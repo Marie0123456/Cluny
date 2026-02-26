@@ -49,6 +49,8 @@ Route::middleware(['auth'])->group(function () {
 
     // Vente actions
     Route::get('/ventes/{vente}', [VenteController::class, 'show'])->name('ventes.show');
+    Route::get('/ventes/{vente}/edit', [VenteController::class, 'edit'])->name('ventes.edit');
+    Route::put('/ventes/{vente}', [VenteController::class, 'update'])->name('ventes.update');
     Route::delete('/ventes/{vente}', [VenteController::class, 'destroy'])->name('ventes.destroy');
 
     // API endpoints

@@ -1,8 +1,8 @@
 <x-app-layout>
     <x-slot name="header">
         <div>
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">{{ $concours->nom }}</h2>
-            <p class="text-sm text-gray-500 mt-1">Nouvelle vente</p>
+            <h2 class="font-semibold text-xl text-gray-800 leading-tight">{{ $vente->concours->nom }}</h2>
+            <p class="text-sm text-gray-500 mt-1">Modifier la vente #{{ $vente->id }}</p>
         </div>
     </x-slot>
 
@@ -19,9 +19,10 @@
             @endif
 
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6"
-                x-data="venteForm()" x-cloak>
-                <form method="POST" action="{{ route('concours.ventes.store', $concours) }}" @submit="prepareSubmit($event)">
+                x-data="venteEditForm()" x-cloak>
+                <form method="POST" action="{{ route('ventes.update', $vente) }}" @submit="prepareSubmit($event)">
                     @csrf
+                    @method('PUT')
 
                     <!-- Nom client -->
                     <div class="mb-6">
@@ -72,7 +73,8 @@
                     <!-- Jour de paiement -->
                     <div class="mb-6">
                         <x-input-label for="jour_paiement" value="Jour de paiement (optionnel)" />
-                        <x-text-input id="jour_paiement" name="jour_paiement" type="date" class="mt-1 block w-full" />
+                        <x-text-input id="jour_paiement" name="jour_paiement" type="date" class="mt-1 block w-full"
+                            value="{{ $vente->jour_paiement?->format('Y-m-d') }}" />
                     </div>
 
                     <!-- Moyens de paiement -->
@@ -100,7 +102,8 @@
                     <!-- N° de chèque -->
                     <div class="mb-6" x-show="paiementCheque" x-transition>
                         <x-input-label for="numero_cheque" value="Numéro de chèque" />
-                        <x-text-input id="numero_cheque" name="numero_cheque" type="text" class="mt-1 block w-full" />
+                        <x-text-input id="numero_cheque" name="numero_cheque" type="text" class="mt-1 block w-full"
+                            value="{{ $vente->numero_cheque }}" />
                     </div>
 
                     <!-- Facture -->
@@ -166,7 +169,7 @@
                     <div class="mb-6">
                         <x-input-label for="commentaire" value="Commentaire (optionnel)" />
                         <textarea id="commentaire" name="commentaire" rows="2"
-                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm"></textarea>
+                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">{{ $vente->commentaire }}</textarea>
                     </div>
 
                     <!-- Hidden inputs for lignes (populated on submit) -->
@@ -174,8 +177,8 @@
 
                     <!-- Submit -->
                     <div class="flex items-center gap-4">
-                        <x-primary-button>Enregistrer la vente</x-primary-button>
-                        <a href="{{ route('concours.ventes.index', $concours) }}" class="text-sm text-gray-600 hover:text-gray-900">Annuler</a>
+                        <x-primary-button>Enregistrer les modifications</x-primary-button>
+                        <a href="{{ route('concours.ventes.index', $vente->concours) }}" class="text-sm text-gray-600 hover:text-gray-900">Annuler</a>
                     </div>
                 </form>
             </div>
@@ -183,24 +186,30 @@
     </div>
 
     <script>
-        function venteForm() {
+        function venteEditForm() {
             const produitsPrix = {
                 @foreach($produits as $produit)
                     '{{ $produit->id }}': {{ $produit->prix_ttc }},
                 @endforeach
             };
 
+            const initialLignes = @json($vente->lignes->map(fn($l) => [
+                'produit_id' => (string) $l->produit_id,
+                'quantite' => $l->quantite,
+                'total' => (float) $l->total_ttc,
+            ]));
+
             return {
-                nomClient: '',
-                lignes: [{ produit_id: '', quantite: 1, total: 0 }],
-                paiementCb: false,
-                paiementEspeces: false,
-                paiementCheque: false,
-                facture: '0',
-                nomFacturation: '',
-                telephone: '',
-                emailFacturation: '',
-                adresseFacturation: '',
+                nomClient: @json($vente->nom_client),
+                lignes: initialLignes.length > 0 ? initialLignes : [{ produit_id: '', quantite: 1, total: 0 }],
+                paiementCb: @json($vente->paiement_cb),
+                paiementEspeces: @json($vente->paiement_especes),
+                paiementCheque: @json($vente->paiement_cheque),
+                facture: @json($vente->facture ? '1' : '0'),
+                nomFacturation: @json($vente->clientFacturation?->nom ?? ''),
+                telephone: @json($vente->clientFacturation?->telephone ?? ''),
+                emailFacturation: @json($vente->clientFacturation?->email ?? ''),
+                adresseFacturation: @json($vente->clientFacturation?->adresse ?? ''),
                 clientsResultats: [],
                 showClientsResults: false,
 
@@ -248,7 +257,6 @@
                 },
 
                 prepareSubmit(event) {
-                    // Validate at least one product selected
                     const validLignes = this.lignes.filter(l => l.produit_id && l.quantite > 0);
                     if (validLignes.length === 0) {
                         event.preventDefault();
@@ -256,7 +264,6 @@
                         return;
                     }
 
-                    // Create hidden inputs for lignes
                     const container = document.getElementById('lignes-hidden');
                     container.innerHTML = '';
                     validLignes.forEach((ligne, i) => {

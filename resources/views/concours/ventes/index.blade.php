@@ -48,7 +48,7 @@
                             @foreach ($ventes as $vente)
                                 <tr>
                                     <td class="px-4 py-3 text-sm font-medium text-gray-900">{{ $vente->nom_client }}</td>
-                                    <td class="px-4 py-3 text-sm text-gray-500">{{ $vente->jour_paiement->format('d/m/Y') }}</td>
+                                    <td class="px-4 py-3 text-sm text-gray-500">{{ $vente->jour_paiement ? $vente->jour_paiement->format('d/m/Y') : '-' }}</td>
                                     <td class="px-4 py-3 text-sm text-gray-500">
                                         @foreach ($vente->lignes as $ligne)
                                             {{ $ligne->produit->nom }} x{{ $ligne->quantite }}@if (!$loop->last), @endif
@@ -62,12 +62,30 @@
                                     </td>
                                     <td class="px-4 py-3 text-sm">
                                         @if ($vente->facture)
-                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-indigo-100 text-indigo-800">Oui</span>
+                                            <span class="relative group inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-indigo-100 text-indigo-800 cursor-default">
+                                                Oui
+                                                @if ($vente->clientFacturation)
+                                                    <div class="hidden group-hover:block absolute z-50 bottom-full left-0 mb-2 w-56 bg-gray-900 text-white text-xs rounded-lg shadow-lg p-3">
+                                                        <p class="font-semibold">{{ $vente->clientFacturation->nom }}</p>
+                                                        @if ($vente->clientFacturation->telephone)
+                                                            <p class="mt-1">Tel: {{ $vente->clientFacturation->telephone }}</p>
+                                                        @endif
+                                                        @if ($vente->clientFacturation->email)
+                                                            <p>Email: {{ $vente->clientFacturation->email }}</p>
+                                                        @endif
+                                                        @if ($vente->clientFacturation->adresse)
+                                                            <p>{{ $vente->clientFacturation->adresse }}</p>
+                                                        @endif
+                                                        <div class="absolute left-4 top-full w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-gray-900"></div>
+                                                    </div>
+                                                @endif
+                                            </span>
                                         @else
                                             <span class="text-gray-400">Non</span>
                                         @endif
                                     </td>
                                     <td class="px-4 py-3 text-sm text-right space-x-2">
+                                        <a href="{{ route('ventes.edit', $vente) }}" class="text-amber-600 hover:text-amber-900 text-xs font-medium">Modifier</a>
                                         <a href="{{ route('ventes.show', $vente) }}" class="text-indigo-600 hover:text-indigo-900 text-xs font-medium">Voir</a>
                                         <form method="POST" action="{{ route('ventes.destroy', $vente) }}" class="inline"
                                             onsubmit="return confirm('Supprimer cette vente ?')">
