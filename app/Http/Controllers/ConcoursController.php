@@ -75,8 +75,9 @@ class ConcoursController extends Controller
         }
 
         $concours->loadCount(['epreuves', 'engagements', 'modifications', 'ventes']);
+        $epreuves = $concours->epreuves()->withCount('engagements')->orderBy('numero')->get();
 
-        return view('concours.show', compact('concours'));
+        return view('concours.show', compact('concours', 'epreuves'));
     }
 
     public function edit(Concours $concours)

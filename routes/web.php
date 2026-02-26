@@ -1,10 +1,14 @@
 <?php
 
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Api\CavalierSearchController;
+use App\Http\Controllers\Api\ChevalSearchController;
+use App\Http\Controllers\Api\EpreuveController as ApiEpreuveController;
 use App\Http\Controllers\ConcoursController;
 use App\Http\Controllers\EngageController;
 use App\Http\Controllers\EpreuveController;
 use App\Http\Controllers\ImportController;
+use App\Http\Controllers\ModificationController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 
@@ -24,6 +28,21 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/engages', [EngageController::class, 'index'])->name('engages.index');
         Route::get('/epreuves', [EpreuveController::class, 'index'])->name('epreuves.index');
         Route::post('/import', [ImportController::class, 'store'])->name('import.store');
+
+        // Modifications
+        Route::get('/modifications', [ModificationController::class, 'index'])->name('modifications.index');
+        Route::post('/modifications/changement-cheval', [ModificationController::class, 'changementCheval'])->name('modifications.changement-cheval');
+    });
+
+    // Modification actions
+    Route::patch('/modifications/{modification}/fait', [ModificationController::class, 'marquerFait'])->name('modifications.fait');
+    Route::delete('/modifications/{modification}', [ModificationController::class, 'destroy'])->name('modifications.destroy');
+
+    // API endpoints
+    Route::prefix('api')->group(function () {
+        Route::get('/cavaliers/search', [CavalierSearchController::class, 'search'])->name('api.cavaliers.search');
+        Route::get('/chevaux/search', [ChevalSearchController::class, 'search'])->name('api.chevaux.search');
+        Route::patch('/epreuves/{epreuve}/prix', [ApiEpreuveController::class, 'updatePrix'])->name('api.epreuves.update-prix');
     });
 
     // Admin routes

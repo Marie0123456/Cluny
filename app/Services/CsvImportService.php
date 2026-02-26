@@ -39,9 +39,11 @@ class CsvImportService
             'nb_engagements' => 0,
         ];
 
-        DB::transaction(function () use ($concours, $lines, &$counters) {
+        $separator = $this->detectSeparator($lines[0] ?? '');
+
+        DB::transaction(function () use ($concours, $lines, &$counters, $separator) {
             foreach ($lines as $line) {
-                $cols = explode("\t", $line);
+                $cols = explode($separator, $line);
 
                 if (count($cols) < 19) {
                     continue;
@@ -121,6 +123,21 @@ class CsvImportService
         });
 
         return $counters;
+    }
+
+    private function detectSeparator(string $line): string
+    {
+        $tabCount = substr_count($line, "\t");
+        $semicolonCount = substr_count($line, ';');
+        $commaCount = substr_count($line, ',');
+
+        if ($tabCount >= $semicolonCount && $tabCount >= $commaCount) {
+            return "\t";
+        }
+        if ($semicolonCount >= $commaCount) {
+            return ';';
+        }
+        return ',';
     }
 
     private function parseDate(string $dateStr): ?string

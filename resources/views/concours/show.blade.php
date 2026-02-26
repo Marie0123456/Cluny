@@ -38,23 +38,7 @@
                 </div>
             @endif
 
-            <!-- Navigation tabs -->
-            <div class="bg-white shadow-sm sm:rounded-lg mb-6">
-                <nav class="flex border-b border-gray-200">
-                    <a href="{{ route('concours.show', $concours) }}"
-                        class="px-6 py-3 text-sm font-medium border-b-2 {{ request()->routeIs('concours.show') ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
-                        Resume
-                    </a>
-                    <a href="{{ route('concours.epreuves.index', $concours) }}"
-                        class="px-6 py-3 text-sm font-medium border-b-2 {{ request()->routeIs('concours.epreuves.*') ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
-                        Epreuves ({{ $concours->epreuves_count }})
-                    </a>
-                    <a href="{{ route('concours.engages.index', $concours) }}"
-                        class="px-6 py-3 text-sm font-medium border-b-2 {{ request()->routeIs('concours.engages.*') ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
-                        Engages ({{ $concours->engagements_count }})
-                    </a>
-                </nav>
-            </div>
+            @include('concours.partials.tabs', ['active' => 'resume'])
 
             <!-- Stats cards -->
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
@@ -75,6 +59,73 @@
                     <p class="text-2xl font-bold text-gray-900">{{ $concours->ventes_count }}</p>
                 </div>
             </div>
+
+            <!-- Mes Epreuves -->
+            @if ($epreuves->isNotEmpty())
+                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
+                    <div class="p-6">
+                        <h3 class="text-lg font-medium text-gray-900 mb-4">Mes Epreuves</h3>
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">N.</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Nom</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Engages</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Prix</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                @foreach ($epreuves as $epreuve)
+                                    <tr>
+                                        <td class="px-4 py-2 text-sm font-medium text-gray-900">{{ $epreuve->numero }}</td>
+                                        <td class="px-4 py-2 text-sm text-gray-900">{{ $epreuve->nom }}</td>
+                                        <td class="px-4 py-2 text-sm text-gray-500">{{ $epreuve->date ? $epreuve->date->format('d/m/Y') : '-' }}</td>
+                                        <td class="px-4 py-2 text-sm">
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+                                                {{ $epreuve->engagements_count }}
+                                            </span>
+                                        </td>
+                                        <td class="px-4 py-2 text-sm"
+                                            x-data="{ editing: false, prix: '{{ $epreuve->prix ?? '' }}', saving: false }">
+                                            <div x-show="!editing" class="flex items-center space-x-2">
+                                                <span x-text="prix ? prix + ' EUR' : '-'" class="text-gray-500"></span>
+                                                @can('admin')
+                                                    <button @click="editing = true" class="text-indigo-600 hover:text-indigo-800 text-xs">modifier</button>
+                                                @endcan
+                                            </div>
+                                            @can('admin')
+                                                <div x-show="editing" x-cloak class="flex items-center space-x-2">
+                                                    <input type="number" step="0.01" x-model="prix"
+                                                        class="w-24 text-sm rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                                        @keydown.enter="
+                                                            saving = true;
+                                                            fetch('/api/epreuves/{{ $epreuve->id }}/prix', {
+                                                                method: 'PATCH',
+                                                                headers: {'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content},
+                                                                body: JSON.stringify({prix: prix})
+                                                            }).then(() => { saving = false; editing = false; });
+                                                        "
+                                                        @keydown.escape="editing = false">
+                                                    <button @click="
+                                                        saving = true;
+                                                        fetch('/api/epreuves/{{ $epreuve->id }}/prix', {
+                                                            method: 'PATCH',
+                                                            headers: {'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content},
+                                                            body: JSON.stringify({prix: prix})
+                                                        }).then(() => { saving = false; editing = false; });
+                                                    " class="text-green-600 hover:text-green-800 text-xs" :disabled="saving">OK</button>
+                                                    <button @click="editing = false" class="text-gray-400 hover:text-gray-600 text-xs">Annuler</button>
+                                                </div>
+                                            @endcan
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            @endif
 
             <!-- Import CSV -->
             @can('admin')
