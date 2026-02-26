@@ -19,7 +19,7 @@
             @include('concours.partials.tabs', ['active' => 'modifications'])
 
             <!-- Changement de cheval form -->
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 mb-6"
+            <div class="bg-white shadow-sm sm:rounded-lg p-6 mb-6"
                 x-data="changementCheval()" x-cloak>
 
                 <div class="flex justify-between items-center mb-4">
@@ -58,7 +58,7 @@
 
                         <ul x-show="showCavalierList && filteredCavaliers.length > 0"
                             @click.away="showCavalierList = false"
-                            class="absolute z-20 w-full bg-white border border-gray-300 rounded-md shadow-lg mt-1 max-h-60 overflow-y-auto">
+                            class="absolute z-50 w-full bg-white border border-gray-300 rounded-md shadow-lg mt-1 max-h-60 overflow-y-auto">
                             <template x-for="c in filteredCavaliers" :key="c.engagement_id">
                                 <li @click="selectCavalier(c)"
                                     class="cursor-pointer hover:bg-indigo-50 px-4 py-3 border-b border-gray-100">
@@ -88,7 +88,7 @@
                         <!-- Recherche cheval existant -->
                         <div x-show="!isNouveauCheval" class="relative">
                             <input type="text" x-model="searchCheval"
-                                @input.debounce.300ms="searchChevaux()"
+                                @input.debounce.150ms="searchChevaux()"
                                 @focus="showResults = true"
                                 placeholder="Rechercher un cheval par nom..."
                                 class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
@@ -103,7 +103,7 @@
 
                             <ul x-show="showResults && resultatsChevaux.length > 0"
                                 @click.away="showResults = false"
-                                class="absolute z-20 w-full bg-white border border-gray-300 rounded-lg shadow-xl mt-1 max-h-64 overflow-y-auto divide-y divide-gray-100">
+                                class="absolute z-50 w-full bg-white border border-gray-300 rounded-lg shadow-xl mt-1 max-h-64 overflow-y-auto divide-y divide-gray-100">
                                 <template x-for="ch in resultatsChevaux" :key="ch.id">
                                     <li @click="selectCheval(ch)"
                                         class="cursor-pointer hover:bg-indigo-50 px-4 py-3 transition-colors">
