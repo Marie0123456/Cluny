@@ -143,6 +143,20 @@
                             Importer
                         </button>
                     </form>
+
+                    @if ($concours->engagements_count > 0)
+                        <div class="mt-4 pt-4 border-t border-gray-200">
+                            <form method="POST" action="{{ route('concours.purge', $concours) }}"
+                                onsubmit="return confirm('Attention : cela supprimera TOUTES les epreuves, engagements, cavaliers, chevaux et modifications de ce concours.\n\nCette action est irreversible.\n\nConfirmer la suppression ?')">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700">
+                                    Supprimer toutes les donnees importees
+                                </button>
+                                <span class="ml-3 text-sm text-gray-500">Supprime epreuves, engagements, cavaliers et chevaux de ce concours.</span>
+                            </form>
+                        </div>
+                    @endif
                 </div>
             @endcan
         </div>

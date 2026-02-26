@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Enums\Discipline;
 use App\Models\Concours;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class ConcoursController extends Controller
 {
@@ -126,5 +127,21 @@ class ConcoursController extends Controller
 
         return redirect()->route('dashboard')
             ->with('success', 'Concours supprimé.');
+    }
+
+    public function purge(Concours $concours)
+    {
+        if (! auth()->user()->isAdmin()) {
+            abort(403);
+        }
+
+        DB::transaction(function () use ($concours) {
+            $concours->modifications()->delete();
+            $concours->engagements()->delete();
+            $concours->epreuves()->delete();
+        });
+
+        return redirect()->route('concours.show', $concours)
+            ->with('success', 'Toutes les donnees importees ont ete supprimees.');
     }
 }

@@ -31,6 +31,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/engages', [EngageController::class, 'index'])->name('engages.index');
         Route::get('/epreuves', [EpreuveController::class, 'index'])->name('epreuves.index');
         Route::post('/import', [ImportController::class, 'store'])->name('import.store');
+        Route::delete('/purge', [ConcoursController::class, 'purge'])->name('purge');
 
         // Modifications
         Route::get('/modifications', [ModificationController::class, 'index'])->name('modifications.index');
