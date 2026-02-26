@@ -26,7 +26,7 @@
                 </a>
             </div>
 
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+            <div class="bg-white shadow-sm sm:rounded-lg">
                 @if ($ventes->isEmpty())
                     <div class="p-6 text-center text-gray-500">
                         Aucune vente pour le moment.
