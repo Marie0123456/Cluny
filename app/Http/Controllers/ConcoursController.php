@@ -18,7 +18,11 @@ class ConcoursController extends Controller
             $concours = $user->concours()->orderBy('date_debut', 'desc')->get();
         }
 
-        return view('dashboard', compact('concours'));
+        $now = now()->startOfDay();
+        $concoursFuturs = $concours->where('date_fin', '>=', $now)->values();
+        $concoursPasses = $concours->where('date_fin', '<', $now)->values();
+
+        return view('dashboard', compact('concoursFuturs', 'concoursPasses'));
     }
 
     public function index()
