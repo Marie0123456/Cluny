@@ -176,9 +176,9 @@
                 'id' => $e->id,
                 'engagements' => $e->engagements->map(fn($eng) => [
                     'engagement_id' => $eng->id,
-                    'cavalier_nom' => $eng->cavalier->nom,
-                    'cavalier_prenom' => $eng->cavalier->prenom,
-                    'cheval_nom' => $eng->cheval->nom,
+                    'cavalier_nom' => $eng->cavalier?->nom ?? '',
+                    'cavalier_prenom' => $eng->cavalier?->prenom ?? '',
+                    'cheval_nom' => $eng->cheval?->nom ?? '',
                 ])
             ]));
 
