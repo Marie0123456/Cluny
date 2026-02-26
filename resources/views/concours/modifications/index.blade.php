@@ -264,6 +264,7 @@
                 },
 
                 filterCavaliers() {
+                    this.showCavalierList = true;
                     const q = this.searchCavalier.toLowerCase();
                     if (!q) {
                         this.filteredCavaliers = this.cavaliers;
