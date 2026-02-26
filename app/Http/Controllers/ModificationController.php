@@ -22,7 +22,21 @@ class ModificationController extends Controller
             ->orderByRaw('CAST(numero AS UNSIGNED), numero')
             ->get();
 
-        return view('concours.modifications.index', compact('concours', 'modifications', 'epreuves'));
+        $epreuvesJson = $epreuves->map(function ($e) {
+            return [
+                'id' => $e->id,
+                'engagements' => $e->engagements->map(function ($eng) {
+                    return [
+                        'engagement_id' => $eng->id,
+                        'cavalier_nom' => $eng->cavalier?->nom ?? '',
+                        'cavalier_prenom' => $eng->cavalier?->prenom ?? '',
+                        'cheval_nom' => $eng->cheval?->nom ?? '',
+                    ];
+                })->values(),
+            ];
+        })->values();
+
+        return view('concours.modifications.index', compact('concours', 'modifications', 'epreuves', 'epreuvesJson'));
     }
 
     public function changementCheval(Request $request, Concours $concours)

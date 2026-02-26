@@ -172,15 +172,7 @@
 
     <script>
         function changementCheval() {
-            const epreuves = @json($epreuves->map(fn($e) => [
-                'id' => $e->id,
-                'engagements' => $e->engagements->map(fn($eng) => [
-                    'engagement_id' => $eng->id,
-                    'cavalier_nom' => $eng->cavalier?->nom ?? '',
-                    'cavalier_prenom' => $eng->cavalier?->prenom ?? '',
-                    'cheval_nom' => $eng->cheval?->nom ?? '',
-                ])
-            ]));
+            const epreuves = @json($epreuvesJson);
 
             return {
                 open: false,
