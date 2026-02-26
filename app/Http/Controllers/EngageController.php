@@ -10,7 +10,7 @@ class EngageController extends Controller
     {
         $epreuves = $concours->epreuves()
             ->with(['engagements.cavalier', 'engagements.cheval'])
-            ->orderBy('numero')
+            ->orderByRaw('CAST(numero AS UNSIGNED), numero')
             ->get();
 
         return view('concours.engages', compact('concours', 'epreuves'));

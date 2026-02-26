@@ -10,7 +10,7 @@ class EpreuveController extends Controller
     {
         $epreuves = $concours->epreuves()
             ->withCount('engagements')
-            ->orderBy('numero')
+            ->orderByRaw('CAST(numero AS UNSIGNED), numero')
             ->get();
 
         return view('concours.epreuves', compact('concours', 'epreuves'));

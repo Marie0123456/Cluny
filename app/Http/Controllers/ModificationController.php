@@ -19,7 +19,7 @@ class ModificationController extends Controller
 
         $epreuves = $concours->epreuves()
             ->with(['engagements.cavalier', 'engagements.cheval'])
-            ->orderBy('numero')
+            ->orderByRaw('CAST(numero AS UNSIGNED), numero')
             ->get();
 
         return view('concours.modifications.index', compact('concours', 'modifications', 'epreuves'));
