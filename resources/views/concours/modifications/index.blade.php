@@ -194,6 +194,9 @@
                                     </td>
                                     <td class="px-4 py-2 text-sm text-green-700 font-medium">
                                         {{ $mod->nouveauCheval->nom ?? '-' }}
+                                        @if($mod->nouveauCheval?->num_sire)
+                                            <span class="text-xs text-gray-500 font-normal">(SIRE: {{ $mod->nouveauCheval->num_sire }})</span>
+                                        @endif
                                     </td>
                                     <td class="px-4 py-2 text-sm">
                                         @if ($mod->statut === 'en_attente')
