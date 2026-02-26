@@ -69,16 +69,7 @@ class ConcoursController extends Controller
 
     public function show(Concours $concours)
     {
-        $user = auth()->user();
-
-        if (! $user->isAdmin() && ! $user->concours()->where('concours.id', $concours->id)->exists()) {
-            abort(403);
-        }
-
-        $concours->loadCount(['epreuves', 'engagements', 'modifications', 'ventes']);
-        $epreuves = $concours->epreuves()->withCount('engagements')->orderByRaw('CAST(numero AS UNSIGNED), numero')->get();
-
-        return view('concours.show', compact('concours', 'epreuves'));
+        return redirect()->route('concours.epreuves.index', $concours);
     }
 
     public function edit(Concours $concours)
@@ -141,7 +132,7 @@ class ConcoursController extends Controller
             $concours->epreuves()->delete();
         });
 
-        return redirect()->route('concours.show', $concours)
+        return redirect()->route('concours.epreuves.index', $concours)
             ->with('success', 'Toutes les donnees importees ont ete supprimees.');
     }
 }

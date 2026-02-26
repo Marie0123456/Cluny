@@ -1,9 +1,5 @@
 <div class="bg-white shadow-sm sm:rounded-lg mb-6">
     <nav class="flex border-b border-gray-200">
-        <a href="{{ route('concours.show', $concours) }}"
-            class="px-6 py-3 text-sm font-medium border-b-2 {{ ($active ?? '') === 'resume' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
-            Resume
-        </a>
         <a href="{{ route('concours.epreuves.index', $concours) }}"
             class="px-6 py-3 text-sm font-medium border-b-2 {{ ($active ?? '') === 'epreuves' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
             Epreuves
