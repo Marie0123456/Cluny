@@ -111,11 +111,6 @@
                                             <span class="font-semibold text-gray-900" x-text="ch.nom"></span>
                                             <span x-show="ch.num_sire" class="text-xs font-mono bg-gray-100 text-gray-600 px-2 py-0.5 rounded" x-text="`SIRE: ${ch.num_sire}`"></span>
                                         </div>
-                                        <div class="text-xs text-gray-500 mt-0.5">
-                                            <span x-show="ch.race" x-text="ch.race"></span>
-                                            <span x-show="ch.race && ch.sexe"> &middot; </span>
-                                            <span x-show="ch.sexe" x-text="ch.sexe"></span>
-                                        </div>
                                     </li>
                                 </template>
                             </ul>
