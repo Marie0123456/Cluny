@@ -17,6 +17,9 @@
                         <x-nav-link :href="route('admin.users.index')" :active="request()->routeIs('admin.users.*')">
                             Utilisateurs
                         </x-nav-link>
+                        <x-nav-link :href="route('admin.produits.index')" :active="request()->routeIs('admin.produits.*')">
+                            Produits
+                        </x-nav-link>
                     @endcan
                 </div>
             </div>
@@ -70,6 +73,9 @@
             @can('admin')
                 <x-responsive-nav-link :href="route('admin.users.index')" :active="request()->routeIs('admin.users.*')">
                     Utilisateurs
+                </x-responsive-nav-link>
+                <x-responsive-nav-link :href="route('admin.produits.index')" :active="request()->routeIs('admin.produits.*')">
+                    Produits
                 </x-responsive-nav-link>
             @endcan
         </div>

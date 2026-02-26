@@ -51,4 +51,11 @@ class Vente extends Model
     {
         return $this->hasMany(VenteLigne::class);
     }
+
+    public function recalculerTotal(): void
+    {
+        $this->update([
+            'total_ttc' => $this->lignes()->sum('total_ttc'),
+        ]);
+    }
 }

@@ -26,6 +26,11 @@ class Produit extends Model
         ];
     }
 
+    public function getPrixHtAttribute(): float
+    {
+        return round($this->prix_ttc / (1 + $this->tva / 100), 2);
+    }
+
     public function venteLignes(): HasMany
     {
         return $this->hasMany(VenteLigne::class);
