@@ -43,52 +43,115 @@
                         </select>
                     </div>
 
-                    <!-- Step 2: Cavalier / Engagement -->
-                    <div x-show="cavaliers.length > 0">
+                    <!-- Step 2: Cavalier / Engagement (filtrable) -->
+                    <div x-show="cavaliers.length > 0" class="relative">
                         <label class="block text-sm font-medium text-gray-700 mb-1">Cavalier (et cheval actuel)</label>
-                        <select x-model="engagementId"
-                            class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-                            <option value="">Choisir le cavalier</option>
-                            <template x-for="c in cavaliers" :key="c.engagement_id">
-                                <option :value="c.engagement_id"
-                                    x-text="`${c.cavalier_nom} ${c.cavalier_prenom} — Cheval actuel: ${c.cheval_nom}`">
-                                </option>
-                            </template>
-                        </select>
-                    </div>
-
-                    <!-- Step 3: Nouveau cheval (autocomplete) -->
-                    <div x-show="engagementId" class="relative">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Nouveau cheval</label>
-                        <input type="text" x-model="searchCheval"
-                            @input.debounce.300ms="searchChevaux()"
-                            @focus="showResults = true"
-                            placeholder="Rechercher un cheval..."
+                        <input type="text" x-model="searchCavalier"
+                            @input="filterCavaliers()"
+                            @focus="showCavalierList = true"
+                            placeholder="Tapez un nom de cavalier ou de cheval..."
                             class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
 
-                        <div x-show="selectedChevalNom" class="mt-1 text-sm text-green-700 font-medium">
-                            Cheval selectionne : <span x-text="selectedChevalNom"></span>
+                        <div x-show="selectedCavalierLabel" class="mt-1 text-sm text-indigo-700 font-medium">
+                            <span x-text="selectedCavalierLabel"></span>
                         </div>
 
-                        <ul x-show="showResults && resultatsChevaux.length > 0"
-                            @click.away="showResults = false"
-                            class="absolute z-10 w-full bg-white border border-gray-200 rounded-md shadow-lg mt-1 max-h-48 overflow-y-auto">
-                            <template x-for="ch in resultatsChevaux" :key="ch.id">
-                                <li @click="selectCheval(ch)"
-                                    class="cursor-pointer hover:bg-indigo-50 px-4 py-2 text-sm">
-                                    <span x-text="ch.nom" class="font-medium"></span>
-                                    <span x-show="ch.race" x-text="' — ' + ch.race" class="text-gray-500"></span>
+                        <ul x-show="showCavalierList && filteredCavaliers.length > 0"
+                            @click.away="showCavalierList = false"
+                            class="absolute z-20 w-full bg-white border border-gray-300 rounded-md shadow-lg mt-1 max-h-60 overflow-y-auto">
+                            <template x-for="c in filteredCavaliers" :key="c.engagement_id">
+                                <li @click="selectCavalier(c)"
+                                    class="cursor-pointer hover:bg-indigo-50 px-4 py-3 border-b border-gray-100">
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <span class="font-semibold text-sm text-gray-900" x-text="`${c.cavalier_nom} ${c.cavalier_prenom}`"></span>
+                                            <span x-show="c.numero_depart" class="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-600" x-text="`N°${c.numero_depart}`"></span>
+                                        </div>
+                                        <span class="text-sm text-gray-500" x-text="c.cheval_nom"></span>
+                                    </div>
                                 </li>
                             </template>
                         </ul>
                     </div>
 
+                    <!-- Step 3: Nouveau cheval -->
+                    <div x-show="engagementId">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Nouveau cheval</label>
+
+                        <!-- Toggle nouveau cheval -->
+                        <label class="inline-flex items-center mb-3 cursor-pointer">
+                            <input type="checkbox" x-model="isNouveauCheval" @change="resetCheval()"
+                                class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
+                            <span class="ml-2 text-sm text-gray-700">Nouveau cheval (pas encore dans la base)</span>
+                        </label>
+
+                        <!-- Recherche cheval existant -->
+                        <div x-show="!isNouveauCheval" class="relative">
+                            <input type="text" x-model="searchCheval"
+                                @input.debounce.300ms="searchChevaux()"
+                                @focus="showResults = true"
+                                placeholder="Rechercher un cheval par nom..."
+                                class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+
+                            <div x-show="selectedChevalNom" class="mt-2 flex items-center gap-2">
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                                    <span x-text="selectedChevalNom"></span>
+                                    <span x-show="selectedChevalSire" x-text="` (SIRE: ${selectedChevalSire})`" class="text-green-600"></span>
+                                </span>
+                                <button type="button" @click="resetCheval()" class="text-gray-400 hover:text-red-500 text-sm">&times;</button>
+                            </div>
+
+                            <ul x-show="showResults && resultatsChevaux.length > 0"
+                                @click.away="showResults = false"
+                                class="absolute z-20 w-full bg-white border border-gray-300 rounded-lg shadow-xl mt-1 max-h-64 overflow-y-auto divide-y divide-gray-100">
+                                <template x-for="ch in resultatsChevaux" :key="ch.id">
+                                    <li @click="selectCheval(ch)"
+                                        class="cursor-pointer hover:bg-indigo-50 px-4 py-3 transition-colors">
+                                        <div class="flex items-center justify-between">
+                                            <span class="font-semibold text-gray-900" x-text="ch.nom"></span>
+                                            <span x-show="ch.num_sire" class="text-xs font-mono bg-gray-100 text-gray-600 px-2 py-0.5 rounded" x-text="`SIRE: ${ch.num_sire}`"></span>
+                                        </div>
+                                        <div class="text-xs text-gray-500 mt-0.5">
+                                            <span x-show="ch.race" x-text="ch.race"></span>
+                                            <span x-show="ch.race && ch.sexe"> &middot; </span>
+                                            <span x-show="ch.sexe" x-text="ch.sexe"></span>
+                                        </div>
+                                    </li>
+                                </template>
+                            </ul>
+                        </div>
+
+                        <!-- Formulaire nouveau cheval -->
+                        <div x-show="isNouveauCheval" class="space-y-3 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Nom du cheval</label>
+                                <input type="text" x-model="nouveauChevalNom"
+                                    placeholder="Nom du cheval"
+                                    class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Numero de SIRE</label>
+                                <input type="text" x-model="nouveauChevalSire"
+                                    placeholder="Ex: 12345678A"
+                                    class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Submit -->
-                    <div x-show="nouveauChevalId">
+                    <div x-show="nouveauChevalId || (isNouveauCheval && nouveauChevalNom)">
                         <form method="POST" action="{{ route('concours.modifications.changement-cheval', $concours) }}">
                             @csrf
                             <input type="hidden" name="engagement_id" :value="engagementId">
-                            <input type="hidden" name="nouveau_cheval_id" :value="nouveauChevalId">
+                            <template x-if="!isNouveauCheval">
+                                <input type="hidden" name="nouveau_cheval_id" :value="nouveauChevalId">
+                            </template>
+                            <template x-if="isNouveauCheval">
+                                <div>
+                                    <input type="hidden" name="nouveau_cheval_nom" :value="nouveauChevalNom">
+                                    <input type="hidden" name="nouveau_cheval_num_sire" :value="nouveauChevalSire">
+                                </div>
+                            </template>
                             <button type="submit"
                                 class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700">
                                 Valider le changement
@@ -179,19 +242,64 @@
                 epreuveId: '',
                 engagementId: '',
                 cavaliers: [],
+                filteredCavaliers: [],
+                searchCavalier: '',
+                showCavalierList: false,
+                selectedCavalierLabel: '',
+
                 searchCheval: '',
                 resultatsChevaux: [],
                 nouveauChevalId: '',
                 selectedChevalNom: '',
+                selectedChevalSire: '',
                 showResults: false,
+
+                isNouveauCheval: false,
+                nouveauChevalNom: '',
+                nouveauChevalSire: '',
 
                 onEpreuveChange() {
                     this.engagementId = '';
-                    this.nouveauChevalId = '';
-                    this.selectedChevalNom = '';
-                    this.searchCheval = '';
+                    this.selectedCavalierLabel = '';
+                    this.searchCavalier = '';
+                    this.resetCheval();
                     const ep = epreuves.find(e => e.id == this.epreuveId);
                     this.cavaliers = ep ? ep.engagements : [];
+                    this.filteredCavaliers = this.cavaliers;
+                },
+
+                filterCavaliers() {
+                    const q = this.searchCavalier.toLowerCase();
+                    if (!q) {
+                        this.filteredCavaliers = this.cavaliers;
+                        return;
+                    }
+                    this.filteredCavaliers = this.cavaliers.filter(c =>
+                        c.cavalier_nom.toLowerCase().includes(q) ||
+                        c.cavalier_prenom.toLowerCase().includes(q) ||
+                        c.cheval_nom.toLowerCase().includes(q) ||
+                        (c.numero_depart && c.numero_depart.toString().includes(q))
+                    );
+                },
+
+                selectCavalier(c) {
+                    this.engagementId = c.engagement_id;
+                    this.searchCavalier = '';
+                    this.showCavalierList = false;
+                    const numDepart = c.numero_depart ? `N°${c.numero_depart} - ` : '';
+                    this.selectedCavalierLabel = `${numDepart}${c.cavalier_nom} ${c.cavalier_prenom} — Cheval: ${c.cheval_nom}`;
+                    this.resetCheval();
+                },
+
+                resetCheval() {
+                    this.nouveauChevalId = '';
+                    this.selectedChevalNom = '';
+                    this.selectedChevalSire = '';
+                    this.searchCheval = '';
+                    this.resultatsChevaux = [];
+                    this.showResults = false;
+                    this.nouveauChevalNom = '';
+                    this.nouveauChevalSire = '';
                 },
 
                 async searchChevaux() {
@@ -207,6 +315,7 @@
                 selectCheval(ch) {
                     this.nouveauChevalId = ch.id;
                     this.selectedChevalNom = ch.nom;
+                    this.selectedChevalSire = ch.num_sire || '';
                     this.searchCheval = ch.nom;
                     this.showResults = false;
                     this.resultatsChevaux = [];

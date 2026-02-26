@@ -28,9 +28,11 @@ class ModificationController extends Controller
                 'engagements' => $e->engagements->map(function ($eng) {
                     return [
                         'engagement_id' => $eng->id,
+                        'numero_depart' => $eng->numero_depart ?? '',
                         'cavalier_nom' => $eng->cavalier?->nom ?? '',
                         'cavalier_prenom' => $eng->cavalier?->prenom ?? '',
                         'cheval_nom' => $eng->cheval?->nom ?? '',
+                        'cheval_num_sire' => $eng->cheval?->num_sire ?? '',
                     ];
                 })->values(),
             ];
@@ -43,12 +45,24 @@ class ModificationController extends Controller
     {
         $validated = $request->validate([
             'engagement_id' => 'required|exists:engagements,id',
-            'nouveau_cheval_id' => 'required|exists:chevaux,id',
+            'nouveau_cheval_id' => 'nullable|exists:chevaux,id',
+            'nouveau_cheval_nom' => 'nullable|required_without:nouveau_cheval_id|string|max:255',
+            'nouveau_cheval_num_sire' => 'nullable|string|max:255',
         ]);
 
         $engagement = Engagement::findOrFail($validated['engagement_id']);
         $ancienChevalId = $engagement->cheval_id;
-        $nouveauCheval = Cheval::findOrFail($validated['nouveau_cheval_id']);
+
+        if (!empty($validated['nouveau_cheval_id'])) {
+            $nouveauCheval = Cheval::findOrFail($validated['nouveau_cheval_id']);
+        } else {
+            $nouveauCheval = Cheval::firstOrCreate(
+                [
+                    'nom' => $validated['nouveau_cheval_nom'],
+                    'num_sire' => $validated['nouveau_cheval_num_sire'] ?: null,
+                ]
+            );
+        }
 
         Modification::create([
             'engagement_id' => $engagement->id,
