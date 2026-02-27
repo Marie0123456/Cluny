@@ -92,6 +92,7 @@
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Paiement</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Jour paiement</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Facture</th>
+                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200">
@@ -148,6 +149,121 @@
                                                 </span>
                                             @endif
                                         </td>
+                                        <td class="px-4 py-3 text-sm text-right">
+                                            <button type="button" onclick="toggleEditRowET({{ $mod->id }})" class="text-indigo-600 hover:text-indigo-800 text-xs font-medium">Editer</button>
+                                        </td>
+                                    </tr>
+                                    {{-- Inline edit row --}}
+                                    <tr id="edit-row-et-{{ $mod->id }}" class="hidden bg-gray-50">
+                                        <td colspan="10" class="px-4 py-4">
+                                            <form method="POST" action="{{ route('modifications.update-paiement', $mod) }}" class="space-y-4">
+                                                @csrf
+                                                @method('PATCH')
+
+                                                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                                    {{-- Jour de paiement --}}
+                                                    <div>
+                                                        <label class="block text-xs font-medium text-gray-500 mb-1">Jour de paiement</label>
+                                                        <input type="date" name="jour_paiement" value="{{ $mod->jour_paiement?->format('Y-m-d') }}"
+                                                            class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                                                    </div>
+                                                    {{-- Type de compte --}}
+                                                    <div>
+                                                        <label class="block text-xs font-medium text-gray-500 mb-1">Type de compte</label>
+                                                        <select name="type_compte" class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                                                            <option value="">—</option>
+                                                            <option value="Licence" {{ $mod->type_compte === 'Licence' ? 'selected' : '' }}>Licence</option>
+                                                            <option value="Compte" {{ $mod->type_compte === 'Compte' ? 'selected' : '' }}>Compte</option>
+                                                            <option value="Club" {{ $mod->type_compte === 'Club' ? 'selected' : '' }}>Club</option>
+                                                        </select>
+                                                    </div>
+                                                    {{-- Numero de compte --}}
+                                                    <div>
+                                                        <label class="block text-xs font-medium text-gray-500 mb-1">Numero de compte</label>
+                                                        <input type="text" name="numero_compte" value="{{ $mod->numero_compte }}"
+                                                            class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                                                    </div>
+                                                    {{-- Moyen de paiement --}}
+                                                    <div>
+                                                        <label class="block text-xs font-medium text-gray-500 mb-1">Moyen de paiement</label>
+                                                        <div class="flex gap-3 mt-1">
+                                                            <label class="inline-flex items-center text-sm">
+                                                                <input type="checkbox" name="paiement_cb" value="1" {{ $mod->paiement_cb ? 'checked' : '' }}
+                                                                    class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
+                                                                <span class="ml-1">CB</span>
+                                                            </label>
+                                                            <label class="inline-flex items-center text-sm">
+                                                                <input type="checkbox" name="paiement_especes" value="1" {{ $mod->paiement_especes ? 'checked' : '' }}
+                                                                    class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
+                                                                <span class="ml-1">Especes</span>
+                                                            </label>
+                                                            <label class="inline-flex items-center text-sm">
+                                                                <input type="checkbox" name="paiement_cheque" value="1" {{ $mod->paiement_cheque ? 'checked' : '' }}
+                                                                    class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
+                                                                <span class="ml-1">Cheque</span>
+                                                            </label>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {{-- Facture section --}}
+                                                <div x-data="{ facture: {{ $mod->facture ? 'true' : 'false' }}, nomFacturation: '{{ addslashes($mod->clientFacturation->nom ?? '') }}', telephone: '{{ addslashes($mod->clientFacturation->telephone ?? '') }}', emailFacturation: '{{ addslashes($mod->clientFacturation->email ?? '') }}', adresseFacturation: '{{ addslashes($mod->clientFacturation->adresse ?? '') }}', clientsResultats: [], showClientsResults: false }">
+                                                    <div class="flex items-center gap-4 mb-3">
+                                                        <span class="text-xs font-medium text-gray-500">Facture</span>
+                                                        <label class="inline-flex items-center text-sm">
+                                                            <input type="radio" name="facture" value="1" :checked="facture" @change="facture = true"
+                                                                class="border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                                                            <span class="ml-1">Oui</span>
+                                                        </label>
+                                                        <label class="inline-flex items-center text-sm">
+                                                            <input type="radio" name="facture" value="0" :checked="!facture" @change="facture = false"
+                                                                class="border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                                                            <span class="ml-1">Non</span>
+                                                        </label>
+                                                    </div>
+                                                    <div x-show="facture" class="grid grid-cols-2 md:grid-cols-4 gap-4 p-3 bg-white rounded-lg border border-gray-200">
+                                                        <div class="relative">
+                                                            <label class="block text-xs font-medium text-gray-500 mb-1">Nom de facturation</label>
+                                                            <input type="text" name="nom_facturation" x-model="nomFacturation"
+                                                                @input.debounce.300ms="if (nomFacturation.length >= 2) { fetch('/api/clients-facturation/search?q=' + encodeURIComponent(nomFacturation)).then(r => r.json()).then(d => { clientsResultats = d; showClientsResults = true; }); } else { clientsResultats = []; }"
+                                                                @focus="showClientsResults = true"
+                                                                class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                                                            <ul x-show="showClientsResults && clientsResultats.length > 0"
+                                                                @click.away="showClientsResults = false"
+                                                                class="absolute z-50 w-full bg-white border border-gray-300 rounded-lg shadow-xl mt-1 max-h-48 overflow-y-auto divide-y divide-gray-100">
+                                                                <template x-for="client in clientsResultats" :key="client.id">
+                                                                    <li @click="nomFacturation = client.nom; telephone = client.telephone || ''; emailFacturation = client.email || ''; adresseFacturation = client.adresse || ''; showClientsResults = false; clientsResultats = [];"
+                                                                        class="cursor-pointer hover:bg-indigo-50 px-4 py-2 text-sm" x-text="client.nom"></li>
+                                                                </template>
+                                                            </ul>
+                                                        </div>
+                                                        <div>
+                                                            <label class="block text-xs font-medium text-gray-500 mb-1">Telephone</label>
+                                                            <input type="text" name="telephone" x-model="telephone"
+                                                                class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                                                        </div>
+                                                        <div>
+                                                            <label class="block text-xs font-medium text-gray-500 mb-1">Email</label>
+                                                            <input type="email" name="email" x-model="emailFacturation"
+                                                                class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                                                        </div>
+                                                        <div>
+                                                            <label class="block text-xs font-medium text-gray-500 mb-1">Adresse</label>
+                                                            <input type="text" name="adresse" x-model="adresseFacturation"
+                                                                class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div class="flex justify-end">
+                                                    <button type="button" onclick="toggleEditRowET({{ $mod->id }})" class="mr-3 text-sm text-gray-600 hover:text-gray-800">Fermer</button>
+                                                    <button type="submit"
+                                                        class="inline-flex items-center px-3 py-1.5 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700">
+                                                        Enregistrer
+                                                    </button>
+                                                </div>
+                                            </form>
+                                        </td>
                                     </tr>
                                 @endforeach
                             </tbody>
@@ -156,7 +272,7 @@
                                     <td colspan="4" class="px-4 py-3 text-sm font-bold text-gray-900">Totaux</td>
                                     <td class="px-4 py-3 text-sm font-bold text-gray-900">{{ number_format($totalPf, 2, ',', ' ') }} &euro;</td>
                                     <td class="px-4 py-3 text-sm font-bold text-gray-900">{{ number_format($totalPrix, 2, ',', ' ') }} &euro;</td>
-                                    <td colspan="3"></td>
+                                    <td colspan="4"></td>
                                 </tr>
                             </tfoot>
                         </table>
@@ -165,6 +281,13 @@
             </div>
 
     <script>
+        function toggleEditRowET(modId) {
+            const row = document.getElementById('edit-row-et-' + modId);
+            if (row) {
+                row.classList.toggle('hidden');
+            }
+        }
+
         function facturationFilter() {
             return {
                 filterEpreuve: '',
