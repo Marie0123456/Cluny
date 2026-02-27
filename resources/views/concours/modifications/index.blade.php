@@ -1395,8 +1395,8 @@
                         this.editablePrix = Math.max(diff, 0);
                         this.editablePf = 0;
                     } else {
-                        // Cas normal : différence + 15€ (min 0 sur le total)
-                        this.editablePrix = Math.max(diff + 15, 0);
+                        // Cas normal : si diff négative → 0 + 15€, sinon diff + 15€
+                        this.editablePrix = Math.max(diff, 0) + 15;
                         this.editablePf = 14.40;
                     }
                 },
