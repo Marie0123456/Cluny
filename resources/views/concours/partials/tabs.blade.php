@@ -12,6 +12,10 @@
             class="px-6 py-3 text-sm font-medium border-b-2 {{ ($active ?? '') === 'modifications' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
             Modifications
         </a>
+        <a href="{{ route('concours.facturation-et.index', $concours) }}"
+            class="px-6 py-3 text-sm font-medium border-b-2 {{ ($active ?? '') === 'facturation-et' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
+            Facturation ET
+        </a>
         <a href="{{ route('concours.ventes.index', $concours) }}"
             class="px-6 py-3 text-sm font-medium border-b-2 {{ ($active ?? '') === 'ventes' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
             Ventes

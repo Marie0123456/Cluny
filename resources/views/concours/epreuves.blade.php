@@ -103,13 +103,22 @@
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Prix</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Engages</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Invitations</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">NP</th>
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
                             @foreach ($epreuves as $epreuve)
                                 <tr>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ $epreuve->numero }}</td>
-                                    <td class="px-6 py-4 text-sm text-gray-900">{{ $epreuve->nom }}</td>
+                                    <td class="px-6 py-4 text-sm text-gray-900">
+                                        {{ $epreuve->nom }}
+                                        @if ($epreuve->badge_label)
+                                            <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {{ $epreuve->badge_couleur }}">
+                                                {{ $epreuve->badge_label }}
+                                            </span>
+                                        @endif
+                                    </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $epreuve->date ? $epreuve->date->format('d/m/Y') : '-' }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm">
                                         <span x-show="!editing" class="text-gray-500">
@@ -123,6 +132,24 @@
                                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
                                             {{ $epreuve->engagements_count }}
                                         </span>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        @if ($epreuve->invitations_count > 0)
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                                {{ $epreuve->invitations_count }}
+                                            </span>
+                                        @else
+                                            <span class="text-sm text-gray-400">0</span>
+                                        @endif
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        @if ($epreuve->non_partants_count > 0)
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                                {{ $epreuve->non_partants_count }}
+                                            </span>
+                                        @else
+                                            <span class="text-sm text-gray-400">0</span>
+                                        @endif
                                     </td>
                                 </tr>
                             @endforeach

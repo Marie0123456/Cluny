@@ -20,6 +20,18 @@ class Modification extends Model
         'ancien_cheval_id',
         'nouveau_cheval_id',
         'statut',
+        'prix',
+        'pf',
+        'type_compte',
+        'numero_compte',
+        'is_gn',
+        'paiement_cb',
+        'paiement_especes',
+        'paiement_cheque',
+        'numero_cheque',
+        'jour_paiement',
+        'facture',
+        'client_facturation_id',
     ];
 
     protected function casts(): array
@@ -27,6 +39,14 @@ class Modification extends Model
         return [
             'type' => ModificationType::class,
             'statut' => ModificationStatut::class,
+            'prix' => 'decimal:2',
+            'pf' => 'decimal:2',
+            'is_gn' => 'boolean',
+            'paiement_cb' => 'boolean',
+            'paiement_especes' => 'boolean',
+            'paiement_cheque' => 'boolean',
+            'jour_paiement' => 'date',
+            'facture' => 'boolean',
         ];
     }
 
@@ -48,5 +68,10 @@ class Modification extends Model
     public function nouveauCheval(): BelongsTo
     {
         return $this->belongsTo(Cheval::class, 'nouveau_cheval_id');
+    }
+
+    public function clientFacturation(): BelongsTo
+    {
+        return $this->belongsTo(ClientFacturation::class);
     }
 }

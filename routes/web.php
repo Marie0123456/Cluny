@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\EpreuveController as ApiEpreuveController;
 use App\Http\Controllers\ConcoursController;
 use App\Http\Controllers\EngageController;
 use App\Http\Controllers\EpreuveController;
+use App\Http\Controllers\FacturationEtController;
 use App\Http\Controllers\ImportController;
 use App\Http\Controllers\ModificationController;
 use App\Http\Controllers\ProfileController;
@@ -36,6 +37,11 @@ Route::middleware(['auth'])->group(function () {
         // Modifications
         Route::get('/modifications', [ModificationController::class, 'index'])->name('modifications.index');
         Route::post('/modifications/changement-cheval', [ModificationController::class, 'changementCheval'])->name('modifications.changement-cheval');
+        Route::post('/modifications/invitation', [ModificationController::class, 'invitation'])->name('modifications.invitation');
+        Route::post('/modifications/non-partant', [ModificationController::class, 'nonPartant'])->name('modifications.non-partant');
+
+        // Facturation ET
+        Route::get('/facturation-et', [FacturationEtController::class, 'index'])->name('facturation-et.index');
 
         // Ventes
         Route::get('/ventes', [VenteController::class, 'index'])->name('ventes.index');
@@ -46,6 +52,7 @@ Route::middleware(['auth'])->group(function () {
     // Modification actions
     Route::patch('/modifications/{modification}/fait', [ModificationController::class, 'marquerFait'])->name('modifications.fait');
     Route::delete('/modifications/{modification}', [ModificationController::class, 'destroy'])->name('modifications.destroy');
+    Route::patch('/modifications/{modification}/update-paiement', [ModificationController::class, 'updatePaiement'])->name('modifications.update-paiement');
 
     // Vente actions
     Route::get('/ventes/{vente}', [VenteController::class, 'show'])->name('ventes.show');

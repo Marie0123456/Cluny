@@ -76,7 +76,13 @@
                                         <tbody class="bg-white divide-y divide-gray-200">
                                             @foreach ($epreuve->engagements as $engagement)
                                                 <tr x-show="search === '' || '{{ strtolower(addslashes(($engagement->cavalier?->nom ?? '') . ' ' . ($engagement->cavalier?->prenom ?? '') . ' ' . ($engagement->cheval?->nom ?? ''))) }}'.includes(search.toLowerCase())">
-                                                    <td class="px-4 py-2 text-sm text-gray-900">{{ $engagement->numero_depart }}</td>
+                                                    <td class="px-4 py-2 text-sm text-gray-900">
+                                                        @if ($engagement->is_non_partant)
+                                                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">NP</span>
+                                                        @else
+                                                            {{ $engagement->numero_depart }}
+                                                        @endif
+                                                    </td>
                                                     <td class="px-4 py-2 text-sm text-gray-900 font-medium">{{ $engagement->cavalier?->prenom }} {{ $engagement->cavalier?->nom }}</td>
                                                     <td class="px-4 py-2 text-sm text-gray-500">{{ $engagement->cavalier?->club }}</td>
                                                     <td class="px-4 py-2 text-sm text-gray-900">

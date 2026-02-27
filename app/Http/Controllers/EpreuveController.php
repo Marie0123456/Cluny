@@ -11,7 +11,15 @@ class EpreuveController extends Controller
         $concours->loadCount(['epreuves', 'engagements', 'modifications', 'ventes']);
 
         $epreuves = $concours->epreuves()
-            ->withCount('engagements')
+            ->withCount([
+                'engagements',
+                'engagements as invitations_count' => function ($query) {
+                    $query->where('is_invitation', true);
+                },
+                'engagements as non_partants_count' => function ($query) {
+                    $query->where('is_non_partant', true);
+                },
+            ])
             ->orderByRaw('CAST(numero AS UNSIGNED), numero')
             ->get();
 

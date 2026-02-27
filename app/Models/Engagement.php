@@ -19,7 +19,17 @@ class Engagement extends Model
         'role_cavalier',
         'dept_groom',
         'role_cheval',
+        'is_invitation',
+        'is_non_partant',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'is_invitation' => 'boolean',
+            'is_non_partant' => 'boolean',
+        ];
+    }
 
     public function epreuve(): BelongsTo
     {

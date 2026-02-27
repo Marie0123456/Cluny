@@ -2,9 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\ModificationType;
+use App\Models\Cavalier;
 use App\Models\Cheval;
+use App\Models\ClientFacturation;
 use App\Models\Concours;
 use App\Models\Engagement;
+use App\Models\Epreuve;
 use App\Models\Modification;
 use Illuminate\Http\Request;
 
@@ -13,7 +17,14 @@ class ModificationController extends Controller
     public function index(Concours $concours)
     {
         $modifications = $concours->modifications()
-            ->with(['engagement.epreuve', 'engagement.cavalier', 'ancienCheval', 'nouveauCheval'])
+            ->with([
+                'engagement.epreuve',
+                'engagement.cavalier',
+                'engagement.cheval',
+                'ancienCheval',
+                'nouveauCheval',
+                'clientFacturation',
+            ])
             ->latest()
             ->get();
 
@@ -25,14 +36,19 @@ class ModificationController extends Controller
         $epreuvesJson = $epreuves->map(function ($e) {
             return [
                 'id' => $e->id,
+                'prix' => $e->prix,
+                'nom' => $e->nom,
+                'type_detecte' => $e->type_detecte,
                 'engagements' => $e->engagements->map(function ($eng) {
                     return [
                         'engagement_id' => $eng->id,
                         'numero_depart' => $eng->numero_depart ?? '',
+                        'cavalier_id' => $eng->cavalier?->id,
                         'cavalier_nom' => $eng->cavalier?->nom ?? '',
                         'cavalier_prenom' => $eng->cavalier?->prenom ?? '',
                         'cheval_nom' => $eng->cheval?->nom ?? '',
                         'cheval_num_sire' => $eng->cheval?->num_sire ?? '',
+                        'is_non_partant' => $eng->is_non_partant,
                     ];
                 })->values(),
             ];
@@ -80,6 +96,188 @@ class ModificationController extends Controller
             ->with('success', 'Changement de cheval enregistre.');
     }
 
+    public function invitation(Request $request, Concours $concours)
+    {
+        $validated = $request->validate([
+            'epreuve_id' => 'required|exists:epreuves,id',
+            'cavalier_id' => 'nullable|exists:cavaliers,id',
+            'nouveau_cavalier_nom' => 'nullable|required_without:cavalier_id|string|max:255',
+            'nouveau_cavalier_prenom' => 'nullable|string|max:255',
+            'nouveau_cavalier_num_licence' => 'nullable|string|max:255',
+            'cheval_id' => 'nullable|exists:chevaux,id',
+            'nouveau_cheval_nom' => 'nullable|required_without:cheval_id|string|max:255',
+            'nouveau_cheval_num_sire' => 'nullable|string|max:255',
+            'type_compte' => 'required|in:Licence,Compte,Club',
+            'numero_compte' => 'required|string|max:255',
+            'is_gn' => 'boolean',
+            'facture' => 'boolean',
+            'nom_facturation' => 'nullable|string|max:255',
+            'telephone' => 'nullable|string|max:20',
+            'email' => 'nullable|email|max:255',
+            'adresse' => 'nullable|string',
+            'paiement_cb' => 'boolean',
+            'paiement_especes' => 'boolean',
+            'paiement_cheque' => 'boolean',
+            'numero_cheque' => 'nullable|string|max:255',
+            'jour_paiement' => 'nullable|date',
+        ]);
+
+        $epreuve = Epreuve::findOrFail($validated['epreuve_id']);
+
+        // Resolve or create cavalier
+        if (!empty($validated['cavalier_id'])) {
+            $cavalier = Cavalier::findOrFail($validated['cavalier_id']);
+        } else {
+            $cavalier = Cavalier::firstOrCreate(
+                ['num_licence' => $validated['nouveau_cavalier_num_licence'] ?: null],
+                [
+                    'nom' => $validated['nouveau_cavalier_nom'],
+                    'prenom' => $validated['nouveau_cavalier_prenom'] ?? '',
+                ]
+            );
+        }
+
+        // Resolve or create cheval
+        if (!empty($validated['cheval_id'])) {
+            $cheval = Cheval::findOrFail($validated['cheval_id']);
+        } else {
+            $cheval = Cheval::firstOrCreate(
+                [
+                    'nom' => $validated['nouveau_cheval_nom'],
+                    'num_sire' => $validated['nouveau_cheval_num_sire'] ?: null,
+                ]
+            );
+        }
+
+        // Auto-assign numero_depart
+        $maxNumero = $epreuve->engagements()->max('numero_depart');
+        $numeroDepart = ($maxNumero ? (int) $maxNumero : $epreuve->engagements()->count()) + 1;
+
+        // Create the engagement
+        $engagement = Engagement::create([
+            'epreuve_id' => $epreuve->id,
+            'cavalier_id' => $cavalier->id,
+            'cheval_id' => $cheval->id,
+            'numero_depart' => $numeroDepart,
+            'is_invitation' => true,
+        ]);
+
+        // Calculate prix and PF server-side
+        $isGn = $request->boolean('is_gn');
+        $typeDetecte = $epreuve->type_detecte;
+        $epreuvePrix = (float) ($epreuve->prix ?? 0);
+
+        if ($concours->grand_national && $isGn && $typeDetecte === 'pro') {
+            $prix = $epreuvePrix;
+            $pf = 4.80;
+        } else {
+            $prix = $epreuvePrix + 15;
+            $pf = 14.40;
+        }
+
+        // Handle facturation
+        $clientFacturationId = null;
+        if ($request->boolean('facture') && !empty($validated['nom_facturation'])) {
+            $client = ClientFacturation::updateOrCreate(
+                ['nom' => $validated['nom_facturation']],
+                [
+                    'telephone' => $validated['telephone'] ?? null,
+                    'email' => $validated['email'] ?? null,
+                    'adresse' => $validated['adresse'] ?? null,
+                ]
+            );
+            $clientFacturationId = $client->id;
+        }
+
+        // Create modification record
+        Modification::create([
+            'engagement_id' => $engagement->id,
+            'concours_id' => $concours->id,
+            'type' => ModificationType::AJOUT_ENGAGEMENT->value,
+            'description' => "Invitation: {$cavalier->prenom} {$cavalier->nom} sur {$cheval->nom} → Épreuve {$epreuve->numero}",
+            'prix' => $prix,
+            'pf' => $pf,
+            'type_compte' => $validated['type_compte'],
+            'numero_compte' => $validated['numero_compte'],
+            'is_gn' => $isGn,
+            'paiement_cb' => $request->boolean('paiement_cb'),
+            'paiement_especes' => $request->boolean('paiement_especes'),
+            'paiement_cheque' => $request->boolean('paiement_cheque'),
+            'numero_cheque' => $validated['numero_cheque'] ?? null,
+            'jour_paiement' => $validated['jour_paiement'] ?? null,
+            'facture' => $request->boolean('facture'),
+            'client_facturation_id' => $clientFacturationId,
+            'statut' => 'en_attente',
+        ]);
+
+        return redirect()->route('concours.modifications.index', $concours)
+            ->with('success', 'Invitation enregistree.');
+    }
+
+    public function nonPartant(Request $request, Concours $concours)
+    {
+        $validated = $request->validate([
+            'engagement_id' => 'required|exists:engagements,id',
+        ]);
+
+        $engagement = Engagement::with(['cavalier', 'epreuve'])->findOrFail($validated['engagement_id']);
+        $engagement->update(['is_non_partant' => true]);
+
+        Modification::create([
+            'engagement_id' => $engagement->id,
+            'concours_id' => $concours->id,
+            'type' => ModificationType::NON_PARTANT->value,
+            'description' => "Non-partant: {$engagement->cavalier->prenom} {$engagement->cavalier->nom} — Épreuve {$engagement->epreuve->numero}",
+            'statut' => 'en_attente',
+        ]);
+
+        return redirect()->route('concours.modifications.index', $concours)
+            ->with('success', 'Non-partant enregistre.');
+    }
+
+    public function updatePaiement(Request $request, Modification $modification)
+    {
+        $validated = $request->validate([
+            'paiement_cb' => 'boolean',
+            'paiement_especes' => 'boolean',
+            'paiement_cheque' => 'boolean',
+            'numero_cheque' => 'nullable|string|max:255',
+            'jour_paiement' => 'nullable|date',
+            'facture' => 'boolean',
+            'nom_facturation' => 'nullable|string|max:255',
+            'telephone' => 'nullable|string|max:20',
+            'email' => 'nullable|email|max:255',
+            'adresse' => 'nullable|string',
+        ]);
+
+        $clientFacturationId = $modification->client_facturation_id;
+        if ($request->boolean('facture') && !empty($validated['nom_facturation'])) {
+            $client = ClientFacturation::updateOrCreate(
+                ['nom' => $validated['nom_facturation']],
+                [
+                    'telephone' => $validated['telephone'] ?? null,
+                    'email' => $validated['email'] ?? null,
+                    'adresse' => $validated['adresse'] ?? null,
+                ]
+            );
+            $clientFacturationId = $client->id;
+        } elseif (!$request->boolean('facture')) {
+            $clientFacturationId = null;
+        }
+
+        $modification->update([
+            'paiement_cb' => $request->boolean('paiement_cb'),
+            'paiement_especes' => $request->boolean('paiement_especes'),
+            'paiement_cheque' => $request->boolean('paiement_cheque'),
+            'numero_cheque' => $validated['numero_cheque'] ?? null,
+            'jour_paiement' => $validated['jour_paiement'] ?? null,
+            'facture' => $request->boolean('facture'),
+            'client_facturation_id' => $clientFacturationId,
+        ]);
+
+        return redirect()->back()->with('success', 'Paiement mis a jour.');
+    }
+
     public function marquerFait(Modification $modification)
     {
         $modification->update(['statut' => 'fait']);
@@ -89,14 +287,24 @@ class ModificationController extends Controller
 
     public function destroy(Modification $modification)
     {
-        if ($modification->type === 'changement_cheval' && $modification->ancien_cheval_id) {
+        if ($modification->type->value === 'changement_cheval' && $modification->ancien_cheval_id) {
             $modification->engagement->update([
                 'cheval_id' => $modification->ancien_cheval_id,
             ]);
         }
 
+        if ($modification->type->value === 'non_partant') {
+            $modification->engagement->update([
+                'is_non_partant' => false,
+            ]);
+        }
+
+        if ($modification->type->value === 'ajout_engagement') {
+            $modification->engagement->delete();
+        }
+
         $modification->update(['statut' => 'supprime']);
 
-        return redirect()->back()->with('success', 'Modification annulee, ancien cheval restaure.');
+        return redirect()->back()->with('success', 'Modification annulee.');
     }
 }
