@@ -259,9 +259,9 @@
                                 </div>
                             </div>
 
-                            <!-- GN checkbox -->
+                            <!-- GN checkbox: only visible for Pro épreuves on GN concours -->
                             @if ($concours->grand_national)
-                                <div class="mt-3">
+                                <div class="mt-3" x-show="epreuveTypeDetecte === 'pro'">
                                     <label class="inline-flex items-center cursor-pointer">
                                         <input type="checkbox" name="is_gn" value="1" x-model="isGn"
                                             class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
@@ -812,6 +812,7 @@
                     this.resetCheval();
                     this.typeCompte = '';
                     this.numeroCompte = '';
+                    this.isGn = false;
                     const ep = epreuves.find(e => e.id == this.epreuveId);
                     if (ep) {
                         this.epreuvePrix = parseFloat(ep.prix) || 0;
