@@ -18,6 +18,7 @@ class FacturationEtController extends Controller
             ->with([
                 'engagement.epreuve',
                 'engagement.cavalier',
+                'engagement.cheval',
                 'clientFacturation',
             ])
             ->latest()

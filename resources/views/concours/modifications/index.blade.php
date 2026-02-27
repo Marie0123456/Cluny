@@ -162,6 +162,154 @@
                 </div>
             </div>
 
+            <!-- Changement de cavalier form -->
+            <div class="bg-white shadow-sm sm:rounded-lg p-6 mb-6"
+                x-data="changementCavalier()" x-cloak>
+
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-medium text-gray-900">Changement de cavalier</h3>
+                    <button @click="open = !open"
+                        class="inline-flex items-center px-4 py-2 bg-purple-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-purple-700">
+                        <span x-text="open ? 'Fermer' : 'Nouveau changement'"></span>
+                    </button>
+                </div>
+
+                <div x-show="open" x-transition class="space-y-4">
+                    @if ($concours->grand_national)
+                        <div class="p-3 bg-yellow-50 border border-yellow-200 rounded-md text-sm text-yellow-800">
+                            Concours Grand National : le changement de cavalier n'est pas autorise sur les epreuves Pro.
+                        </div>
+                    @endif
+
+                    <!-- Step 1: Epreuve -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Epreuve</label>
+                        <select x-model="epreuveId" @change="onEpreuveChange()"
+                            class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                            <option value="">Choisir l'epreuve</option>
+                            @foreach($epreuves as $epreuve)
+                                <option value="{{ $epreuve->id }}">{{ $epreuve->numero }} - {{ $epreuve->nom }}</option>
+                            @endforeach
+                        </select>
+                        <p x-show="proBlocked" class="mt-1 text-sm text-red-600">Epreuve Pro : changement de cavalier non autorise en GN.</p>
+                    </div>
+
+                    <!-- Step 2: Engagement (cavalier actuel) -->
+                    <div x-show="cavaliers.length > 0 && !proBlocked" class="relative">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Cavalier actuel (et cheval)</label>
+                        <input type="text" x-model="searchCavalier"
+                            @input="filterCavaliers()"
+                            @focus="showCavalierList = true"
+                            placeholder="Tapez un nom de cavalier ou de cheval..."
+                            class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+
+                        <div x-show="selectedCavalierLabel" class="mt-1 text-sm text-indigo-700 font-medium">
+                            <span x-text="selectedCavalierLabel"></span>
+                        </div>
+
+                        <ul x-show="showCavalierList && filteredCavaliers.length > 0"
+                            @click.away="showCavalierList = false"
+                            class="absolute z-50 w-full bg-white border border-gray-300 rounded-md shadow-lg mt-1 max-h-60 overflow-y-auto">
+                            <template x-for="c in filteredCavaliers" :key="c.engagement_id">
+                                <li @click="selectCavalier(c)"
+                                    class="cursor-pointer hover:bg-indigo-50 px-4 py-3 border-b border-gray-100">
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <span class="font-semibold text-sm text-gray-900" x-text="`${c.cavalier_nom} ${c.cavalier_prenom}`"></span>
+                                            <span x-show="c.numero_depart" class="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-600" x-text="`N°${c.numero_depart}`"></span>
+                                        </div>
+                                        <span class="text-sm text-gray-500" x-text="c.cheval_nom"></span>
+                                    </div>
+                                </li>
+                            </template>
+                        </ul>
+                    </div>
+
+                    <!-- Step 3: Nouveau cavalier -->
+                    <div x-show="engagementId && !proBlocked">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Nouveau cavalier</label>
+
+                        <label class="inline-flex items-center mb-3 cursor-pointer">
+                            <input type="checkbox" x-model="isNouveauCavalier" @change="resetNouveauCavalier()"
+                                class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
+                            <span class="ml-2 text-sm text-gray-700">Nouveau cavalier (pas encore dans la base)</span>
+                        </label>
+
+                        <div x-show="!isNouveauCavalier" class="relative">
+                            <input type="text" x-model="searchNouveauCavalier"
+                                @input.debounce.150ms="searchCavalierApi()"
+                                @focus="showNouveauResults = true"
+                                placeholder="Rechercher un cavalier par nom..."
+                                class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+
+                            <div x-show="selectedNouveauLabel" class="mt-2 flex items-center gap-2">
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                                    <span x-text="selectedNouveauLabel"></span>
+                                </span>
+                                <button type="button" @click="resetNouveauCavalier()" class="text-gray-400 hover:text-red-500 text-sm">&times;</button>
+                            </div>
+
+                            <ul x-show="showNouveauResults && cavalierApiResults.length > 0"
+                                @click.away="showNouveauResults = false"
+                                class="absolute z-50 w-full bg-white border border-gray-300 rounded-lg shadow-xl mt-1 max-h-64 overflow-y-auto divide-y divide-gray-100">
+                                <template x-for="cav in cavalierApiResults" :key="cav.id">
+                                    <li @click="selectNouveauCavalier(cav)"
+                                        class="cursor-pointer hover:bg-indigo-50 px-4 py-3 transition-colors">
+                                        <div class="flex items-center justify-between">
+                                            <span class="font-semibold text-gray-900" x-text="`${cav.nom} ${cav.prenom}`"></span>
+                                            <span x-show="cav.num_licence" class="text-xs font-mono bg-gray-100 text-gray-600 px-2 py-0.5 rounded" x-text="`Lic: ${cav.num_licence}`"></span>
+                                        </div>
+                                    </li>
+                                </template>
+                            </ul>
+                        </div>
+
+                        <div x-show="isNouveauCavalier" class="space-y-3 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Nom</label>
+                                <input type="text" x-model="nouveauCavalierNom"
+                                    placeholder="Nom du cavalier"
+                                    class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Prenom</label>
+                                <input type="text" x-model="nouveauCavalierPrenom"
+                                    placeholder="Prenom"
+                                    class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">N° de licence</label>
+                                <input type="text" x-model="nouveauCavalierLicence"
+                                    placeholder="Ex: 1234567"
+                                    class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Submit -->
+                    <div x-show="(nouveauCavalierId || (isNouveauCavalier && nouveauCavalierNom)) && !proBlocked">
+                        <form method="POST" action="{{ route('concours.modifications.changement-cavalier', $concours) }}">
+                            @csrf
+                            <input type="hidden" name="engagement_id" :value="engagementId">
+                            <template x-if="!isNouveauCavalier">
+                                <input type="hidden" name="nouveau_cavalier_id" :value="nouveauCavalierId">
+                            </template>
+                            <template x-if="isNouveauCavalier">
+                                <div>
+                                    <input type="hidden" name="nouveau_cavalier_nom" :value="nouveauCavalierNom">
+                                    <input type="hidden" name="nouveau_cavalier_prenom" :value="nouveauCavalierPrenom">
+                                    <input type="hidden" name="nouveau_cavalier_num_licence" :value="nouveauCavalierLicence">
+                                </div>
+                            </template>
+                            <button type="submit"
+                                class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700">
+                                Valider le changement
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
             <!-- Invitation form -->
             <div class="bg-white shadow-sm sm:rounded-lg p-6 mb-6"
                 x-data="invitationForm()" x-cloak>
@@ -468,6 +616,225 @@
                 </div>
             </div>
 
+            <!-- Changement d'epreuve form -->
+            <div class="bg-white shadow-sm sm:rounded-lg p-6 mb-6"
+                x-data="changementEpreuveForm()" x-cloak>
+
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-medium text-gray-900">Changement d'epreuve</h3>
+                    <button @click="open = !open"
+                        class="inline-flex items-center px-4 py-2 bg-yellow-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-yellow-700">
+                        <span x-text="open ? 'Fermer' : 'Nouveau changement'"></span>
+                    </button>
+                </div>
+
+                <div x-show="open" x-transition class="space-y-4">
+                    <form method="POST" action="{{ route('concours.modifications.changement-epreuve', $concours) }}" class="space-y-4">
+                        @csrf
+
+                        <!-- Step 1: Epreuve d'origine -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Epreuve d'origine</label>
+                            <select x-model="epreuveId" @change="onEpreuveChange()"
+                                class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                <option value="">Choisir l'epreuve</option>
+                                @foreach($epreuves as $epreuve)
+                                    <option value="{{ $epreuve->id }}">{{ $epreuve->numero }} - {{ $epreuve->nom }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <!-- Step 2: Cavalier / Engagement -->
+                        <div x-show="cavaliers.length > 0" class="relative">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Cavalier</label>
+                            <input type="text" x-model="searchCavalier"
+                                @input="filterCavaliers()"
+                                @focus="showCavalierList = true"
+                                placeholder="Rechercher un cavalier..."
+                                class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+
+                            <div x-show="selectedCavalierLabel" class="mt-1 text-sm text-indigo-700 font-medium">
+                                <span x-text="selectedCavalierLabel"></span>
+                            </div>
+
+                            <input type="hidden" name="engagement_id" :value="engagementId">
+
+                            <ul x-show="showCavalierList && filteredCavaliers.length > 0"
+                                @click.away="showCavalierList = false"
+                                class="absolute z-50 w-full bg-white border border-gray-300 rounded-md shadow-lg mt-1 max-h-60 overflow-y-auto">
+                                <template x-for="c in filteredCavaliers" :key="c.engagement_id">
+                                    <li @click="selectCavalier(c)"
+                                        class="cursor-pointer hover:bg-indigo-50 px-4 py-3 border-b border-gray-100">
+                                        <div class="flex items-center justify-between">
+                                            <div>
+                                                <span class="font-semibold text-sm text-gray-900" x-text="`${c.cavalier_nom} ${c.cavalier_prenom}`"></span>
+                                                <span x-show="c.numero_depart" class="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-600" x-text="`N°${c.numero_depart}`"></span>
+                                            </div>
+                                            <span class="text-sm text-gray-500" x-text="c.cheval_nom"></span>
+                                        </div>
+                                    </li>
+                                </template>
+                            </ul>
+                        </div>
+
+                        <!-- GN checkbox (if concours is GN) -->
+                        @if ($concours->grand_national)
+                            <div x-show="engagementId" class="flex items-center gap-2">
+                                <input type="checkbox" name="is_gn" value="1" x-model="isGn" @change="recalculatePrix()"
+                                    class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
+                                <label class="text-sm font-medium text-gray-700">Cavalier GN</label>
+                            </div>
+                        @endif
+
+                        <!-- Step 3: Nouvelle epreuve -->
+                        <div x-show="engagementId">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Nouvelle epreuve</label>
+                            <select x-model="nouvelleEpreuveId" name="nouvelle_epreuve_id" @change="onNouvelleEpreuveChange()"
+                                class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                <option value="">Choisir la nouvelle epreuve</option>
+                                @foreach($epreuves as $epreuve)
+                                    <option value="{{ $epreuve->id }}">{{ $epreuve->numero }} - {{ $epreuve->nom }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <!-- Step 4: Prix display (editable) -->
+                        <div x-show="nouvelleEpreuveId && nouvelleEpreuveId != epreuveId" class="p-4 bg-indigo-50 rounded-lg">
+                            <div class="grid grid-cols-3 gap-4">
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-500 mb-1">Prix Epreuve</label>
+                                    <input type="number" step="0.01" min="0" x-model.number="editablePrix" name="prix"
+                                        class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-500 mb-1">PF</label>
+                                    <input type="number" step="0.01" min="0" x-model.number="editablePf" name="pf"
+                                        class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-500 mb-1">TOTAL</label>
+                                    <div class="mt-1 text-lg font-bold text-indigo-900" x-text="(editablePrix + editablePf).toFixed(2) + ' €'"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Step 5: Type de compte + numero -->
+                        <div x-show="nouvelleEpreuveId && nouvelleEpreuveId != epreuveId" class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Type de compte</label>
+                                <select name="type_compte"
+                                    class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                    <option value="">Choisir</option>
+                                    <option value="Licence">Licence</option>
+                                    <option value="Compte">Compte</option>
+                                    <option value="Club">Club</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Numero de compte</label>
+                                <input type="text" name="numero_compte"
+                                    class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                            </div>
+                        </div>
+
+                        <!-- Step 6: Jour de paiement -->
+                        <div x-show="nouvelleEpreuveId && nouvelleEpreuveId != epreuveId">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Jour de paiement (optionnel)</label>
+                            <input type="date" name="jour_paiement"
+                                class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                        </div>
+
+                        <!-- Step 7: Moyen de paiement -->
+                        <div x-show="nouvelleEpreuveId && nouvelleEpreuveId != epreuveId">
+                            <span class="block text-sm font-medium text-gray-700 mb-2">Moyen de paiement</span>
+                            <div class="flex gap-6">
+                                <label class="inline-flex items-center">
+                                    <input type="checkbox" name="paiement_cb" value="1"
+                                        class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
+                                    <span class="ml-2 text-sm text-gray-700">CB</span>
+                                </label>
+                                <label class="inline-flex items-center">
+                                    <input type="checkbox" name="paiement_especes" value="1"
+                                        class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
+                                    <span class="ml-2 text-sm text-gray-700">Especes</span>
+                                </label>
+                                <label class="inline-flex items-center">
+                                    <input type="checkbox" name="paiement_cheque" value="1" x-model="paiementCheque"
+                                        class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
+                                    <span class="ml-2 text-sm text-gray-700">Cheque</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Numero cheque -->
+                        <div x-show="paiementCheque && nouvelleEpreuveId && nouvelleEpreuveId != epreuveId">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Numero de cheque</label>
+                            <input type="text" name="numero_cheque"
+                                class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                        </div>
+
+                        <!-- Step 8: Facture -->
+                        <div x-show="nouvelleEpreuveId && nouvelleEpreuveId != epreuveId">
+                            <span class="block text-sm font-medium text-gray-700 mb-2">Facture</span>
+                            <div class="flex gap-6">
+                                <label class="flex items-center gap-2">
+                                    <input type="radio" name="facture" value="1" x-model="facture"
+                                        class="border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                                    <span class="text-sm text-gray-700">Oui</span>
+                                </label>
+                                <label class="flex items-center gap-2">
+                                    <input type="radio" name="facture" value="0" x-model="facture"
+                                        class="border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                                    <span class="text-sm text-gray-700">Non</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Facturation details -->
+                        <div x-show="facture === '1' && nouvelleEpreuveId && nouvelleEpreuveId != epreuveId" class="space-y-3 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                            <div class="relative">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Nom de facturation</label>
+                                <input type="text" name="nom_facturation" x-model="nomFacturation"
+                                    @input.debounce.300ms="searchClients()"
+                                    @focus="showClientsResults = true"
+                                    class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                <ul x-show="showClientsResults && clientsResultats.length > 0"
+                                    @click.away="showClientsResults = false"
+                                    class="absolute z-50 w-full bg-white border border-gray-300 rounded-lg shadow-xl mt-1 max-h-48 overflow-y-auto divide-y divide-gray-100">
+                                    <template x-for="client in clientsResultats" :key="client.id">
+                                        <li @click="selectClient(client)"
+                                            class="cursor-pointer hover:bg-indigo-50 px-4 py-2 text-sm" x-text="client.nom"></li>
+                                    </template>
+                                </ul>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Telephone</label>
+                                <input type="text" name="telephone" x-model="telephone"
+                                    class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                                <input type="email" name="email" x-model="emailFacturation"
+                                    class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Adresse</label>
+                                <textarea name="adresse" x-model="adresseFacturation" rows="2"
+                                    class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"></textarea>
+                            </div>
+                        </div>
+
+                        <!-- Submit -->
+                        <div x-show="nouvelleEpreuveId && nouvelleEpreuveId != epreuveId && engagementId">
+                            <button type="submit"
+                                class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700">
+                                Valider le changement d'epreuve
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
             <!-- Non-partant form -->
             <div class="bg-white shadow-sm sm:rounded-lg p-6 mb-6"
                 x-data="nonPartantForm()" x-cloak>
@@ -576,7 +943,13 @@
                                         </td>
                                         {{-- Epreuve --}}
                                         <td class="px-4 py-2 text-sm text-gray-900">
-                                            {{ $mod->engagement->epreuve->numero ?? '-' }}
+                                            @if ($mod->type === \App\Enums\ModificationType::CHANGEMENT_EPREUVE && $mod->linkedModification)
+                                                <span class="text-gray-400">{{ $mod->linkedModification->engagement->epreuve->numero ?? '?' }}</span>
+                                                <span class="mx-1">&rarr;</span>
+                                                <span class="font-medium">{{ $mod->engagement->epreuve->numero ?? '-' }}</span>
+                                            @else
+                                                {{ $mod->engagement->epreuve->numero ?? '-' }}
+                                            @endif
                                         </td>
                                         {{-- Depart --}}
                                         <td class="px-4 py-2 text-sm text-gray-500">
@@ -588,9 +961,21 @@
                                         </td>
                                         {{-- Nom (numero licence) --}}
                                         <td class="px-4 py-2 text-sm text-gray-900">
-                                            <span class="font-medium">{{ $mod->engagement->cavalier->nom ?? '' }} {{ $mod->engagement->cavalier->prenom ?? '' }}</span>
-                                            @if ($mod->engagement->cavalier->num_licence ?? null)
-                                                <div class="text-xs text-gray-500">({{ $mod->engagement->cavalier->num_licence }})</div>
+                                            @if ($mod->type === \App\Enums\ModificationType::CHANGEMENT_CAVALIER)
+                                                <span class="text-gray-400 line-through">{{ $mod->ancienCavalier->nom ?? '-' }} {{ $mod->ancienCavalier->prenom ?? '' }}</span>
+                                                <span class="mx-1">&rarr;</span>
+                                                <span class="text-green-700 font-medium">{{ $mod->nouveauCavalier->nom ?? '-' }} {{ $mod->nouveauCavalier->prenom ?? '' }}</span>
+                                                @if ($mod->nouveauCavalier->num_licence ?? null)
+                                                    <div class="text-xs text-gray-500">({{ $mod->nouveauCavalier->num_licence }})</div>
+                                                @endif
+                                            @else
+                                                <span class="font-medium">{{ $mod->engagement->cavalier->nom ?? '' }} {{ $mod->engagement->cavalier->prenom ?? '' }}</span>
+                                                @if ($mod->is_gn)
+                                                    <span class="ml-1 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800">GN</span>
+                                                @endif
+                                                @if ($mod->engagement->cavalier->num_licence ?? null)
+                                                    <div class="text-xs text-gray-500">({{ $mod->engagement->cavalier->num_licence }})</div>
+                                                @endif
                                             @endif
                                         </td>
                                         {{-- Cheval (numero de sire) --}}
@@ -816,6 +1201,222 @@
                     this.searchCheval = ch.nom;
                     this.showResults = false;
                     this.resultatsChevaux = [];
+                }
+            };
+        }
+
+        function changementCavalier() {
+            const epreuves = @json($epreuvesJson);
+            const isGrandNational = @json($concours->grand_national);
+
+            return {
+                open: false,
+                epreuveId: '',
+                engagementId: '',
+                cavaliers: [],
+                filteredCavaliers: [],
+                searchCavalier: '',
+                showCavalierList: false,
+                selectedCavalierLabel: '',
+                proBlocked: false,
+
+                isNouveauCavalier: false,
+                nouveauCavalierId: '',
+                nouveauCavalierNom: '',
+                nouveauCavalierPrenom: '',
+                nouveauCavalierLicence: '',
+                searchNouveauCavalier: '',
+                cavalierApiResults: [],
+                showNouveauResults: false,
+                selectedNouveauLabel: '',
+
+                onEpreuveChange() {
+                    this.engagementId = '';
+                    this.selectedCavalierLabel = '';
+                    this.searchCavalier = '';
+                    this.resetNouveauCavalier();
+                    const ep = epreuves.find(e => e.id == this.epreuveId);
+                    this.cavaliers = ep ? ep.engagements.filter(eng => !eng.is_non_partant) : [];
+                    this.filteredCavaliers = this.cavaliers;
+                    this.proBlocked = isGrandNational && ep && ep.type_detecte === 'pro';
+                },
+
+                filterCavaliers() {
+                    this.showCavalierList = true;
+                    const q = this.searchCavalier.toLowerCase();
+                    if (!q) {
+                        this.filteredCavaliers = this.cavaliers;
+                        return;
+                    }
+                    this.filteredCavaliers = this.cavaliers.filter(c =>
+                        c.cavalier_nom.toLowerCase().includes(q) ||
+                        c.cavalier_prenom.toLowerCase().includes(q) ||
+                        c.cheval_nom.toLowerCase().includes(q) ||
+                        (c.numero_depart && c.numero_depart.toString().includes(q))
+                    );
+                },
+
+                selectCavalier(c) {
+                    this.engagementId = c.engagement_id;
+                    this.searchCavalier = '';
+                    this.showCavalierList = false;
+                    const numDepart = c.numero_depart ? `N°${c.numero_depart} - ` : '';
+                    this.selectedCavalierLabel = `${numDepart}${c.cavalier_nom} ${c.cavalier_prenom} — Cheval: ${c.cheval_nom}`;
+                    this.resetNouveauCavalier();
+                },
+
+                resetNouveauCavalier() {
+                    this.nouveauCavalierId = '';
+                    this.selectedNouveauLabel = '';
+                    this.searchNouveauCavalier = '';
+                    this.cavalierApiResults = [];
+                    this.showNouveauResults = false;
+                    this.nouveauCavalierNom = '';
+                    this.nouveauCavalierPrenom = '';
+                    this.nouveauCavalierLicence = '';
+                },
+
+                async searchCavalierApi() {
+                    if (this.searchNouveauCavalier.length < 2) {
+                        this.cavalierApiResults = [];
+                        return;
+                    }
+                    const res = await fetch(`/api/cavaliers/search?q=${encodeURIComponent(this.searchNouveauCavalier)}`);
+                    this.cavalierApiResults = await res.json();
+                    this.showNouveauResults = true;
+                },
+
+                selectNouveauCavalier(cav) {
+                    this.nouveauCavalierId = cav.id;
+                    this.selectedNouveauLabel = `${cav.nom} ${cav.prenom}${cav.num_licence ? ' (Lic: ' + cav.num_licence + ')' : ''}`;
+                    this.searchNouveauCavalier = `${cav.nom} ${cav.prenom}`;
+                    this.showNouveauResults = false;
+                    this.cavalierApiResults = [];
+                }
+            };
+        }
+
+        function changementEpreuveForm() {
+            const epreuves = @json($epreuvesJson);
+            const isGrandNational = @json($concours->grand_national);
+
+            return {
+                open: false,
+                epreuveId: '',
+                epreuvePrix: 0,
+                epreuveTypeDetecte: null,
+                engagementId: '',
+                cavaliers: [],
+                filteredCavaliers: [],
+                searchCavalier: '',
+                showCavalierList: false,
+                selectedCavalierLabel: '',
+
+                isGn: false,
+
+                nouvelleEpreuveId: '',
+                nouvelleEpreuvePrix: 0,
+                nouvelleEpreuveTypeDetecte: null,
+
+                editablePrix: 0,
+                editablePf: 0,
+
+                paiementCheque: false,
+                facture: '0',
+                nomFacturation: '',
+                telephone: '',
+                emailFacturation: '',
+                adresseFacturation: '',
+                clientsResultats: [],
+                showClientsResults: false,
+
+                onEpreuveChange() {
+                    this.engagementId = '';
+                    this.selectedCavalierLabel = '';
+                    this.searchCavalier = '';
+                    this.nouvelleEpreuveId = '';
+                    this.editablePrix = 0;
+                    this.editablePf = 0;
+                    this.isGn = false;
+                    const ep = epreuves.find(e => e.id == this.epreuveId);
+                    if (ep) {
+                        this.epreuvePrix = parseFloat(ep.prix) || 0;
+                        this.epreuveTypeDetecte = ep.type_detecte;
+                        this.cavaliers = ep.engagements.filter(eng => !eng.is_non_partant);
+                        this.filteredCavaliers = this.cavaliers;
+                    } else {
+                        this.epreuvePrix = 0;
+                        this.epreuveTypeDetecte = null;
+                        this.cavaliers = [];
+                        this.filteredCavaliers = [];
+                    }
+                },
+
+                filterCavaliers() {
+                    this.showCavalierList = true;
+                    const q = this.searchCavalier.toLowerCase();
+                    if (!q) {
+                        this.filteredCavaliers = this.cavaliers;
+                        return;
+                    }
+                    this.filteredCavaliers = this.cavaliers.filter(c =>
+                        c.cavalier_nom.toLowerCase().includes(q) ||
+                        c.cavalier_prenom.toLowerCase().includes(q) ||
+                        c.cheval_nom.toLowerCase().includes(q) ||
+                        (c.numero_depart && c.numero_depart.toString().includes(q))
+                    );
+                },
+
+                selectCavalier(c) {
+                    this.engagementId = c.engagement_id;
+                    this.searchCavalier = '';
+                    this.showCavalierList = false;
+                    const numDepart = c.numero_depart ? `N°${c.numero_depart} - ` : '';
+                    this.selectedCavalierLabel = `${numDepart}${c.cavalier_nom} ${c.cavalier_prenom} — ${c.cheval_nom}`;
+                },
+
+                onNouvelleEpreuveChange() {
+                    const ep = epreuves.find(e => e.id == this.nouvelleEpreuveId);
+                    if (ep) {
+                        this.nouvelleEpreuvePrix = parseFloat(ep.prix) || 0;
+                        this.nouvelleEpreuveTypeDetecte = ep.type_detecte;
+                    } else {
+                        this.nouvelleEpreuvePrix = 0;
+                        this.nouvelleEpreuveTypeDetecte = null;
+                    }
+                    this.recalculatePrix();
+                },
+
+                recalculatePrix() {
+                    const diff = this.nouvelleEpreuvePrix - this.epreuvePrix;
+                    const basePrix = Math.max(diff, 0);
+
+                    if (isGrandNational && this.isGn && this.nouvelleEpreuveTypeDetecte === 'pro') {
+                        this.editablePrix = basePrix;
+                        this.editablePf = 0;
+                    } else {
+                        this.editablePrix = basePrix + 15;
+                        this.editablePf = 14.40;
+                    }
+                },
+
+                async searchClients() {
+                    if (this.nomFacturation.length < 2) {
+                        this.clientsResultats = [];
+                        return;
+                    }
+                    const res = await fetch(`/api/clients-facturation/search?q=${encodeURIComponent(this.nomFacturation)}`);
+                    this.clientsResultats = await res.json();
+                    this.showClientsResults = true;
+                },
+
+                selectClient(client) {
+                    this.nomFacturation = client.nom;
+                    this.telephone = client.telephone || '';
+                    this.emailFacturation = client.email || '';
+                    this.adresseFacturation = client.adresse || '';
+                    this.showClientsResults = false;
+                    this.clientsResultats = [];
                 }
             };
         }

@@ -23,6 +23,9 @@ class ModificationController extends Controller
                 'engagement.cheval',
                 'ancienCheval',
                 'nouveauCheval',
+                'ancienCavalier',
+                'nouveauCavalier',
+                'linkedModification.engagement.epreuve',
                 'clientFacturation',
             ])
             ->latest()
@@ -94,6 +97,53 @@ class ModificationController extends Controller
 
         return redirect()->route('concours.modifications.index', $concours)
             ->with('success', 'Changement de cheval enregistre.');
+    }
+
+    public function changementCavalier(Request $request, Concours $concours)
+    {
+        $validated = $request->validate([
+            'engagement_id' => 'required|exists:engagements,id',
+            'nouveau_cavalier_id' => 'nullable|exists:cavaliers,id',
+            'nouveau_cavalier_nom' => 'nullable|required_without:nouveau_cavalier_id|string|max:255',
+            'nouveau_cavalier_prenom' => 'nullable|string|max:255',
+            'nouveau_cavalier_num_licence' => 'nullable|string|max:255',
+        ]);
+
+        $engagement = Engagement::with(['cavalier', 'epreuve'])->findOrFail($validated['engagement_id']);
+
+        // Block pro events when concours is GN
+        if ($concours->grand_national && $engagement->epreuve->type_detecte === 'pro') {
+            return redirect()->back()->withErrors(['engagement_id' => 'Changement de cavalier non autorise sur les epreuves Pro en Grand National.']);
+        }
+
+        $ancienCavalierId = $engagement->cavalier_id;
+
+        if (!empty($validated['nouveau_cavalier_id'])) {
+            $nouveauCavalier = Cavalier::findOrFail($validated['nouveau_cavalier_id']);
+        } else {
+            $nouveauCavalier = Cavalier::firstOrCreate(
+                ['num_licence' => $validated['nouveau_cavalier_num_licence'] ?: null],
+                [
+                    'nom' => $validated['nouveau_cavalier_nom'],
+                    'prenom' => $validated['nouveau_cavalier_prenom'] ?? '',
+                ]
+            );
+        }
+
+        Modification::create([
+            'engagement_id' => $engagement->id,
+            'concours_id' => $concours->id,
+            'type' => ModificationType::CHANGEMENT_CAVALIER->value,
+            'description' => "Changement cavalier: {$engagement->cavalier->nom} → {$nouveauCavalier->nom}",
+            'ancien_cavalier_id' => $ancienCavalierId,
+            'nouveau_cavalier_id' => $nouveauCavalier->id,
+            'statut' => 'en_attente',
+        ]);
+
+        $engagement->update(['cavalier_id' => $nouveauCavalier->id]);
+
+        return redirect()->route('concours.modifications.index', $concours)
+            ->with('success', 'Changement de cavalier enregistre.');
     }
 
     public function invitation(Request $request, Concours $concours)
@@ -214,6 +264,97 @@ class ModificationController extends Controller
             ->with('success', 'Invitation enregistree.');
     }
 
+    public function changementEpreuve(Request $request, Concours $concours)
+    {
+        $validated = $request->validate([
+            'engagement_id' => 'required|exists:engagements,id',
+            'nouvelle_epreuve_id' => 'required|exists:epreuves,id',
+            'prix' => 'required|numeric|min:0',
+            'pf' => 'required|numeric|min:0',
+            'is_gn' => 'boolean',
+            'type_compte' => 'nullable|in:Licence,Compte,Club',
+            'numero_compte' => 'nullable|string|max:255',
+            'paiement_cb' => 'boolean',
+            'paiement_especes' => 'boolean',
+            'paiement_cheque' => 'boolean',
+            'numero_cheque' => 'nullable|string|max:255',
+            'jour_paiement' => 'nullable|date',
+            'facture' => 'boolean',
+            'nom_facturation' => 'nullable|string|max:255',
+            'telephone' => 'nullable|string|max:20',
+            'email' => 'nullable|email|max:255',
+            'adresse' => 'nullable|string',
+        ]);
+
+        $engagement = Engagement::with(['cavalier', 'cheval', 'epreuve'])->findOrFail($validated['engagement_id']);
+        $nouvelleEpreuve = Epreuve::findOrFail($validated['nouvelle_epreuve_id']);
+
+        // 1. Mark engagement as NP in old epreuve
+        $engagement->update(['is_non_partant' => true]);
+
+        $npMod = Modification::create([
+            'engagement_id' => $engagement->id,
+            'concours_id' => $concours->id,
+            'type' => ModificationType::NON_PARTANT->value,
+            'description' => "NP (changement épreuve): {$engagement->cavalier->nom} — Épreuve {$engagement->epreuve->numero}",
+            'statut' => 'en_attente',
+        ]);
+
+        // 2. Create new engagement in new epreuve
+        $maxNumero = (int) $nouvelleEpreuve->engagements()->selectRaw('MAX(numero_depart + 0) as max_num')->value('max_num');
+        $numeroDepart = $maxNumero + 1;
+
+        $newEngagement = Engagement::create([
+            'epreuve_id' => $nouvelleEpreuve->id,
+            'cavalier_id' => $engagement->cavalier_id,
+            'cheval_id' => $engagement->cheval_id,
+            'numero_depart' => $numeroDepart,
+            'is_invitation' => true,
+        ]);
+
+        // Handle facturation
+        $clientFacturationId = null;
+        if ($request->boolean('facture') && !empty($validated['nom_facturation'])) {
+            $client = ClientFacturation::updateOrCreate(
+                ['nom' => $validated['nom_facturation']],
+                [
+                    'telephone' => $validated['telephone'] ?? null,
+                    'email' => $validated['email'] ?? null,
+                    'adresse' => $validated['adresse'] ?? null,
+                ]
+            );
+            $clientFacturationId = $client->id;
+        }
+
+        // 3. Create changement d'epreuve modification linked to NP
+        $changementMod = Modification::create([
+            'engagement_id' => $newEngagement->id,
+            'concours_id' => $concours->id,
+            'type' => ModificationType::CHANGEMENT_EPREUVE->value,
+            'description' => "Changement épreuve: {$engagement->epreuve->numero} → {$nouvelleEpreuve->numero}",
+            'linked_modification_id' => $npMod->id,
+            'prix' => $validated['prix'],
+            'pf' => $validated['pf'],
+            'is_gn' => $request->boolean('is_gn'),
+            'type_compte' => $validated['type_compte'] ?? null,
+            'numero_compte' => $validated['numero_compte'] ?? null,
+            'paiement_cb' => $request->boolean('paiement_cb'),
+            'paiement_especes' => $request->boolean('paiement_especes'),
+            'paiement_cheque' => $request->boolean('paiement_cheque'),
+            'numero_cheque' => $validated['numero_cheque'] ?? null,
+            'jour_paiement' => $validated['jour_paiement'] ?? null,
+            'facture' => $request->boolean('facture'),
+            'client_facturation_id' => $clientFacturationId,
+            'statut' => 'en_attente',
+        ]);
+
+        // Link NP to changement too
+        $npMod->update(['linked_modification_id' => $changementMod->id]);
+
+        return redirect()->route('concours.modifications.index', $concours)
+            ->with('success', "Changement d'epreuve enregistre.");
+    }
+
     public function nonPartant(Request $request, Concours $concours)
     {
         $validated = $request->validate([
@@ -297,7 +438,13 @@ class ModificationController extends Controller
             ]);
         }
 
-        if ($modification->type->value === 'non_partant') {
+        if ($modification->type->value === 'changement_cavalier' && $modification->ancien_cavalier_id) {
+            $modification->engagement->update([
+                'cavalier_id' => $modification->ancien_cavalier_id,
+            ]);
+        }
+
+        if ($modification->type->value === 'non_partant' && !$modification->linked_modification_id) {
             $modification->engagement->update([
                 'is_non_partant' => false,
             ]);
@@ -305,6 +452,20 @@ class ModificationController extends Controller
 
         if ($modification->type->value === 'ajout_engagement') {
             $modification->engagement->delete();
+        }
+
+        // Changement d'epreuve: cancel both NP and new engagement
+        if ($modification->type->value === 'changement_epreuve') {
+            // Delete the new engagement created
+            $modification->engagement->delete();
+            // Cancel the linked NP
+            if ($modification->linked_modification_id) {
+                $linked = Modification::find($modification->linked_modification_id);
+                if ($linked) {
+                    $linked->engagement->update(['is_non_partant' => false]);
+                    $linked->update(['statut' => 'supprime']);
+                }
+            }
         }
 
         $modification->update(['statut' => 'supprime']);

@@ -37,6 +37,8 @@ Route::middleware(['auth'])->group(function () {
         // Modifications
         Route::get('/modifications', [ModificationController::class, 'index'])->name('modifications.index');
         Route::post('/modifications/changement-cheval', [ModificationController::class, 'changementCheval'])->name('modifications.changement-cheval');
+        Route::post('/modifications/changement-cavalier', [ModificationController::class, 'changementCavalier'])->name('modifications.changement-cavalier');
+        Route::post('/modifications/changement-epreuve', [ModificationController::class, 'changementEpreuve'])->name('modifications.changement-epreuve');
         Route::post('/modifications/invitation', [ModificationController::class, 'invitation'])->name('modifications.invitation');
         Route::post('/modifications/non-partant', [ModificationController::class, 'nonPartant'])->name('modifications.non-partant');
 

@@ -19,6 +19,9 @@ class Modification extends Model
         'description',
         'ancien_cheval_id',
         'nouveau_cheval_id',
+        'ancien_cavalier_id',
+        'nouveau_cavalier_id',
+        'linked_modification_id',
         'statut',
         'prix',
         'pf',
@@ -68,6 +71,21 @@ class Modification extends Model
     public function nouveauCheval(): BelongsTo
     {
         return $this->belongsTo(Cheval::class, 'nouveau_cheval_id');
+    }
+
+    public function ancienCavalier(): BelongsTo
+    {
+        return $this->belongsTo(Cavalier::class, 'ancien_cavalier_id');
+    }
+
+    public function nouveauCavalier(): BelongsTo
+    {
+        return $this->belongsTo(Cavalier::class, 'nouveau_cavalier_id');
+    }
+
+    public function linkedModification(): BelongsTo
+    {
+        return $this->belongsTo(Modification::class, 'linked_modification_id');
     }
 
     public function clientFacturation(): BelongsTo

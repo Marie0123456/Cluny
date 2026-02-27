@@ -46,6 +46,7 @@
                                 <tr>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">N. Epreuve</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cavalier</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cheval</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type de modif</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">PF</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Prix</th>
@@ -62,6 +63,9 @@
                                         </td>
                                         <td class="px-4 py-3 text-sm text-gray-900">
                                             {{ $mod->engagement->cavalier->prenom ?? '' }} {{ $mod->engagement->cavalier->nom ?? '' }}
+                                        </td>
+                                        <td class="px-4 py-3 text-sm text-gray-900">
+                                            {{ $mod->engagement->cheval->nom ?? '-' }}
                                         </td>
                                         <td class="px-4 py-3 text-sm">
                                             <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {{ $mod->type->badgeClass() }}">
@@ -119,7 +123,7 @@
                             </tbody>
                             <tfoot class="bg-gray-50">
                                 <tr>
-                                    <td colspan="3" class="px-4 py-3 text-sm font-bold text-gray-900">Totaux</td>
+                                    <td colspan="4" class="px-4 py-3 text-sm font-bold text-gray-900">Totaux</td>
                                     <td class="px-4 py-3 text-sm font-bold text-gray-900">{{ number_format($totalPf, 2, ',', ' ') }} &euro;</td>
                                     <td class="px-4 py-3 text-sm font-bold text-gray-900">{{ number_format($totalPrix, 2, ',', ' ') }} &euro;</td>
                                     <td colspan="3"></td>
