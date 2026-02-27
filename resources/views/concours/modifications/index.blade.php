@@ -909,7 +909,7 @@
             </div>
 
             <!-- Modifications table -->
-            <div class="bg-white shadow-sm sm:rounded-lg">
+            <div class="bg-white shadow-sm sm:rounded-lg" x-data="modificationsFilter()" x-cloak>
                 @php
                     $visibleMods = $modifications->filter(fn($m) => $m->statut->value !== 'supprime');
                 @endphp
@@ -919,6 +919,45 @@
                         Aucune modification pour le moment.
                     </div>
                 @else
+                    <!-- Filtres -->
+                    <div class="px-4 pt-4 pb-2 grid grid-cols-2 md:grid-cols-4 gap-3">
+                        <div>
+                            <label class="block text-xs font-medium text-gray-500 mb-1">Epreuve</label>
+                            <select x-model="filterEpreuve"
+                                class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                                <option value="">Toutes</option>
+                                @php
+                                    $modEpreuves = $visibleMods->map(fn($m) => $m->engagement->epreuve)->filter()->unique('id')->sortBy(fn($e) => intval($e->numero));
+                                @endphp
+                                @foreach ($modEpreuves as $ep)
+                                    <option value="{{ $ep->numero }}">{{ $ep->numero }} - {{ $ep->nom }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-500 mb-1">Nom (cavalier)</label>
+                            <input type="text" x-model="filterNom" placeholder="Nom du cavalier..."
+                                class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-500 mb-1">Jour</label>
+                            <input type="date" x-model="filterJour"
+                                class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-500 mb-1">Statut</label>
+                            <select x-model="filterStatut"
+                                class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                                <option value="">Tous</option>
+                                <option value="en_attente">En attente</option>
+                                <option value="fait">Fait</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div x-show="filterEpreuve || filterNom || filterJour || filterStatut" class="px-4 pb-2">
+                        <button @click="resetFilters()" type="button" class="text-xs text-indigo-600 hover:text-indigo-800 font-medium">Reinitialiser les filtres</button>
+                    </div>
+
                     <div class="overflow-x-auto">
                         <table class="min-w-full divide-y divide-gray-200">
                             <thead class="bg-gray-50">
@@ -934,8 +973,16 @@
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200">
-                                @foreach ($visibleMods->sortBy(fn($m) => $m->statut->value === 'en_attente' ? 0 : 1) as $mod)
-                                    <tr class="{{ $mod->statut->value === 'fait' ? 'opacity-50' : '' }}">
+                                @foreach ($visibleMods as $mod)
+                                    <tr class="{{ $mod->statut->value === 'fait' ? 'opacity-50' : '' }}"
+                                        x-show="showRow({{ json_encode([
+                                            'epreuve' => (string) ($mod->engagement->epreuve->numero ?? ''),
+                                            'nom' => $mod->type === \App\Enums\ModificationType::CHANGEMENT_CAVALIER
+                                                ? trim(($mod->ancienCavalier->nom ?? '') . ' ' . ($mod->ancienCavalier->prenom ?? '') . ' ' . ($mod->nouveauCavalier->nom ?? '') . ' ' . ($mod->nouveauCavalier->prenom ?? ''))
+                                                : trim(($mod->engagement->cavalier->nom ?? '') . ' ' . ($mod->engagement->cavalier->prenom ?? '')),
+                                            'jour' => $mod->created_at->format('Y-m-d'),
+                                            'statut' => $mod->statut->value,
+                                        ]) }})">
                                         {{-- Type --}}
                                         <td class="px-4 py-2 text-sm">
                                             <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {{ $mod->type->badgeClass() }}">
@@ -1014,8 +1061,8 @@
                                             @endif
                                         </td>
                                         <td class="px-4 py-2 text-sm text-right">
-                                            @if ($mod->statut->value === 'en_attente')
-                                                <div class="flex justify-end space-x-2">
+                                            <div class="flex justify-end space-x-2">
+                                                @if ($mod->statut->value === 'en_attente')
                                                     @if ($mod->type->isPaid())
                                                         <button type="button" onclick="toggleEditRow({{ $mod->id }})" class="text-indigo-600 hover:text-indigo-800 text-xs font-medium">Editer</button>
                                                     @endif
@@ -1024,14 +1071,14 @@
                                                         @method('PATCH')
                                                         <button type="submit" class="text-green-600 hover:text-green-800 text-xs font-medium">Fait</button>
                                                     </form>
-                                                    <form method="POST" action="{{ route('modifications.destroy', $mod) }}"
-                                                        onsubmit="return confirm('Annuler cette modification ?')">
-                                                        @csrf
-                                                        @method('DELETE')
-                                                        <button type="submit" class="text-red-600 hover:text-red-800 text-xs font-medium">Annuler</button>
-                                                    </form>
-                                                </div>
-                                            @endif
+                                                @endif
+                                                <form method="POST" action="{{ route('modifications.destroy', $mod) }}"
+                                                    onsubmit="return confirm('Supprimer cette modification ?')">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit" class="text-red-600 hover:text-red-800 text-xs font-medium">Supprimer</button>
+                                                </form>
+                                            </div>
                                         </td>
                                     </tr>
                                     {{-- Inline edit row --}}
@@ -1109,6 +1156,30 @@
     </div>
 
     <script>
+        function modificationsFilter() {
+            return {
+                filterEpreuve: '',
+                filterNom: '',
+                filterJour: '',
+                filterStatut: '',
+
+                showRow(row) {
+                    if (this.filterEpreuve && row.epreuve !== this.filterEpreuve) return false;
+                    if (this.filterNom && !row.nom.toLowerCase().includes(this.filterNom.toLowerCase())) return false;
+                    if (this.filterJour && row.jour !== this.filterJour) return false;
+                    if (this.filterStatut && row.statut !== this.filterStatut) return false;
+                    return true;
+                },
+
+                resetFilters() {
+                    this.filterEpreuve = '';
+                    this.filterNom = '';
+                    this.filterJour = '';
+                    this.filterStatut = '';
+                }
+            };
+        }
+
         function toggleEditRow(modId) {
             const row = document.getElementById('edit-row-' + modId);
             if (row) {

@@ -26,87 +26,160 @@
                 </a>
             </div>
 
-            <div class="bg-white shadow-sm sm:rounded-lg">
+            <div class="bg-white shadow-sm sm:rounded-lg" x-data="ventesFilter()" x-cloak>
                 @if ($ventes->isEmpty())
                     <div class="p-6 text-center text-gray-500">
                         Aucune vente pour le moment.
                     </div>
                 @else
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Client</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date paiement</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Produits</th>
-                                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Total TTC</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Paiement</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Facture</th>
-                                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
-                            @foreach ($ventes as $vente)
+                    <!-- Filtres -->
+                    <div class="px-4 pt-4 pb-2 grid grid-cols-2 md:grid-cols-4 gap-3">
+                        <div>
+                            <label class="block text-xs font-medium text-gray-500 mb-1">Client</label>
+                            <input type="text" x-model="filterClient" placeholder="Nom du client..."
+                                class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-500 mb-1">Produit</label>
+                            <select x-model="filterProduit"
+                                class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                                <option value="">Tous</option>
+                                @php
+                                    $produitNames = $ventes->flatMap(fn($v) => $v->lignes->pluck('produit.nom'))->unique()->sort();
+                                @endphp
+                                @foreach ($produitNames as $pnom)
+                                    <option value="{{ $pnom }}">{{ $pnom }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-500 mb-1">Facturation</label>
+                            <select x-model="filterFacture"
+                                class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                                <option value="">Tous</option>
+                                <option value="oui">Avec facture</option>
+                                <option value="non">Sans facture</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-500 mb-1">Nom facturation</label>
+                            <input type="text" x-model="filterNomFacturation" placeholder="Nom de facturation..."
+                                class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                        </div>
+                    </div>
+                    <div x-show="filterClient || filterProduit || filterFacture || filterNomFacturation" class="px-4 pb-2">
+                        <button @click="resetFilters()" type="button" class="text-xs text-indigo-600 hover:text-indigo-800 font-medium">Reinitialiser les filtres</button>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
                                 <tr>
-                                    <td class="px-4 py-3 text-sm font-medium text-gray-900">{{ $vente->nom_client }}</td>
-                                    <td class="px-4 py-3 text-sm text-gray-500">{{ $vente->jour_paiement ? $vente->jour_paiement->format('d/m/Y') : '-' }}</td>
-                                    <td class="px-4 py-3 text-sm text-gray-500">
-                                        @foreach ($vente->lignes as $ligne)
-                                            {{ $ligne->produit->nom }} x{{ $ligne->quantite }}@if (!$loop->last), @endif
-                                        @endforeach
-                                    </td>
-                                    <td class="px-4 py-3 text-sm text-gray-900 font-medium text-right">{{ number_format($vente->total_ttc, 2, ',', ' ') }} &euro;</td>
-                                    <td class="px-4 py-3 text-sm text-gray-500">
-                                        @if ($vente->paiement_cb)<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">CB</span>@endif
-                                        @if ($vente->paiement_especes)<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">Especes</span>@endif
-                                        @if ($vente->paiement_cheque)<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">Cheque</span>@endif
-                                    </td>
-                                    <td class="px-4 py-3 text-sm">
-                                        @if ($vente->facture)
-                                            <span class="relative group inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-indigo-100 text-indigo-800 cursor-default">
-                                                Oui
-                                                @if ($vente->clientFacturation)
-                                                    <div class="hidden group-hover:block absolute z-50 bottom-full left-0 mb-2 w-56 bg-gray-900 text-white text-xs rounded-lg shadow-lg p-3">
-                                                        <p class="font-semibold">{{ $vente->clientFacturation->nom }}</p>
-                                                        @if ($vente->clientFacturation->telephone)
-                                                            <p class="mt-1">Tel: {{ $vente->clientFacturation->telephone }}</p>
-                                                        @endif
-                                                        @if ($vente->clientFacturation->email)
-                                                            <p>Email: {{ $vente->clientFacturation->email }}</p>
-                                                        @endif
-                                                        @if ($vente->clientFacturation->adresse)
-                                                            <p>{{ $vente->clientFacturation->adresse }}</p>
-                                                        @endif
-                                                        <div class="absolute left-4 top-full w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-gray-900"></div>
-                                                    </div>
-                                                @endif
-                                            </span>
-                                        @else
-                                            <span class="text-gray-400">Non</span>
-                                        @endif
-                                    </td>
-                                    <td class="px-4 py-3 text-sm text-right space-x-2">
-                                        <a href="{{ route('ventes.edit', $vente) }}" class="text-amber-600 hover:text-amber-900 text-xs font-medium">Modifier</a>
-                                        <a href="{{ route('ventes.show', $vente) }}" class="text-indigo-600 hover:text-indigo-900 text-xs font-medium">Voir</a>
-                                        <form method="POST" action="{{ route('ventes.destroy', $vente) }}" class="inline"
-                                            onsubmit="return confirm('Supprimer cette vente ?')">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="text-red-600 hover:text-red-800 text-xs font-medium">Supprimer</button>
-                                        </form>
-                                    </td>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Client</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date paiement</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Produits</th>
+                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Total TTC</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Paiement</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Facture</th>
+                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
                                 </tr>
-                            @endforeach
-                        </tbody>
-                        <tfoot class="bg-gray-50">
-                            <tr>
-                                <td colspan="3" class="px-4 py-3 text-sm font-bold text-gray-900 text-right">Total général</td>
-                                <td class="px-4 py-3 text-sm font-bold text-gray-900 text-right">{{ number_format($totalGeneral, 2, ',', ' ') }} &euro;</td>
-                                <td colspan="3"></td>
-                            </tr>
-                        </tfoot>
-                    </table>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                @foreach ($ventes as $vente)
+                                    <tr x-show="showRow({{ json_encode([
+                                        'client' => $vente->nom_client,
+                                        'produits' => $vente->lignes->pluck('produit.nom')->join(', '),
+                                        'facture' => $vente->facture,
+                                        'nom_facturation' => $vente->clientFacturation->nom ?? '',
+                                    ]) }})">
+                                        <td class="px-4 py-3 text-sm font-medium text-gray-900">{{ $vente->nom_client }}</td>
+                                        <td class="px-4 py-3 text-sm text-gray-500">{{ $vente->jour_paiement ? $vente->jour_paiement->format('d/m/Y') : '-' }}</td>
+                                        <td class="px-4 py-3 text-sm text-gray-500">
+                                            @foreach ($vente->lignes as $ligne)
+                                                {{ $ligne->produit->nom }} x{{ $ligne->quantite }}@if (!$loop->last), @endif
+                                            @endforeach
+                                        </td>
+                                        <td class="px-4 py-3 text-sm text-gray-900 font-medium text-right">{{ number_format($vente->total_ttc, 2, ',', ' ') }} &euro;</td>
+                                        <td class="px-4 py-3 text-sm text-gray-500">
+                                            @if ($vente->paiement_cb)<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">CB</span>@endif
+                                            @if ($vente->paiement_especes)<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">Especes</span>@endif
+                                            @if ($vente->paiement_cheque)<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">Cheque</span>@endif
+                                        </td>
+                                        <td class="px-4 py-3 text-sm">
+                                            @if ($vente->facture)
+                                                <span class="relative group inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-indigo-100 text-indigo-800 cursor-default">
+                                                    Oui
+                                                    @if ($vente->clientFacturation)
+                                                        <div class="hidden group-hover:block absolute z-50 bottom-full left-0 mb-2 w-56 bg-gray-900 text-white text-xs rounded-lg shadow-lg p-3">
+                                                            <p class="font-semibold">{{ $vente->clientFacturation->nom }}</p>
+                                                            @if ($vente->clientFacturation->telephone)
+                                                                <p class="mt-1">Tel: {{ $vente->clientFacturation->telephone }}</p>
+                                                            @endif
+                                                            @if ($vente->clientFacturation->email)
+                                                                <p>Email: {{ $vente->clientFacturation->email }}</p>
+                                                            @endif
+                                                            @if ($vente->clientFacturation->adresse)
+                                                                <p>{{ $vente->clientFacturation->adresse }}</p>
+                                                            @endif
+                                                            <div class="absolute left-4 top-full w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-gray-900"></div>
+                                                        </div>
+                                                    @endif
+                                                </span>
+                                            @else
+                                                <span class="text-gray-400">Non</span>
+                                            @endif
+                                        </td>
+                                        <td class="px-4 py-3 text-sm text-right space-x-2">
+                                            <a href="{{ route('ventes.edit', $vente) }}" class="text-amber-600 hover:text-amber-900 text-xs font-medium">Modifier</a>
+                                            <a href="{{ route('ventes.show', $vente) }}" class="text-indigo-600 hover:text-indigo-900 text-xs font-medium">Voir</a>
+                                            <form method="POST" action="{{ route('ventes.destroy', $vente) }}" class="inline"
+                                                onsubmit="return confirm('Supprimer cette vente ?')">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="text-red-600 hover:text-red-800 text-xs font-medium">Supprimer</button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                            <tfoot class="bg-gray-50">
+                                <tr>
+                                    <td colspan="3" class="px-4 py-3 text-sm font-bold text-gray-900 text-right">Total general</td>
+                                    <td class="px-4 py-3 text-sm font-bold text-gray-900 text-right">{{ number_format($totalGeneral, 2, ',', ' ') }} &euro;</td>
+                                    <td colspan="3"></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
                 @endif
             </div>
+
+    <script>
+        function ventesFilter() {
+            return {
+                filterClient: '',
+                filterProduit: '',
+                filterFacture: '',
+                filterNomFacturation: '',
+
+                showRow(row) {
+                    if (this.filterClient && !row.client.toLowerCase().includes(this.filterClient.toLowerCase())) return false;
+                    if (this.filterProduit && !row.produits.toLowerCase().includes(this.filterProduit.toLowerCase())) return false;
+                    if (this.filterFacture === 'oui' && !row.facture) return false;
+                    if (this.filterFacture === 'non' && row.facture) return false;
+                    if (this.filterNomFacturation && !row.nom_facturation.toLowerCase().includes(this.filterNomFacturation.toLowerCase())) return false;
+                    return true;
+                },
+
+                resetFilters() {
+                    this.filterClient = '';
+                    this.filterProduit = '';
+                    this.filterFacture = '';
+                    this.filterNomFacturation = '';
+                }
+            };
+        }
+    </script>
         </div>
     </div>
 </x-app-layout>

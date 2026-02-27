@@ -23,4 +23,9 @@ class ClientFacturation extends Model
     {
         return $this->hasMany(Vente::class, 'client_facturation_id');
     }
+
+    public function modifications(): HasMany
+    {
+        return $this->hasMany(Modification::class, 'client_facturation_id');
+    }
 }

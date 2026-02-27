@@ -20,5 +20,9 @@
             class="px-6 py-3 text-sm font-medium border-b-2 {{ ($active ?? '') === 'ventes' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
             Ventes
         </a>
+        <a href="{{ route('concours.factures.index', $concours) }}"
+            class="px-6 py-3 text-sm font-medium border-b-2 {{ ($active ?? '') === 'factures' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
+            Factures
+        </a>
     </nav>
 </div>

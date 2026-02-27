@@ -10,6 +10,7 @@ use App\Http\Controllers\ConcoursController;
 use App\Http\Controllers\EngageController;
 use App\Http\Controllers\EpreuveController;
 use App\Http\Controllers\FacturationEtController;
+use App\Http\Controllers\FactureController;
 use App\Http\Controllers\ImportController;
 use App\Http\Controllers\ModificationController;
 use App\Http\Controllers\ProfileController;
@@ -49,6 +50,10 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/ventes', [VenteController::class, 'index'])->name('ventes.index');
         Route::get('/ventes/create', [VenteController::class, 'create'])->name('ventes.create');
         Route::post('/ventes', [VenteController::class, 'store'])->name('ventes.store');
+
+        // Factures
+        Route::get('/factures', [FactureController::class, 'index'])->name('factures.index');
+        Route::get('/factures/{client}', [FactureController::class, 'show'])->name('factures.show');
     });
 
     // Modification actions

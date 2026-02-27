@@ -28,7 +28,11 @@ class ModificationController extends Controller
                 'linkedModification.engagement.epreuve',
                 'clientFacturation',
             ])
-            ->latest()
+            ->join('engagements', 'modifications.engagement_id', '=', 'engagements.id')
+            ->join('epreuves', 'engagements.epreuve_id', '=', 'epreuves.id')
+            ->orderByRaw('CAST(epreuves.numero AS UNSIGNED), epreuves.numero')
+            ->orderBy('modifications.created_at', 'desc')
+            ->select('modifications.*')
             ->get();
 
         $epreuves = $concours->epreuves()

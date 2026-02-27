@@ -34,12 +34,51 @@
                 </div>
             </div>
 
-            <div class="bg-white shadow-sm sm:rounded-lg">
+            <div class="bg-white shadow-sm sm:rounded-lg" x-data="facturationFilter()" x-cloak>
                 @if ($modifications->isEmpty())
                     <div class="p-6 text-center text-gray-500">
                         Aucune modification payante pour le moment.
                     </div>
                 @else
+                    <!-- Filtres -->
+                    <div class="px-4 pt-4 pb-2 grid grid-cols-2 md:grid-cols-4 gap-3">
+                        <div>
+                            <label class="block text-xs font-medium text-gray-500 mb-1">Epreuve</label>
+                            <select x-model="filterEpreuve"
+                                class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                                <option value="">Toutes</option>
+                                @php
+                                    $epreuveNums = $modifications->map(fn($m) => $m->engagement->epreuve)->filter()->unique('id')->sortBy('numero');
+                                @endphp
+                                @foreach ($epreuveNums as $ep)
+                                    <option value="{{ $ep->numero }}">{{ $ep->numero }} - {{ $ep->nom }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-500 mb-1">Cavalier</label>
+                            <input type="text" x-model="filterCavalier" placeholder="Nom du cavalier..."
+                                class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-500 mb-1">Facturation</label>
+                            <select x-model="filterFacture"
+                                class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                                <option value="">Tous</option>
+                                <option value="oui">Avec facture</option>
+                                <option value="non">Sans facture</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-500 mb-1">Nom facturation</label>
+                            <input type="text" x-model="filterNomFacturation" placeholder="Nom de facturation..."
+                                class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                        </div>
+                    </div>
+                    <div x-show="filterEpreuve || filterCavalier || filterFacture || filterNomFacturation" class="px-4 pb-2">
+                        <button @click="resetFilters()" type="button" class="text-xs text-indigo-600 hover:text-indigo-800 font-medium">Reinitialiser les filtres</button>
+                    </div>
+
                     <div class="overflow-x-auto">
                         <table class="min-w-full divide-y divide-gray-200">
                             <thead class="bg-gray-50">
@@ -57,7 +96,12 @@
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200">
                                 @foreach ($modifications as $mod)
-                                    <tr>
+                                    <tr x-show="showRow({{ json_encode([
+                                        'epreuve' => (string) ($mod->engagement->epreuve->numero ?? ''),
+                                        'cavalier' => trim(($mod->engagement->cavalier->prenom ?? '') . ' ' . ($mod->engagement->cavalier->nom ?? '')),
+                                        'facture' => $mod->facture,
+                                        'nom_facturation' => $mod->clientFacturation->nom ?? '',
+                                    ]) }})">
                                         <td class="px-4 py-3 text-sm text-gray-900 font-medium">
                                             {{ $mod->engagement->epreuve->numero ?? '-' }}
                                         </td>
@@ -82,8 +126,8 @@
                                             @php
                                                 $paiements = [];
                                                 if ($mod->paiement_cb) $paiements[] = 'CB';
-                                                if ($mod->paiement_especes) $paiements[] = 'Espèces';
-                                                if ($mod->paiement_cheque) $paiements[] = 'Chèque';
+                                                if ($mod->paiement_especes) $paiements[] = 'Especes';
+                                                if ($mod->paiement_cheque) $paiements[] = 'Cheque';
                                             @endphp
                                             {{ $paiements ? implode(', ', $paiements) : '-' }}
                                         </td>
@@ -133,6 +177,33 @@
                     </div>
                 @endif
             </div>
+
+    <script>
+        function facturationFilter() {
+            return {
+                filterEpreuve: '',
+                filterCavalier: '',
+                filterFacture: '',
+                filterNomFacturation: '',
+
+                showRow(row) {
+                    if (this.filterEpreuve && row.epreuve !== this.filterEpreuve) return false;
+                    if (this.filterCavalier && !row.cavalier.toLowerCase().includes(this.filterCavalier.toLowerCase())) return false;
+                    if (this.filterFacture === 'oui' && !row.facture) return false;
+                    if (this.filterFacture === 'non' && row.facture) return false;
+                    if (this.filterNomFacturation && !row.nom_facturation.toLowerCase().includes(this.filterNomFacturation.toLowerCase())) return false;
+                    return true;
+                },
+
+                resetFilters() {
+                    this.filterEpreuve = '';
+                    this.filterCavalier = '';
+                    this.filterFacture = '';
+                    this.filterNomFacturation = '';
+                }
+            };
+        }
+    </script>
         </div>
     </div>
 </x-app-layout>
