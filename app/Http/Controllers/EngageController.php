@@ -10,9 +10,12 @@ class EngageController extends Controller
     {
         $epreuves = $concours->epreuves()
             ->with(['engagements.cavalier', 'engagements.cheval'])
+            ->orderBy('date')
             ->orderByRaw('CAST(numero AS UNSIGNED), numero')
             ->get();
 
-        return view('concours.engages', compact('concours', 'epreuves'));
+        $epreuvesByDate = $epreuves->groupBy(fn($e) => $e->date ? $e->date->format('Y-m-d') : 'sans_date');
+
+        return view('concours.engages', compact('concours', 'epreuves', 'epreuvesByDate'));
     }
 }
