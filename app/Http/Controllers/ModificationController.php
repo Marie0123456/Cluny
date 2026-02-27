@@ -107,8 +107,8 @@ class ModificationController extends Controller
             'cheval_id' => 'nullable|exists:chevaux,id',
             'nouveau_cheval_nom' => 'nullable|required_without:cheval_id|string|max:255',
             'nouveau_cheval_num_sire' => 'nullable|string|max:255',
-            'type_compte' => 'required|in:Licence,Compte,Club',
-            'numero_compte' => 'required|string|max:255',
+            'type_compte' => 'nullable|in:Licence,Compte,Club',
+            'numero_compte' => 'nullable|string|max:255',
             'is_gn' => 'boolean',
             'facture' => 'boolean',
             'nom_facturation' => 'nullable|string|max:255',
@@ -238,6 +238,8 @@ class ModificationController extends Controller
     public function updatePaiement(Request $request, Modification $modification)
     {
         $validated = $request->validate([
+            'type_compte' => 'nullable|in:Licence,Compte,Club',
+            'numero_compte' => 'nullable|string|max:255',
             'paiement_cb' => 'boolean',
             'paiement_especes' => 'boolean',
             'paiement_cheque' => 'boolean',
@@ -266,6 +268,8 @@ class ModificationController extends Controller
         }
 
         $modification->update([
+            'type_compte' => $validated['type_compte'] ?? null,
+            'numero_compte' => $validated['numero_compte'] ?? null,
             'paiement_cb' => $request->boolean('paiement_cb'),
             'paiement_especes' => $request->boolean('paiement_especes'),
             'paiement_cheque' => $request->boolean('paiement_cheque'),

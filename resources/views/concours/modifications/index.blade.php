@@ -345,7 +345,7 @@
                         </div>
 
                         <!-- Step 5: Prix calculated -->
-                        <div x-show="typeCompte && numeroCompte" class="p-4 bg-indigo-50 rounded-lg">
+                        <div x-show="chevalId || (isNouveauCheval && nouveauChevalNom)" class="p-4 bg-indigo-50 rounded-lg">
                             <div class="flex justify-between items-center">
                                 <div>
                                     <p class="text-sm text-gray-600">Prix total :</p>
@@ -361,14 +361,14 @@
                         </div>
 
                         <!-- Step 6: Jour de paiement -->
-                        <div x-show="typeCompte && numeroCompte">
+                        <div x-show="chevalId || (isNouveauCheval && nouveauChevalNom)">
                             <label class="block text-sm font-medium text-gray-700 mb-1">Jour de paiement (optionnel)</label>
                             <input type="date" name="jour_paiement"
                                 class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                         </div>
 
                         <!-- Step 7: Moyen de paiement -->
-                        <div x-show="typeCompte && numeroCompte">
+                        <div x-show="chevalId || (isNouveauCheval && nouveauChevalNom)">
                             <span class="block text-sm font-medium text-gray-700 mb-2">Moyen de paiement (optionnel)</span>
                             <div class="flex gap-6">
                                 <label class="flex items-center gap-2">
@@ -397,7 +397,7 @@
                         </div>
 
                         <!-- Step 8: Facture -->
-                        <div x-show="typeCompte && numeroCompte">
+                        <div x-show="chevalId || (isNouveauCheval && nouveauChevalNom)">
                             <span class="block text-sm font-medium text-gray-700 mb-2">Facture</span>
                             <div class="flex gap-6">
                                 <label class="flex items-center gap-2">
@@ -458,7 +458,7 @@
                         </div>
 
                         <!-- Submit -->
-                        <div x-show="typeCompte && numeroCompte && (chevalId || (isNouveauCheval && nouveauChevalNom)) && (cavalierId || (cavalierMode === 'new' && nouveauCavalierNom))">
+                        <div x-show="(chevalId || (isNouveauCheval && nouveauChevalNom)) && (cavalierId || (cavalierMode === 'new' && nouveauCavalierNom))">
                             <button type="submit"
                                 class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700">
                                 Valider l'invitation
@@ -630,6 +630,9 @@
                                         <td class="px-4 py-2 text-sm text-right">
                                             @if ($mod->statut->value === 'en_attente')
                                                 <div class="flex justify-end space-x-2">
+                                                    @if ($mod->type->isPaid())
+                                                        <button type="button" onclick="toggleEditRow({{ $mod->id }})" class="text-indigo-600 hover:text-indigo-800 text-xs font-medium">Editer</button>
+                                                    @endif
                                                     <form method="POST" action="{{ route('modifications.fait', $mod) }}">
                                                         @csrf
                                                         @method('PATCH')
@@ -645,6 +648,71 @@
                                             @endif
                                         </td>
                                     </tr>
+                                    {{-- Inline edit row --}}
+                                    @if ($mod->statut->value === 'en_attente' && $mod->type->isPaid())
+                                        <tr id="edit-row-{{ $mod->id }}" class="hidden bg-gray-50">
+                                            <td colspan="8" class="px-4 py-4">
+                                                <form method="POST" action="{{ route('modifications.update-paiement', $mod) }}" class="space-y-4">
+                                                    @csrf
+                                                    @method('PATCH')
+
+                                                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                                        {{-- Type de compte --}}
+                                                        <div>
+                                                            <label class="block text-xs font-medium text-gray-500 mb-1">Type de compte</label>
+                                                            <select name="type_compte" class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                                                                <option value="">—</option>
+                                                                <option value="Licence" {{ $mod->type_compte === 'Licence' ? 'selected' : '' }}>Licence</option>
+                                                                <option value="Compte" {{ $mod->type_compte === 'Compte' ? 'selected' : '' }}>Compte</option>
+                                                                <option value="Club" {{ $mod->type_compte === 'Club' ? 'selected' : '' }}>Club</option>
+                                                            </select>
+                                                        </div>
+                                                        {{-- Numero de compte --}}
+                                                        <div>
+                                                            <label class="block text-xs font-medium text-gray-500 mb-1">Numero de compte</label>
+                                                            <input type="text" name="numero_compte" value="{{ $mod->numero_compte }}"
+                                                                class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                                                        </div>
+                                                        {{-- Jour de paiement --}}
+                                                        <div>
+                                                            <label class="block text-xs font-medium text-gray-500 mb-1">Jour de paiement</label>
+                                                            <input type="date" name="jour_paiement" value="{{ $mod->jour_paiement?->format('Y-m-d') }}"
+                                                                class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                                                        </div>
+                                                        {{-- Moyen de paiement --}}
+                                                        <div>
+                                                            <label class="block text-xs font-medium text-gray-500 mb-1">Moyen de paiement</label>
+                                                            <div class="flex gap-3 mt-1">
+                                                                <label class="inline-flex items-center text-sm">
+                                                                    <input type="checkbox" name="paiement_cb" value="1" {{ $mod->paiement_cb ? 'checked' : '' }}
+                                                                        class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
+                                                                    <span class="ml-1">CB</span>
+                                                                </label>
+                                                                <label class="inline-flex items-center text-sm">
+                                                                    <input type="checkbox" name="paiement_especes" value="1" {{ $mod->paiement_especes ? 'checked' : '' }}
+                                                                        class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
+                                                                    <span class="ml-1">Especes</span>
+                                                                </label>
+                                                                <label class="inline-flex items-center text-sm">
+                                                                    <input type="checkbox" name="paiement_cheque" value="1" {{ $mod->paiement_cheque ? 'checked' : '' }}
+                                                                        class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
+                                                                    <span class="ml-1">Cheque</span>
+                                                                </label>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="flex justify-end">
+                                                        <button type="button" onclick="toggleEditRow({{ $mod->id }})" class="mr-3 text-sm text-gray-600 hover:text-gray-800">Fermer</button>
+                                                        <button type="submit"
+                                                            class="inline-flex items-center px-3 py-1.5 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700">
+                                                            Enregistrer
+                                                        </button>
+                                                    </div>
+                                                </form>
+                                            </td>
+                                        </tr>
+                                    @endif
                                 @endforeach
                             </tbody>
                         </table>
@@ -655,6 +723,13 @@
     </div>
 
     <script>
+        function toggleEditRow(modId) {
+            const row = document.getElementById('edit-row-' + modId);
+            if (row) {
+                row.classList.toggle('hidden');
+            }
+        }
+
         function changementCheval() {
             const epreuves = @json($epreuvesJson);
 
