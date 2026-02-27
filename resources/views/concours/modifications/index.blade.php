@@ -700,12 +700,14 @@
 
                         <!-- Step 4: Prix display (editable) -->
                         <div x-show="nouvelleEpreuveId && nouvelleEpreuveId != epreuveId" class="p-4 bg-indigo-50 rounded-lg">
-                            <div class="grid grid-cols-3 gap-4">
+                            <div class="grid grid-cols-4 gap-4 items-end">
                                 <div>
-                                    <label class="block text-xs font-medium text-gray-500 mb-1">Prix Epreuve</label>
+                                    <label class="block text-xs font-medium text-gray-500 mb-1">Prix</label>
                                     <input type="number" step="0.01" min="0" x-model.number="editablePrix" name="prix"
                                         class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                                    <p class="mt-1 text-xs text-gray-400" x-text="'Diff: ' + Math.max(nouvelleEpreuvePrix - epreuvePrix, 0).toFixed(2) + ' + 15€'"></p>
                                 </div>
+                                <div class="text-center text-gray-400 text-lg pb-5">+</div>
                                 <div>
                                     <label class="block text-xs font-medium text-gray-500 mb-1">PF</label>
                                     <input type="number" step="0.01" min="0" x-model.number="editablePf" name="pf"
@@ -713,7 +715,7 @@
                                 </div>
                                 <div>
                                     <label class="block text-xs font-medium text-gray-500 mb-1">TOTAL</label>
-                                    <div class="mt-1 text-lg font-bold text-indigo-900" x-text="(editablePrix + editablePf).toFixed(2) + ' €'"></div>
+                                    <div class="text-lg font-bold text-indigo-900" x-text="(editablePrix + editablePf).toFixed(2) + ' €'"></div>
                                 </div>
                             </div>
                         </div>
