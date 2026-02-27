@@ -94,7 +94,7 @@ class ModificationController extends Controller
             'description' => "Changement: {$engagement->cheval->nom} → {$nouveauCheval->nom}",
             'ancien_cheval_id' => $ancienChevalId,
             'nouveau_cheval_id' => $nouveauCheval->id,
-            'statut' => 'en_attente',
+            'statut' => 'cree',
         ]);
 
         $engagement->update(['cheval_id' => $nouveauCheval->id]);
@@ -141,7 +141,7 @@ class ModificationController extends Controller
             'description' => "Changement cavalier: {$engagement->cavalier->nom} → {$nouveauCavalier->nom}",
             'ancien_cavalier_id' => $ancienCavalierId,
             'nouveau_cavalier_id' => $nouveauCavalier->id,
-            'statut' => 'en_attente',
+            'statut' => 'cree',
         ]);
 
         $engagement->update(['cavalier_id' => $nouveauCavalier->id]);
@@ -261,7 +261,7 @@ class ModificationController extends Controller
             'jour_paiement' => $validated['jour_paiement'] ?? null,
             'facture' => $request->boolean('facture'),
             'client_facturation_id' => $clientFacturationId,
-            'statut' => 'en_attente',
+            'statut' => 'cree',
         ]);
 
         return redirect()->route('concours.modifications.index', $concours)
@@ -301,7 +301,7 @@ class ModificationController extends Controller
             'concours_id' => $concours->id,
             'type' => ModificationType::NON_PARTANT->value,
             'description' => "NP (changement épreuve): {$engagement->cavalier->nom} — Épreuve {$engagement->epreuve->numero}",
-            'statut' => 'en_attente',
+            'statut' => 'cree',
         ]);
 
         // 2. Create new engagement in new epreuve
@@ -349,7 +349,7 @@ class ModificationController extends Controller
             'jour_paiement' => $validated['jour_paiement'] ?? null,
             'facture' => $request->boolean('facture'),
             'client_facturation_id' => $clientFacturationId,
-            'statut' => 'en_attente',
+            'statut' => 'cree',
         ]);
 
         // Link NP to changement too
@@ -373,7 +373,7 @@ class ModificationController extends Controller
             'concours_id' => $concours->id,
             'type' => ModificationType::NON_PARTANT->value,
             'description' => "Non-partant: {$engagement->cavalier->prenom} {$engagement->cavalier->nom} — Épreuve {$engagement->epreuve->numero}",
-            'statut' => 'en_attente',
+            'statut' => 'cree',
         ]);
 
         return redirect()->route('concours.modifications.index', $concours)
@@ -412,7 +412,7 @@ class ModificationController extends Controller
             $clientFacturationId = null;
         }
 
-        $modification->update([
+        $updateData = [
             'type_compte' => $validated['type_compte'] ?? null,
             'numero_compte' => $validated['numero_compte'] ?? null,
             'paiement_cb' => $request->boolean('paiement_cb'),
@@ -422,7 +422,13 @@ class ModificationController extends Controller
             'jour_paiement' => $validated['jour_paiement'] ?? null,
             'facture' => $request->boolean('facture'),
             'client_facturation_id' => $clientFacturationId,
-        ]);
+        ];
+
+        if ($modification->statut->value === 'fait') {
+            $updateData['statut'] = 'modifie';
+        }
+
+        $modification->update($updateData);
 
         return redirect()->back()->with('success', 'Paiement mis a jour.');
     }

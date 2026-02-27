@@ -949,8 +949,9 @@
                             <select x-model="filterStatut"
                                 class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
                                 <option value="">Tous</option>
-                                <option value="en_attente">En attente</option>
+                                <option value="cree">Cree</option>
                                 <option value="fait">Fait</option>
+                                <option value="modifie">Modifie</option>
                             </select>
                         </div>
                     </div>
@@ -1054,18 +1055,20 @@
                                             @endif
                                         </td>
                                         <td class="px-4 py-2 text-sm">
-                                            @if ($mod->statut->value === 'en_attente')
-                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">En attente</span>
+                                            @if ($mod->statut->value === 'cree')
+                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">Cree</span>
                                             @elseif ($mod->statut->value === 'fait')
                                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Fait</span>
+                                            @elseif ($mod->statut->value === 'modifie')
+                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">Modifie</span>
                                             @endif
                                         </td>
                                         <td class="px-4 py-2 text-sm text-right">
                                             <div class="flex justify-end space-x-2">
-                                                @if ($mod->statut->value === 'en_attente')
-                                                    @if ($mod->type->isPaid())
-                                                        <button type="button" onclick="toggleEditRow({{ $mod->id }})" class="text-indigo-600 hover:text-indigo-800 text-xs font-medium">Editer</button>
-                                                    @endif
+                                                @if (in_array($mod->statut->value, ['cree', 'fait']) && $mod->type->isPaid())
+                                                    <button type="button" onclick="toggleEditRow({{ $mod->id }})" class="text-indigo-600 hover:text-indigo-800 text-xs font-medium">Editer</button>
+                                                @endif
+                                                @if (in_array($mod->statut->value, ['cree', 'modifie']))
                                                     <form method="POST" action="{{ route('modifications.fait', $mod) }}">
                                                         @csrf
                                                         @method('PATCH')
@@ -1082,7 +1085,7 @@
                                         </td>
                                     </tr>
                                     {{-- Inline edit row --}}
-                                    @if ($mod->statut->value === 'en_attente' && $mod->type->isPaid())
+                                    @if (in_array($mod->statut->value, ['cree', 'fait']) && $mod->type->isPaid())
                                         <tr id="edit-row-{{ $mod->id }}" class="hidden bg-gray-50">
                                             <td colspan="8" class="px-4 py-4">
                                                 <form method="POST" action="{{ route('modifications.update-paiement', $mod) }}" class="space-y-4">
