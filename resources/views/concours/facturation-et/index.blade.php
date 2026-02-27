@@ -160,27 +160,11 @@
                                                 @csrf
                                                 @method('PATCH')
 
-                                                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                                <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
                                                     {{-- Jour de paiement --}}
                                                     <div>
                                                         <label class="block text-xs font-medium text-gray-500 mb-1">Jour de paiement</label>
                                                         <input type="date" name="jour_paiement" value="{{ $mod->jour_paiement?->format('Y-m-d') }}"
-                                                            class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
-                                                    </div>
-                                                    {{-- Type de compte --}}
-                                                    <div>
-                                                        <label class="block text-xs font-medium text-gray-500 mb-1">Type de compte</label>
-                                                        <select name="type_compte" class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
-                                                            <option value="">—</option>
-                                                            <option value="Licence" {{ $mod->type_compte === 'Licence' ? 'selected' : '' }}>Licence</option>
-                                                            <option value="Compte" {{ $mod->type_compte === 'Compte' ? 'selected' : '' }}>Compte</option>
-                                                            <option value="Club" {{ $mod->type_compte === 'Club' ? 'selected' : '' }}>Club</option>
-                                                        </select>
-                                                    </div>
-                                                    {{-- Numero de compte --}}
-                                                    <div>
-                                                        <label class="block text-xs font-medium text-gray-500 mb-1">Numero de compte</label>
-                                                        <input type="text" name="numero_compte" value="{{ $mod->numero_compte }}"
                                                             class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
                                                     </div>
                                                     {{-- Moyen de paiement --}}
