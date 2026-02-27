@@ -1389,13 +1389,14 @@
 
                 recalculatePrix() {
                     const diff = this.nouvelleEpreuvePrix - this.epreuvePrix;
-                    const basePrix = Math.max(diff, 0);
 
                     if (isGrandNational && this.isGn && this.nouvelleEpreuveTypeDetecte === 'pro') {
-                        this.editablePrix = basePrix;
+                        // GN + Pro : juste la différence (min 0), PF = 0
+                        this.editablePrix = Math.max(diff, 0);
                         this.editablePf = 0;
                     } else {
-                        this.editablePrix = basePrix + 15;
+                        // Cas normal : différence + 15€ (min 0 sur le total)
+                        this.editablePrix = Math.max(diff + 15, 0);
                         this.editablePf = 14.40;
                     }
                 },
