@@ -557,10 +557,10 @@
                                 <tr>
                                     <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
                                     <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Epreuve</th>
-                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Dep.</th>
-                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Cavalier</th>
-                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Detail</th>
-                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Prix</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Depart</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Nom</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Cheval</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Compte</th>
                                     <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Statut</th>
                                     <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
                                 </tr>
@@ -568,14 +568,17 @@
                             <tbody class="bg-white divide-y divide-gray-200">
                                 @foreach ($visibleMods->sortBy(fn($m) => $m->statut->value === 'en_attente' ? 0 : 1) as $mod)
                                     <tr class="{{ $mod->statut->value === 'fait' ? 'opacity-50' : '' }}">
+                                        {{-- Type --}}
                                         <td class="px-4 py-2 text-sm">
                                             <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {{ $mod->type->badgeClass() }}">
                                                 {{ $mod->type->label() }}
                                             </span>
                                         </td>
+                                        {{-- Epreuve --}}
                                         <td class="px-4 py-2 text-sm text-gray-900">
                                             {{ $mod->engagement->epreuve->numero ?? '-' }}
                                         </td>
+                                        {{-- Depart --}}
                                         <td class="px-4 py-2 text-sm text-gray-500">
                                             @if ($mod->type === \App\Enums\ModificationType::NON_PARTANT)
                                                 <span class="font-bold text-red-600">NP</span>
@@ -583,30 +586,35 @@
                                                 {{ $mod->engagement->numero_depart ?? '-' }}
                                             @endif
                                         </td>
-                                        <td class="px-4 py-2 text-sm text-gray-900 font-medium">
-                                            {{ $mod->engagement->cavalier->prenom ?? '' }} {{ $mod->engagement->cavalier->nom ?? '' }}
+                                        {{-- Nom (numero licence) --}}
+                                        <td class="px-4 py-2 text-sm text-gray-900">
+                                            <span class="font-medium">{{ $mod->engagement->cavalier->nom ?? '' }} {{ $mod->engagement->cavalier->prenom ?? '' }}</span>
+                                            @if ($mod->engagement->cavalier->num_licence ?? null)
+                                                <div class="text-xs text-gray-500">({{ $mod->engagement->cavalier->num_licence }})</div>
+                                            @endif
                                         </td>
-                                        <td class="px-4 py-2 text-sm">
+                                        {{-- Cheval (numero de sire) --}}
+                                        <td class="px-4 py-2 text-sm text-gray-900">
                                             @if ($mod->type === \App\Enums\ModificationType::CHANGEMENT_CHEVAL)
                                                 <span class="text-gray-400 line-through">{{ $mod->ancienCheval->nom ?? '-' }}</span>
                                                 <span class="mx-1">&rarr;</span>
                                                 <span class="text-green-700 font-medium">{{ $mod->nouveauCheval->nom ?? '-' }}</span>
-                                            @elseif ($mod->type === \App\Enums\ModificationType::AJOUT_ENGAGEMENT)
-                                                <span class="text-blue-700">{{ $mod->engagement->cheval->nom ?? '' }}</span>
-                                                @if ($mod->type_compte)
-                                                    <span class="text-xs text-gray-500 ml-1">({{ $mod->type_compte }}: {{ $mod->numero_compte }})</span>
+                                                @if ($mod->nouveauCheval->num_sire ?? null)
+                                                    <div class="text-xs text-gray-500">({{ $mod->nouveauCheval->num_sire }})</div>
                                                 @endif
-                                            @elseif ($mod->type === \App\Enums\ModificationType::NON_PARTANT)
-                                                <span class="text-gray-500">{{ $mod->engagement->cheval->nom ?? '' }}</span>
                                             @else
-                                                {{ $mod->description ?? '-' }}
+                                                {{ $mod->engagement->cheval->nom ?? '-' }}
+                                                @if ($mod->engagement->cheval->num_sire ?? null)
+                                                    <div class="text-xs text-gray-500">({{ $mod->engagement->cheval->num_sire }})</div>
+                                                @endif
                                             @endif
                                         </td>
+                                        {{-- Compte (numero de compte) --}}
                                         <td class="px-4 py-2 text-sm text-gray-900">
-                                            @if ($mod->type->isPaid() && $mod->prix)
-                                                {{ number_format($mod->prix, 2, ',', ' ') }} &euro;
-                                                @if ($mod->pf)
-                                                    <div class="text-xs text-gray-500">PF: {{ number_format($mod->pf, 2, ',', ' ') }} &euro;</div>
+                                            @if ($mod->type_compte)
+                                                {{ $mod->type_compte }}
+                                                @if ($mod->numero_compte)
+                                                    <div class="text-xs text-gray-500">({{ $mod->numero_compte }})</div>
                                                 @endif
                                             @else
                                                 -
