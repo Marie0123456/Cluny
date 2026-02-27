@@ -113,25 +113,13 @@
                                                     @if ($vente->paiement_cheque)<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">Cheque</span>@endif
                                                 </td>
                                                 <td class="px-4 py-3 text-sm" rowspan="{{ $ligneCount }}">
-                                                    @if ($vente->facture)
-                                                        <span class="relative group inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-indigo-100 text-indigo-800 cursor-default">
-                                                            Oui
-                                                            @if ($vente->clientFacturation)
-                                                                <div class="hidden group-hover:block absolute z-50 bottom-full left-0 mb-2 w-56 bg-gray-900 text-white text-xs rounded-lg shadow-lg p-3">
-                                                                    <p class="font-semibold">{{ $vente->clientFacturation->nom }}</p>
-                                                                    @if ($vente->clientFacturation->telephone)
-                                                                        <p class="mt-1">Tel: {{ $vente->clientFacturation->telephone }}</p>
-                                                                    @endif
-                                                                    @if ($vente->clientFacturation->email)
-                                                                        <p>Email: {{ $vente->clientFacturation->email }}</p>
-                                                                    @endif
-                                                                    @if ($vente->clientFacturation->adresse)
-                                                                        <p>{{ $vente->clientFacturation->adresse }}</p>
-                                                                    @endif
-                                                                    <div class="absolute left-4 top-full w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-gray-900"></div>
-                                                                </div>
-                                                            @endif
-                                                        </span>
+                                                    @if ($vente->facture && $vente->clientFacturation)
+                                                        <a href="{{ route('concours.factures.show', [$concours, $vente->clientFacturation]) }}"
+                                                            class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-indigo-100 text-indigo-800 hover:bg-indigo-200 transition">
+                                                            {{ $vente->clientFacturation->nom }}
+                                                        </a>
+                                                    @elseif ($vente->facture)
+                                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-indigo-100 text-indigo-800">Oui</span>
                                                     @else
                                                         <span class="text-gray-400">Non</span>
                                                     @endif

@@ -135,27 +135,13 @@
                                             {{ $mod->jour_paiement ? $mod->jour_paiement->format('d/m/Y') : '-' }}
                                         </td>
                                         <td class="px-4 py-3 text-sm">
-                                            @if ($mod->facture)
-                                                <div class="relative group inline-block">
-                                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 cursor-help">
-                                                        Oui
-                                                    </span>
-                                                    @if ($mod->clientFacturation)
-                                                        <div class="hidden group-hover:block absolute z-50 bottom-full left-1/2 transform -translate-x-1/2 mb-2 w-64 bg-white rounded-lg shadow-xl border border-gray-200 p-3 text-sm">
-                                                            <p class="font-semibold text-gray-900">{{ $mod->clientFacturation->nom }}</p>
-                                                            @if ($mod->clientFacturation->telephone)
-                                                                <p class="text-gray-600">Tel: {{ $mod->clientFacturation->telephone }}</p>
-                                                            @endif
-                                                            @if ($mod->clientFacturation->email)
-                                                                <p class="text-gray-600">{{ $mod->clientFacturation->email }}</p>
-                                                            @endif
-                                                            @if ($mod->clientFacturation->adresse)
-                                                                <p class="text-gray-600">{{ $mod->clientFacturation->adresse }}</p>
-                                                            @endif
-                                                            <div class="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-1/2 rotate-45 w-2 h-2 bg-white border-r border-b border-gray-200"></div>
-                                                        </div>
-                                                    @endif
-                                                </div>
+                                            @if ($mod->facture && $mod->clientFacturation)
+                                                <a href="{{ route('concours.factures.show', [$concours, $mod->clientFacturation]) }}"
+                                                    class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 hover:bg-green-200 transition">
+                                                    {{ $mod->clientFacturation->nom }}
+                                                </a>
+                                            @elseif ($mod->facture)
+                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Oui</span>
                                             @else
                                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
                                                     Non
