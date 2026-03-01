@@ -54,9 +54,9 @@
 
                         <div>
                             <label for="epreuve2_id" class="block text-sm font-medium text-gray-700">Epreuve 2</label>
-                            <select name="epreuve2_id" id="epreuve2_id" required
+                            <select name="epreuve2_id" id="epreuve2_id"
                                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
-                                <option value="">-- Choisir --</option>
+                                <option value="">Pas de seconde &eacute;preuve</option>
                                 @foreach ($epreuves as $epreuve)
                                     <option value="{{ $epreuve->id }}" {{ old('epreuve2_id') == $epreuve->id ? 'selected' : '' }}>
                                         {{ $epreuve->numero }} - {{ $epreuve->nom }}
@@ -117,7 +117,11 @@
                                         {{ $championnat->epreuve1->numero }} - {{ $championnat->epreuve1->nom }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        {{ $championnat->epreuve2->numero }} - {{ $championnat->epreuve2->nom }}
+                                        @if ($championnat->epreuve2)
+                                            {{ $championnat->epreuve2->numero }} - {{ $championnat->epreuve2->nom }}
+                                        @else
+                                            <span class="italic text-gray-400">Pas de seconde &eacute;preuve</span>
+                                        @endif
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
                                         <a href="{{ route('concours.championnats.show', [$concours, $championnat]) }}"

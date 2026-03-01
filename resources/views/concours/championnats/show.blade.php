@@ -29,7 +29,11 @@
                 <h3 class="text-lg font-medium text-gray-900">{{ $championnat->nom }}</h3>
                 <div class="mt-2 flex flex-wrap gap-4 text-sm text-gray-500">
                     <span>Epreuve 1 : <span class="font-medium text-gray-700">{{ $championnat->epreuve1->numero }} - {{ $championnat->epreuve1->nom }}</span></span>
-                    <span>Epreuve 2 : <span class="font-medium text-gray-700">{{ $championnat->epreuve2->numero }} - {{ $championnat->epreuve2->nom }}</span></span>
+                    @if ($championnat->epreuve2)
+                        <span>Epreuve 2 : <span class="font-medium text-gray-700">{{ $championnat->epreuve2->numero }} - {{ $championnat->epreuve2->nom }}</span></span>
+                    @else
+                        <span class="italic text-gray-400">Pas de seconde &eacute;preuve</span>
+                    @endif
                     <span>Participants : <span class="font-medium text-gray-700">{{ $participants->count() }}</span></span>
                 </div>
             </div>
@@ -75,45 +79,47 @@
                     </div>
 
                     {{-- Import Epreuve 2 --}}
-                    <div>
-                        <form action="{{ route('concours.championnats.import-resultats', [$concours, $championnat]) }}" method="POST" enctype="multipart/form-data">
-                            @csrf
-                            <input type="hidden" name="epreuve" value="2">
-                            <div class="flex items-end gap-3">
-                                <div class="flex-1">
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">
-                                        Epreuve 2 : {{ $championnat->epreuve2->numero }}
-                                        @if ($resultatsEpreuve2->isNotEmpty())
-                                            <span class="text-green-600">({{ $resultatsEpreuve2->count() }} resultats)</span>
-                                        @endif
-                                    </label>
-                                    <input type="file" name="csv_file" accept=".csv,.txt" required
-                                        class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
-                                </div>
-                                <button type="submit"
-                                    class="inline-flex items-center px-3 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 transition">
-                                    Importer
-                                </button>
-                            </div>
-                        </form>
-                        @if ($resultatsEpreuve2->isNotEmpty())
-                            <form action="{{ route('concours.championnats.delete-resultats', [$concours, $championnat]) }}" method="POST" class="mt-2"
-                                onsubmit="return confirm('Supprimer les {{ $resultatsEpreuve2->count() }} resultats de l\'epreuve 2 ?')">
+                    @if ($championnat->epreuve2)
+                        <div>
+                            <form action="{{ route('concours.championnats.import-resultats', [$concours, $championnat]) }}" method="POST" enctype="multipart/form-data">
                                 @csrf
-                                @method('DELETE')
                                 <input type="hidden" name="epreuve" value="2">
-                                <button type="submit"
-                                    class="inline-flex items-center px-3 py-1.5 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700 transition">
-                                    Supprimer resultats E2
-                                </button>
+                                <div class="flex items-end gap-3">
+                                    <div class="flex-1">
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                                            Epreuve 2 : {{ $championnat->epreuve2->numero }}
+                                            @if ($resultatsEpreuve2->isNotEmpty())
+                                                <span class="text-green-600">({{ $resultatsEpreuve2->count() }} resultats)</span>
+                                            @endif
+                                        </label>
+                                        <input type="file" name="csv_file" accept=".csv,.txt" required
+                                            class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
+                                    </div>
+                                    <button type="submit"
+                                        class="inline-flex items-center px-3 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 transition">
+                                        Importer
+                                    </button>
+                                </div>
                             </form>
-                        @endif
-                    </div>
+                            @if ($resultatsEpreuve2->isNotEmpty())
+                                <form action="{{ route('concours.championnats.delete-resultats', [$concours, $championnat]) }}" method="POST" class="mt-2"
+                                    onsubmit="return confirm('Supprimer les {{ $resultatsEpreuve2->count() }} resultats de l\'epreuve 2 ?')">
+                                    @csrf
+                                    @method('DELETE')
+                                    <input type="hidden" name="epreuve" value="2">
+                                    <button type="submit"
+                                        class="inline-flex items-center px-3 py-1.5 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700 transition">
+                                        Supprimer resultats E2
+                                    </button>
+                                </form>
+                            @endif
+                        </div>
+                    @endif
                 </div>
             </div>
 
-            {{-- Bouton Exporter LDP (visible quand epreuve 1 a des resultats) --}}
-            @if ($resultatsEpreuve1->isNotEmpty())
+            {{-- Bouton Exporter LDP (visible quand epreuve 2 existe et epreuve 1 a des resultats) --}}
+            @if ($championnat->epreuve2 && $resultatsEpreuve1->isNotEmpty())
                 <div class="mb-6">
                     <a href="{{ route('concours.championnats.export-ldp', [$concours, $championnat]) }}"
                         class="inline-flex items-center px-4 py-2 bg-amber-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-amber-700 transition">
@@ -140,12 +146,14 @@
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cavalier</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cheval</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Club</th>
-                                    <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Pts E1</th>
-                                    <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Tps E1</th>
-                                    <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Pts E2</th>
-                                    <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Tps E2</th>
-                                    <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider font-bold">Total Pts</th>
-                                    <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider font-bold">Total Tps</th>
+                                    <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">{{ $championnat->epreuve2 ? 'Pts E1' : 'Points' }}</th>
+                                    <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">{{ $championnat->epreuve2 ? 'Tps E1' : 'Temps' }}</th>
+                                    @if ($championnat->epreuve2)
+                                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Pts E2</th>
+                                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Tps E2</th>
+                                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider font-bold">Total Pts</th>
+                                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider font-bold">Total Tps</th>
+                                    @endif
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200">
@@ -179,22 +187,24 @@
                                         <td class="px-4 py-3 whitespace-nowrap text-sm text-center {{ $entry['is_excluded'] ? 'text-orange-400' : 'text-gray-500' }}">
                                             {{ $entry['temps_e1'] ? number_format($entry['temps_e1'], 2, ',', '') : '-' }}
                                         </td>
-                                        <td class="px-4 py-3 whitespace-nowrap text-sm text-center {{ $entry['is_excluded'] ? 'text-orange-400' : ($entry['statut_e2'] !== 'normal' ? 'text-red-500' : 'text-gray-500') }}">
-                                            @if ($entry['statut_e2'] === 'elimine') EL
-                                            @elseif ($entry['statut_e2'] === 'non_partant') NP
-                                            @elseif ($entry['statut_e2'] === 'abandon') AB
-                                            @else {{ number_format($entry['points_e2'], 2, ',', '') }}
-                                            @endif
-                                        </td>
-                                        <td class="px-4 py-3 whitespace-nowrap text-sm text-center {{ $entry['is_excluded'] ? 'text-orange-400' : 'text-gray-500' }}">
-                                            {{ $entry['temps_e2'] ? number_format($entry['temps_e2'], 2, ',', '') : '-' }}
-                                        </td>
-                                        <td class="px-4 py-3 whitespace-nowrap text-sm text-center font-bold {{ $entry['is_excluded'] ? 'text-orange-400' : 'text-gray-900' }}">
-                                            {{ number_format($entry['total_points'], 2, ',', '') }}
-                                        </td>
-                                        <td class="px-4 py-3 whitespace-nowrap text-sm text-center font-bold {{ $entry['is_excluded'] ? 'text-orange-400' : 'text-gray-900' }}">
-                                            {{ number_format($entry['total_temps'], 2, ',', '') }}
-                                        </td>
+                                        @if ($championnat->epreuve2)
+                                            <td class="px-4 py-3 whitespace-nowrap text-sm text-center {{ $entry['is_excluded'] ? 'text-orange-400' : ($entry['statut_e2'] !== 'normal' ? 'text-red-500' : 'text-gray-500') }}">
+                                                @if ($entry['statut_e2'] === 'elimine') EL
+                                                @elseif ($entry['statut_e2'] === 'non_partant') NP
+                                                @elseif ($entry['statut_e2'] === 'abandon') AB
+                                                @else {{ number_format($entry['points_e2'], 2, ',', '') }}
+                                                @endif
+                                            </td>
+                                            <td class="px-4 py-3 whitespace-nowrap text-sm text-center {{ $entry['is_excluded'] ? 'text-orange-400' : 'text-gray-500' }}">
+                                                {{ $entry['temps_e2'] ? number_format($entry['temps_e2'], 2, ',', '') : '-' }}
+                                            </td>
+                                            <td class="px-4 py-3 whitespace-nowrap text-sm text-center font-bold {{ $entry['is_excluded'] ? 'text-orange-400' : 'text-gray-900' }}">
+                                                {{ number_format($entry['total_points'], 2, ',', '') }}
+                                            </td>
+                                            <td class="px-4 py-3 whitespace-nowrap text-sm text-center font-bold {{ $entry['is_excluded'] ? 'text-orange-400' : 'text-gray-900' }}">
+                                                {{ number_format($entry['total_temps'], 2, ',', '') }}
+                                            </td>
+                                        @endif
                                     </tr>
                                 @endforeach
                             </tbody>
@@ -205,7 +215,7 @@
 
             {{-- Classements par epreuve --}}
             @if ($resultatsEpreuve1->isNotEmpty() || $resultatsEpreuve2->isNotEmpty())
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                <div class="grid grid-cols-1 {{ $championnat->epreuve2 ? 'lg:grid-cols-2' : '' }} gap-6 mb-6">
                     {{-- Epreuve 1 --}}
                     @if ($resultatsEpreuve1->isNotEmpty())
                         <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
@@ -248,7 +258,7 @@
                     @endif
 
                     {{-- Epreuve 2 --}}
-                    @if ($resultatsEpreuve2->isNotEmpty())
+                    @if ($championnat->epreuve2 && $resultatsEpreuve2->isNotEmpty())
                         <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                             <div class="p-4 pb-0">
                                 <h4 class="text-sm font-medium text-gray-900">Epreuve 2 : {{ $championnat->epreuve2->numero }} - {{ $championnat->epreuve2->nom }}</h4>

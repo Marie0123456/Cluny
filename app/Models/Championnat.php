@@ -43,10 +43,28 @@ class Championnat extends Model
     }
 
     /**
-     * Couples cavalier+cheval engagés dans les DEUX épreuves.
+     * Couples cavalier+cheval engagés dans les DEUX épreuves (ou juste E1 si pas d'E2).
      */
     public function participants(): Collection
     {
+        if ($this->epreuve2_id === null) {
+            return DB::table('engagements')
+                ->join('cavaliers', 'cavaliers.id', '=', 'engagements.cavalier_id')
+                ->join('chevaux', 'chevaux.id', '=', 'engagements.cheval_id')
+                ->where('engagements.epreuve_id', $this->epreuve1_id)
+                ->select(
+                    'cavaliers.id as cavalier_id',
+                    'cavaliers.nom as cavalier_nom',
+                    'cavaliers.prenom as cavalier_prenom',
+                    'cavaliers.club',
+                    'chevaux.id as cheval_id',
+                    'chevaux.nom as cheval_nom',
+                )
+                ->orderBy('cavaliers.nom')
+                ->orderBy('cavaliers.prenom')
+                ->get();
+        }
+
         return DB::table('engagements as e1')
             ->join('engagements as e2', function ($join) {
                 $join->on('e1.cavalier_id', '=', 'e2.cavalier_id')

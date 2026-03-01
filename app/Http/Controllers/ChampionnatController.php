@@ -29,8 +29,13 @@ class ChampionnatController extends Controller
         $validated = $request->validate([
             'nom' => 'required|string|max:255',
             'epreuve1_id' => 'required|exists:epreuves,id',
-            'epreuve2_id' => 'required|exists:epreuves,id|different:epreuve1_id',
+            'epreuve2_id' => 'nullable|exists:epreuves,id|different:epreuve1_id',
         ]);
+
+        // Convert empty string to null
+        if (empty($validated['epreuve2_id'])) {
+            $validated['epreuve2_id'] = null;
+        }
 
         $concours->championnats()->create($validated);
 
@@ -57,17 +62,28 @@ class ChampionnatController extends Controller
             ->sortBy([['points', 'asc'], ['temps', 'asc']])
             ->values();
 
-        $resultatsEpreuve2 = $championnat->resultats()
-            ->where('epreuve_id', $championnat->epreuve2_id)
-            ->with(['cavalier', 'cheval'])
-            ->get()
-            ->sortBy([['points', 'asc'], ['temps', 'asc']])
-            ->values();
+        $resultatsEpreuve2 = collect();
+        if ($championnat->epreuve2_id) {
+            $resultatsEpreuve2 = $championnat->resultats()
+                ->where('epreuve_id', $championnat->epreuve2_id)
+                ->with(['cavalier', 'cheval'])
+                ->get()
+                ->sortBy([['points', 'asc'], ['temps', 'asc']])
+                ->values();
+        }
 
-        // Calculate classement general if both epreuves have resultats
+        // Calculate classement general
         $classementGeneral = collect();
-        if ($resultatsEpreuve1->isNotEmpty() && $resultatsEpreuve2->isNotEmpty()) {
-            $classementGeneral = $this->calculerClassement($championnat, $exclusionKeys);
+        if ($championnat->epreuve2_id) {
+            // Two epreuves: need both to have resultats
+            if ($resultatsEpreuve1->isNotEmpty() && $resultatsEpreuve2->isNotEmpty()) {
+                $classementGeneral = $this->calculerClassement($championnat, $exclusionKeys);
+            }
+        } else {
+            // Single epreuve: classement = E1 results
+            if ($resultatsEpreuve1->isNotEmpty()) {
+                $classementGeneral = $this->calculerClassementSimple($championnat, $exclusionKeys);
+            }
         }
 
         return view('concours.championnats.show', compact(
@@ -78,9 +94,10 @@ class ChampionnatController extends Controller
 
     public function importResultats(Request $request, Concours $concours, Championnat $championnat)
     {
+        $allowedEpreuves = $championnat->epreuve2_id ? '1,2' : '1';
         $request->validate([
             'csv_file' => 'required|file|mimes:csv,txt',
-            'epreuve' => 'required|in:1,2',
+            'epreuve' => "required|in:$allowedEpreuves",
         ]);
 
         $epreuveId = $request->input('epreuve') == '1'
@@ -276,6 +293,57 @@ class ChampionnatController extends Controller
         return $classement;
     }
 
+    private function calculerClassementSimple(Championnat $championnat, $exclusionKeys): \Illuminate\Support\Collection
+    {
+        $resultats1 = $championnat->resultats()
+            ->where('epreuve_id', $championnat->epreuve1_id)
+            ->with(['cavalier', 'cheval'])
+            ->get()
+            ->sortBy([['points', 'asc'], ['temps', 'asc']])
+            ->values();
+
+        $classement = collect();
+
+        foreach ($resultats1 as $r1) {
+            $key = $r1->cavalier_id . '-' . $r1->cheval_id;
+            $isExcluded = $exclusionKeys->has($key);
+
+            $classement->push([
+                'cavalier_id' => $r1->cavalier_id,
+                'cheval_id' => $r1->cheval_id,
+                'cavalier_nom' => $r1->cavalier->nom,
+                'cavalier_prenom' => $r1->cavalier->prenom,
+                'cheval_nom' => $r1->cheval->nom,
+                'club' => $r1->cavalier->club,
+                'points_e1' => (float) $r1->points,
+                'temps_e1' => $r1->temps,
+                'statut_e1' => $r1->statut,
+                'total_points' => (float) $r1->points,
+                'total_temps' => $r1->temps ?? 0,
+                'is_excluded' => $isExcluded,
+            ]);
+        }
+
+        $classement = $classement->sortBy([['total_points', 'asc'], ['total_temps', 'asc']])->values();
+
+        // Mark non-best results per cavalier as excluded
+        $bestCavalierSeen = [];
+        $classement = $classement->map(function ($entry) use (&$bestCavalierSeen) {
+            $cavId = $entry['cavalier_id'];
+            if ($entry['is_excluded']) {
+                return $entry;
+            }
+            if (isset($bestCavalierSeen[$cavId])) {
+                $entry['is_excluded'] = true;
+            } else {
+                $bestCavalierSeen[$cavId] = true;
+            }
+            return $entry;
+        });
+
+        return $classement;
+    }
+
     public function exportResultats(Concours $concours, Championnat $championnat)
     {
         $championnat->load(['epreuve1', 'epreuve2']);
@@ -284,7 +352,11 @@ class ChampionnatController extends Controller
             ->map(fn ($e) => $e->cavalier_id . '-' . $e->cheval_id)
             ->flip();
 
-        $classement = $this->calculerClassement($championnat, $exclusionKeys);
+        $hasE2 = $championnat->epreuve2_id !== null;
+
+        $classement = $hasE2
+            ? $this->calculerClassement($championnat, $exclusionKeys)
+            : $this->calculerClassementSimple($championnat, $exclusionKeys);
 
         // Filter: only non-excluded entries (one per cavalier, best result)
         $exported = $classement->filter(fn ($e) => !$e['is_excluded'])->values();
@@ -296,19 +368,25 @@ class ChampionnatController extends Controller
             'Content-Disposition' => "attachment; filename=\"$filename\"",
         ];
 
-        $callback = function () use ($exported, $championnat) {
+        $callback = function () use ($exported, $championnat, $hasE2) {
             $handle = fopen('php://output', 'w');
-            // BOM for Excel UTF-8
             fwrite($handle, "\xEF\xBB\xBF");
 
-            fputcsv($handle, [
-                'Classement', 'Cavalier', 'Club', 'Cheval',
-                'Points ' . $championnat->epreuve1->numero,
-                'Temps ' . $championnat->epreuve1->numero,
-                'Points ' . $championnat->epreuve2->numero,
-                'Temps ' . $championnat->epreuve2->numero,
-                'Total Points', 'Total Temps',
-            ], ';');
+            if ($hasE2) {
+                fputcsv($handle, [
+                    'Classement', 'Cavalier', 'Club', 'Cheval',
+                    'Points ' . $championnat->epreuve1->numero,
+                    'Temps ' . $championnat->epreuve1->numero,
+                    'Points ' . $championnat->epreuve2->numero,
+                    'Temps ' . $championnat->epreuve2->numero,
+                    'Total Points', 'Total Temps',
+                ], ';');
+            } else {
+                fputcsv($handle, [
+                    'Classement', 'Cavalier', 'Club', 'Cheval',
+                    'Points', 'Temps',
+                ], ';');
+            }
 
             foreach ($exported as $index => $entry) {
                 $ptsE1 = match ($entry['statut_e1']) {
@@ -317,25 +395,37 @@ class ChampionnatController extends Controller
                     'abandon' => 'AB',
                     default => number_format($entry['points_e1'], 2, ',', ''),
                 };
-                $ptsE2 = match ($entry['statut_e2']) {
-                    'elimine' => 'EL',
-                    'non_partant' => 'NP',
-                    'abandon' => 'AB',
-                    default => number_format($entry['points_e2'], 2, ',', ''),
-                };
 
-                fputcsv($handle, [
-                    $index + 1,
-                    $entry['cavalier_prenom'] . ' ' . $entry['cavalier_nom'],
-                    $entry['club'] ?? '',
-                    $entry['cheval_nom'],
-                    $ptsE1,
-                    $entry['temps_e1'] ? number_format($entry['temps_e1'], 2, ',', '') : '',
-                    $ptsE2,
-                    $entry['temps_e2'] ? number_format($entry['temps_e2'], 2, ',', '') : '',
-                    number_format($entry['total_points'], 2, ',', ''),
-                    number_format($entry['total_temps'], 2, ',', ''),
-                ], ';');
+                if ($hasE2) {
+                    $ptsE2 = match ($entry['statut_e2']) {
+                        'elimine' => 'EL',
+                        'non_partant' => 'NP',
+                        'abandon' => 'AB',
+                        default => number_format($entry['points_e2'], 2, ',', ''),
+                    };
+
+                    fputcsv($handle, [
+                        $index + 1,
+                        $entry['cavalier_prenom'] . ' ' . $entry['cavalier_nom'],
+                        $entry['club'] ?? '',
+                        $entry['cheval_nom'],
+                        $ptsE1,
+                        $entry['temps_e1'] ? number_format($entry['temps_e1'], 2, ',', '') : '',
+                        $ptsE2,
+                        $entry['temps_e2'] ? number_format($entry['temps_e2'], 2, ',', '') : '',
+                        number_format($entry['total_points'], 2, ',', ''),
+                        number_format($entry['total_temps'], 2, ',', ''),
+                    ], ';');
+                } else {
+                    fputcsv($handle, [
+                        $index + 1,
+                        $entry['cavalier_prenom'] . ' ' . $entry['cavalier_nom'],
+                        $entry['club'] ?? '',
+                        $entry['cheval_nom'],
+                        $ptsE1,
+                        $entry['temps_e1'] ? number_format($entry['temps_e1'], 2, ',', '') : '',
+                    ], ';');
+                }
             }
 
             fclose($handle);
@@ -529,7 +619,7 @@ class ChampionnatController extends Controller
             ->sortBy('cavalier_nom')
             ->values();
 
-        return view('concours.championnats.doublons', compact('concours', 'doublons', 'existingExclusions'));
+        return view('concours.championnats.doublons', compact('concours', 'championnats', 'doublons', 'existingExclusions'));
     }
 
     public function storeDoublons(Request $request, Concours $concours)
