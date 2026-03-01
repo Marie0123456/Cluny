@@ -362,7 +362,6 @@ class ChampionnatController extends Controller
                 'chevaux.id as cheval_id',
                 'chevaux.nom as cheval_nom',
             )
-            ->orderByRaw('CAST(engagements.numero_depart AS UNSIGNED), engagements.numero_depart')
             ->get();
 
         // Resultats epreuve 1: build classement (rank by points then temps)
@@ -388,6 +387,53 @@ class ChampionnatController extends Controller
             ->map(fn ($e) => $e->cavalier_id . '-' . $e->cheval_id)
             ->flip();
 
+        // Build rows with sort info
+        $rows = $engagesE2->map(function ($e) use ($classementE1, $participantKeys, $exclusionKeys) {
+            $coupleKey = $e->cavalier_id . '-' . $e->cheval_id;
+            $clE1 = $classementE1[$coupleKey] ?? null;
+
+            if ($participantKeys->has($coupleKey)) {
+                if ($exclusionKeys->has($coupleKey)) {
+                    $participation = 'Exclu';
+                    $sortGroup = 1; // Excluded: after non-participants
+                } else {
+                    $participation = 'Oui';
+                    $sortGroup = 2; // Participants: last, reverse E1 order
+                }
+            } else {
+                $participation = 'Non';
+                $sortGroup = 0; // Non-participants: first
+            }
+
+            return [
+                'numero_depart' => $e->numero_depart,
+                'cavalier_prenom' => $e->cavalier_prenom,
+                'cavalier_nom' => $e->cavalier_nom,
+                'club' => $e->club,
+                'cheval_nom' => $e->cheval_nom,
+                'classement_e1' => $clE1,
+                'participation' => $participation,
+                'sort_group' => $sortGroup,
+            ];
+        });
+
+        // Sort: group 0 (Non) -> group 1 (Exclu) -> group 2 (Oui, reverse E1 classement)
+        // Within group 2: highest classement first (worst result first, best last)
+        // Within group 2 without E1 result: before those with results
+        $rows = $rows->sort(function ($a, $b) {
+            if ($a['sort_group'] !== $b['sort_group']) {
+                return $a['sort_group'] <=> $b['sort_group'];
+            }
+            if ($a['sort_group'] === 2) {
+                // Both participants: reverse E1 classement (highest rank number first)
+                $aRank = $a['classement_e1'] ?? 0;
+                $bRank = $b['classement_e1'] ?? 0;
+                return $bRank <=> $aRank;
+            }
+            // Within non-participants or excluded: by name
+            return ($a['cavalier_nom'] . $a['cavalier_prenom']) <=> ($b['cavalier_nom'] . $b['cavalier_prenom']);
+        })->values();
+
         $filename = 'LDP_' . str_replace(' ', '_', $championnat->nom) . '_E2.csv';
 
         $headers = [
@@ -395,7 +441,7 @@ class ChampionnatController extends Controller
             'Content-Disposition' => "attachment; filename=\"$filename\"",
         ];
 
-        $callback = function () use ($engagesE2, $classementE1, $participantKeys, $exclusionKeys) {
+        $callback = function () use ($rows) {
             $handle = fopen('php://output', 'w');
             fwrite($handle, "\xEF\xBB\xBF");
 
@@ -404,32 +450,15 @@ class ChampionnatController extends Controller
                 'Classement epreuve 1', 'Participation Championnat',
             ], ';');
 
-            $numero = 0;
-            foreach ($engagesE2 as $e) {
-                $numero++;
-                $coupleKey = $e->cavalier_id . '-' . $e->cheval_id;
-
-                $clE1 = $classementE1[$coupleKey] ?? '';
-
-                $participation = '';
-                if ($participantKeys->has($coupleKey)) {
-                    if ($exclusionKeys->has($coupleKey)) {
-                        $participation = 'Exclu';
-                    } else {
-                        $participation = 'Oui';
-                    }
-                } else {
-                    $participation = 'Non';
-                }
-
+            foreach ($rows as $index => $row) {
                 fputcsv($handle, [
-                    $numero,
-                    $e->numero_depart ?? '',
-                    $e->cavalier_prenom . ' ' . $e->cavalier_nom,
-                    $e->club ?? '',
-                    $e->cheval_nom,
-                    $clE1,
-                    $participation,
+                    $index + 1,
+                    $row['numero_depart'] ?? '',
+                    $row['cavalier_prenom'] . ' ' . $row['cavalier_nom'],
+                    $row['club'] ?? '',
+                    $row['cheval_nom'],
+                    $row['classement_e1'] ?? '',
+                    $row['participation'],
                 ], ';');
             }
 
