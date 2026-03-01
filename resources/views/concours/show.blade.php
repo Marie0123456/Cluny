@@ -130,18 +130,9 @@
             <!-- Import CSV -->
             @can('admin')
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                    <h3 class="text-lg font-medium text-gray-900 mb-4">Importer les engages</h3>
+                    <h3 class="text-lg font-medium text-gray-900 mb-4">Importer les engages ({{ $concours->type_ffe_sif ? 'FFE SIF' : 'FFE Compet' }})</h3>
                     <form method="POST" action="{{ route('concours.import.store', $concours) }}" enctype="multipart/form-data" class="flex items-end space-x-4">
                         @csrf
-                        <div>
-                            <label for="format" class="block text-sm font-medium text-gray-700 mb-1">Format</label>
-                            <select name="format" id="format" required
-                                class="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
-                                <option value="ffe_compet">FFE Compet</option>
-                                <option value="ffe_sif">FFE SIF</option>
-                            </select>
-                            @error('format') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
-                        </div>
                         <div class="flex-1">
                             <label for="fichier" class="block text-sm font-medium text-gray-700 mb-1">Fichier CSV/TXT</label>
                             <input type="file" name="fichier" id="fichier" accept=".csv,.txt,.tsv" required

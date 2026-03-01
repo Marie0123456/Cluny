@@ -18,13 +18,13 @@ class ImportController extends Controller
 
         $request->validate([
             'fichier' => 'required|file|max:10240',
-            'format' => 'required|in:ffe_compet,ffe_sif',
         ]);
 
         $file = $request->file('fichier');
-        $format = $request->input('format');
 
-        $service = $format === 'ffe_sif'
+        $format = $concours->type_ffe_sif ? 'ffe_sif' : 'ffe_compet';
+
+        $service = $concours->type_ffe_sif
             ? new SifCsvImportService()
             : new CsvImportService();
 
