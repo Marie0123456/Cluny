@@ -344,6 +344,101 @@ class ChampionnatController extends Controller
         return response()->stream($callback, 200, $headers);
     }
 
+    public function exportLDP(Concours $concours, Championnat $championnat)
+    {
+        $championnat->load(['epreuve1', 'epreuve2']);
+
+        // All engages of epreuve 2 with cavalier/cheval info
+        $engagesE2 = DB::table('engagements')
+            ->join('cavaliers', 'cavaliers.id', '=', 'engagements.cavalier_id')
+            ->join('chevaux', 'chevaux.id', '=', 'engagements.cheval_id')
+            ->where('engagements.epreuve_id', $championnat->epreuve2_id)
+            ->select(
+                'engagements.numero_depart',
+                'cavaliers.id as cavalier_id',
+                'cavaliers.nom as cavalier_nom',
+                'cavaliers.prenom as cavalier_prenom',
+                'cavaliers.club',
+                'chevaux.id as cheval_id',
+                'chevaux.nom as cheval_nom',
+            )
+            ->orderByRaw('CAST(engagements.numero_depart AS UNSIGNED), engagements.numero_depart')
+            ->get();
+
+        // Resultats epreuve 1: build classement (rank by points then temps)
+        $resultatsE1 = $championnat->resultats()
+            ->where('epreuve_id', $championnat->epreuve1_id)
+            ->get()
+            ->sortBy([['points', 'asc'], ['temps', 'asc']])
+            ->values();
+
+        // Map couple key => classement rank
+        $classementE1 = [];
+        foreach ($resultatsE1 as $index => $r) {
+            $key = $r->cavalier_id . '-' . $r->cheval_id;
+            $classementE1[$key] = $index + 1;
+        }
+
+        // Participants of this championnat (couples in both epreuves)
+        $participants = $championnat->participants();
+        $participantKeys = $participants->map(fn ($p) => $p->cavalier_id . '-' . $p->cheval_id)->flip();
+
+        // Exclusions
+        $exclusionKeys = $championnat->exclusions
+            ->map(fn ($e) => $e->cavalier_id . '-' . $e->cheval_id)
+            ->flip();
+
+        $filename = 'LDP_' . str_replace(' ', '_', $championnat->nom) . '_E2.csv';
+
+        $headers = [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => "attachment; filename=\"$filename\"",
+        ];
+
+        $callback = function () use ($engagesE2, $classementE1, $participantKeys, $exclusionKeys) {
+            $handle = fopen('php://output', 'w');
+            fwrite($handle, "\xEF\xBB\xBF");
+
+            fputcsv($handle, [
+                'Numero', 'Depart epreuve 2', 'Cavalier', 'Club', 'Cheval',
+                'Classement epreuve 1', 'Participation Championnat',
+            ], ';');
+
+            $numero = 0;
+            foreach ($engagesE2 as $e) {
+                $numero++;
+                $coupleKey = $e->cavalier_id . '-' . $e->cheval_id;
+
+                $clE1 = $classementE1[$coupleKey] ?? '';
+
+                $participation = '';
+                if ($participantKeys->has($coupleKey)) {
+                    if ($exclusionKeys->has($coupleKey)) {
+                        $participation = 'Exclu';
+                    } else {
+                        $participation = 'Oui';
+                    }
+                } else {
+                    $participation = 'Non';
+                }
+
+                fputcsv($handle, [
+                    $numero,
+                    $e->numero_depart ?? '',
+                    $e->cavalier_prenom . ' ' . $e->cavalier_nom,
+                    $e->club ?? '',
+                    $e->cheval_nom,
+                    $clE1,
+                    $participation,
+                ], ';');
+            }
+
+            fclose($handle);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
     public function doublons(Concours $concours)
     {
         $concours->loadCount(['epreuves', 'engagements', 'modifications', 'ventes']);

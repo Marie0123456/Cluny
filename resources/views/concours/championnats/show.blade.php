@@ -84,6 +84,16 @@
                 </div>
             </div>
 
+            {{-- Bouton Exporter LDP (visible quand epreuve 1 a des resultats) --}}
+            @if ($resultatsEpreuve1->isNotEmpty())
+                <div class="mb-6">
+                    <a href="{{ route('concours.championnats.export-ldp', [$concours, $championnat]) }}"
+                        class="inline-flex items-center px-4 py-2 bg-amber-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-amber-700 transition">
+                        Exporter LDP Epreuve 2
+                    </a>
+                </div>
+            @endif
+
             {{-- Classement General du Championnat --}}
             @if ($classementGeneral->isNotEmpty())
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
