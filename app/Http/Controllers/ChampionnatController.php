@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Championnat;
+use App\Models\ChampionnatExclusion;
 use App\Models\Concours;
 use Illuminate\Http\Request;
 
@@ -42,7 +43,11 @@ class ChampionnatController extends Controller
         $championnat->load(['epreuve1', 'epreuve2']);
         $participants = $championnat->participants();
 
-        return view('concours.championnats.show', compact('concours', 'championnat', 'participants'));
+        $exclusionKeys = $championnat->exclusions
+            ->map(fn ($e) => $e->cavalier_id . '-' . $e->cheval_id)
+            ->flip();
+
+        return view('concours.championnats.show', compact('concours', 'championnat', 'participants', 'exclusionKeys'));
     }
 
     public function doublons(Concours $concours)
@@ -50,6 +55,12 @@ class ChampionnatController extends Controller
         $concours->loadCount(['epreuves', 'engagements', 'modifications', 'ventes']);
 
         $championnats = $concours->championnats()->with(['epreuve1', 'epreuve2'])->get();
+
+        // Existing exclusions keyed by "coupleKey-championnatId"
+        $existingExclusions = ChampionnatExclusion::whereIn('championnat_id', $championnats->pluck('id'))
+            ->get()
+            ->map(fn ($e) => $e->cavalier_id . '-' . $e->cheval_id . '-' . $e->championnat_id)
+            ->flip();
 
         $coupleChampionnats = [];
 
@@ -61,6 +72,8 @@ class ChampionnatController extends Controller
 
                 if (!isset($coupleChampionnats[$key])) {
                     $coupleChampionnats[$key] = [
+                        'cavalier_id' => $participant->cavalier_id,
+                        'cheval_id' => $participant->cheval_id,
                         'cavalier_prenom' => $participant->cavalier_prenom,
                         'cavalier_nom' => $participant->cavalier_nom,
                         'club' => $participant->club,
@@ -69,7 +82,10 @@ class ChampionnatController extends Controller
                     ];
                 }
 
-                $coupleChampionnats[$key]['championnats'][] = $championnat->nom;
+                $coupleChampionnats[$key]['championnats'][] = [
+                    'id' => $championnat->id,
+                    'nom' => $championnat->nom,
+                ];
             }
         }
 
@@ -78,7 +94,50 @@ class ChampionnatController extends Controller
             ->sortBy('cavalier_nom')
             ->values();
 
-        return view('concours.championnats.doublons', compact('concours', 'doublons'));
+        return view('concours.championnats.doublons', compact('concours', 'doublons', 'existingExclusions'));
+    }
+
+    public function storeDoublons(Request $request, Concours $concours)
+    {
+        $selections = $request->input('selections', []);
+        $championnats = $concours->championnats()->get();
+        $championnatIds = $championnats->pluck('id');
+
+        // Clear existing exclusions for this concours
+        ChampionnatExclusion::whereIn('championnat_id', $championnatIds)->delete();
+
+        // For each couple, the selected value is the championnat they DO participate in.
+        // All others become exclusions.
+        foreach ($selections as $coupleKey => $selectedChampionnatId) {
+            [$cavalierId, $chevalId] = explode('-', $coupleKey);
+
+            // Find all championnats this couple participates in
+            $coupleChampionnatIds = [];
+            foreach ($championnats as $championnat) {
+                $isParticipant = $championnat->participants()
+                    ->where('cavalier_id', $cavalierId)
+                    ->where('cheval_id', $chevalId)
+                    ->isNotEmpty();
+
+                if ($isParticipant) {
+                    $coupleChampionnatIds[] = $championnat->id;
+                }
+            }
+
+            // Create exclusions for all championnats except the selected one
+            foreach ($coupleChampionnatIds as $champId) {
+                if ((int) $champId !== (int) $selectedChampionnatId) {
+                    ChampionnatExclusion::create([
+                        'championnat_id' => $champId,
+                        'cavalier_id' => $cavalierId,
+                        'cheval_id' => $chevalId,
+                    ]);
+                }
+            }
+        }
+
+        return redirect()->route('concours.championnats.doublons', $concours)
+            ->with('success', 'Selections enregistrees.');
     }
 
     public function destroy(Concours $concours, Championnat $championnat)

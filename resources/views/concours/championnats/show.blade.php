@@ -46,15 +46,19 @@
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
                             @foreach ($participants as $index => $participant)
-                                <tr>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $index + 1 }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                @php
+                                    $pKey = $participant->cavalier_id . '-' . $participant->cheval_id;
+                                    $isExcluded = $exclusionKeys->has($pKey);
+                                @endphp
+                                <tr class="{{ $isExcluded ? 'bg-orange-50 opacity-50' : '' }}">
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm {{ $isExcluded ? 'text-orange-400' : 'text-gray-500' }}">{{ $index + 1 }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium {{ $isExcluded ? 'text-orange-500' : 'text-gray-900' }}">
                                         {{ $participant->cavalier_prenom }} {{ $participant->cavalier_nom }}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm {{ $isExcluded ? 'text-orange-400' : 'text-gray-500' }}">
                                         {{ $participant->club ?? '-' }}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm {{ $isExcluded ? 'text-orange-400' : 'text-gray-500' }}">
                                         {{ $participant->cheval_nom }}
                                     </td>
                                 </tr>

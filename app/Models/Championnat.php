@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -29,6 +30,11 @@ class Championnat extends Model
     public function epreuve2(): BelongsTo
     {
         return $this->belongsTo(Epreuve::class, 'epreuve2_id');
+    }
+
+    public function exclusions(): HasMany
+    {
+        return $this->hasMany(ChampionnatExclusion::class);
     }
 
     /**
