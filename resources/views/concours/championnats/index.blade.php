@@ -71,7 +71,7 @@
                             <label for="epreuve2_id" class="block text-sm font-medium text-gray-700">Epreuve 2</label>
                             <select name="epreuve2_id" id="epreuve2_id"
                                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
-                                <option value="">Pas de seconde &eacute;preuve</option>
+                                <option value="" id="epreuve2-empty">-- Choisir --</option>
                                 @foreach ($epreuves as $epreuve)
                                     <option value="{{ $epreuve->id }}" {{ old('epreuve2_id') == $epreuve->id ? 'selected' : '' }}>
                                         {{ $epreuve->numero }} - {{ $epreuve->nom }}
@@ -172,11 +172,16 @@
             const epreuve2Select = document.getElementById('epreuve2_id');
 
             function toggleEpreuve2() {
-                if (disciplineSelect.value === 'Dressage') {
+                const disc = disciplineSelect.value;
+                if (disc === 'Dressage') {
+                    // Dressage: pas de seconde epreuve
                     epreuve2Wrapper.style.display = 'none';
                     epreuve2Select.value = '';
+                    epreuve2Select.removeAttribute('required');
                 } else {
+                    // CSO / Hunter: epreuve 2 obligatoire
                     epreuve2Wrapper.style.display = '';
+                    epreuve2Select.setAttribute('required', 'required');
                 }
             }
 

@@ -27,21 +27,22 @@ class ChampionnatController extends Controller
 
     public function store(Request $request, Concours $concours)
     {
+        $disc = DisciplineChampionnat::tryFrom($request->input('discipline'));
+        $needsE2 = $disc && $disc->hasTwoEpreuves();
+
         $validated = $request->validate([
             'nom' => 'required|string|max:255',
             'discipline' => 'required|in:CSO,Hunter,Dressage',
             'epreuve1_id' => 'required|exists:epreuves,id',
-            'epreuve2_id' => 'nullable|exists:epreuves,id|different:epreuve1_id',
+            'epreuve2_id' => [
+                $needsE2 ? 'required' : 'nullable',
+                'exists:epreuves,id',
+                'different:epreuve1_id',
+            ],
         ]);
 
-        // Convert empty string to null
-        if (empty($validated['epreuve2_id'])) {
-            $validated['epreuve2_id'] = null;
-        }
-
         // Dressage: toujours une seule epreuve
-        $disc = DisciplineChampionnat::from($validated['discipline']);
-        if (!$disc->hasTwoEpreuves()) {
+        if (!$needsE2) {
             $validated['epreuve2_id'] = null;
         }
 
