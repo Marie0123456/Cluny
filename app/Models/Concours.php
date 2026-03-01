@@ -66,4 +66,9 @@ class Concours extends Model
     {
         return $this->hasManyThrough(Engagement::class, Epreuve::class);
     }
+
+    public function championnats(): HasMany
+    {
+        return $this->hasMany(Championnat::class);
+    }
 }

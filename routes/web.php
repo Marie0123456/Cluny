@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\CavalierSearchController;
 use App\Http\Controllers\Api\ChevalSearchController;
 use App\Http\Controllers\Api\ClientFacturationController;
 use App\Http\Controllers\Api\EpreuveController as ApiEpreuveController;
+use App\Http\Controllers\ChampionnatController;
 use App\Http\Controllers\ConcoursController;
 use App\Http\Controllers\EngageController;
 use App\Http\Controllers\EpreuveController;
@@ -58,6 +59,12 @@ Route::middleware(['auth'])->group(function () {
 
         // Statistiques (FFE SIF Open)
         Route::get('/statistiques', [StatistiqueController::class, 'index'])->name('statistiques.index');
+
+        // Championnats (FFE SIF Open)
+        Route::get('/championnats', [ChampionnatController::class, 'index'])->name('championnats.index');
+        Route::post('/championnats', [ChampionnatController::class, 'store'])->name('championnats.store');
+        Route::get('/championnats/{championnat}', [ChampionnatController::class, 'show'])->name('championnats.show');
+        Route::delete('/championnats/{championnat}', [ChampionnatController::class, 'destroy'])->name('championnats.destroy');
     });
 
     // Modification actions
