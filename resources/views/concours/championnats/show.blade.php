@@ -9,6 +9,12 @@
         </div>
     </x-slot>
 
+    @php
+        $usePct = $championnat->discipline->usesPercentage();
+        $valLabel = $usePct ? '%' : 'Pts';
+        $hasE2 = $championnat->epreuve2 !== null;
+    @endphp
+
     <div class="py-6">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             @include('concours.partials.tabs', ['active' => 'championnats'])
@@ -26,10 +32,17 @@
 
             {{-- En-tete du championnat --}}
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 mb-6">
-                <h3 class="text-lg font-medium text-gray-900">{{ $championnat->nom }}</h3>
+                <div class="flex items-center gap-3">
+                    <h3 class="text-lg font-medium text-gray-900">{{ $championnat->nom }}</h3>
+                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium
+                        {{ $championnat->discipline === \App\Enums\DisciplineChampionnat::CSO ? 'bg-blue-100 text-blue-800' : '' }}
+                        {{ $championnat->discipline === \App\Enums\DisciplineChampionnat::HUNTER ? 'bg-green-100 text-green-800' : '' }}
+                        {{ $championnat->discipline === \App\Enums\DisciplineChampionnat::DRESSAGE ? 'bg-purple-100 text-purple-800' : '' }}
+                    ">{{ $championnat->discipline->value }}</span>
+                </div>
                 <div class="mt-2 flex flex-wrap gap-4 text-sm text-gray-500">
                     <span>Epreuve 1 : <span class="font-medium text-gray-700">{{ $championnat->epreuve1->numero }} - {{ $championnat->epreuve1->nom }}</span></span>
-                    @if ($championnat->epreuve2)
+                    @if ($hasE2)
                         <span>Epreuve 2 : <span class="font-medium text-gray-700">{{ $championnat->epreuve2->numero }} - {{ $championnat->epreuve2->nom }}</span></span>
                     @else
                         <span class="italic text-gray-400">Pas de seconde &eacute;preuve</span>
@@ -79,7 +92,7 @@
                     </div>
 
                     {{-- Import Epreuve 2 --}}
-                    @if ($championnat->epreuve2)
+                    @if ($hasE2)
                         <div>
                             <form action="{{ route('concours.championnats.import-resultats', [$concours, $championnat]) }}" method="POST" enctype="multipart/form-data">
                                 @csrf
@@ -119,7 +132,7 @@
             </div>
 
             {{-- Bouton Exporter LDP (visible quand epreuve 2 existe et epreuve 1 a des resultats) --}}
-            @if ($championnat->epreuve2 && $resultatsEpreuve1->isNotEmpty())
+            @if ($hasE2 && $resultatsEpreuve1->isNotEmpty())
                 <div class="mb-6">
                     <a href="{{ route('concours.championnats.export-ldp', [$concours, $championnat]) }}"
                         class="inline-flex items-center px-4 py-2 bg-amber-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-amber-700 transition">
@@ -146,13 +159,19 @@
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cavalier</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cheval</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Club</th>
-                                    <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">{{ $championnat->epreuve2 ? 'Pts E1' : 'Points' }}</th>
-                                    <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">{{ $championnat->epreuve2 ? 'Tps E1' : 'Temps' }}</th>
-                                    @if ($championnat->epreuve2)
-                                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Pts E2</th>
-                                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Tps E2</th>
-                                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider font-bold">Total Pts</th>
-                                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider font-bold">Total Tps</th>
+                                    <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">{{ $hasE2 ? $valLabel . ' E1' : $valLabel }}</th>
+                                    @if (!$usePct)
+                                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">{{ $hasE2 ? 'Tps E1' : 'Temps' }}</th>
+                                    @endif
+                                    @if ($hasE2)
+                                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">{{ $valLabel }} E2</th>
+                                        @if (!$usePct)
+                                            <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Tps E2</th>
+                                        @endif
+                                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider font-bold">Total {{ $valLabel }}</th>
+                                        @if (!$usePct)
+                                            <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider font-bold">Total Tps</th>
+                                        @endif
                                     @endif
                                 </tr>
                             </thead>
@@ -184,10 +203,12 @@
                                             @else {{ number_format($entry['points_e1'], 2, ',', '') }}
                                             @endif
                                         </td>
-                                        <td class="px-4 py-3 whitespace-nowrap text-sm text-center {{ $entry['is_excluded'] ? 'text-orange-400' : 'text-gray-500' }}">
-                                            {{ $entry['temps_e1'] ? number_format($entry['temps_e1'], 2, ',', '') : '-' }}
-                                        </td>
-                                        @if ($championnat->epreuve2)
+                                        @if (!$usePct)
+                                            <td class="px-4 py-3 whitespace-nowrap text-sm text-center {{ $entry['is_excluded'] ? 'text-orange-400' : 'text-gray-500' }}">
+                                                {{ $entry['temps_e1'] ? number_format($entry['temps_e1'], 2, ',', '') : '-' }}
+                                            </td>
+                                        @endif
+                                        @if ($hasE2)
                                             <td class="px-4 py-3 whitespace-nowrap text-sm text-center {{ $entry['is_excluded'] ? 'text-orange-400' : ($entry['statut_e2'] !== 'normal' ? 'text-red-500' : 'text-gray-500') }}">
                                                 @if ($entry['statut_e2'] === 'elimine') EL
                                                 @elseif ($entry['statut_e2'] === 'non_partant') NP
@@ -195,15 +216,19 @@
                                                 @else {{ number_format($entry['points_e2'], 2, ',', '') }}
                                                 @endif
                                             </td>
-                                            <td class="px-4 py-3 whitespace-nowrap text-sm text-center {{ $entry['is_excluded'] ? 'text-orange-400' : 'text-gray-500' }}">
-                                                {{ $entry['temps_e2'] ? number_format($entry['temps_e2'], 2, ',', '') : '-' }}
-                                            </td>
+                                            @if (!$usePct)
+                                                <td class="px-4 py-3 whitespace-nowrap text-sm text-center {{ $entry['is_excluded'] ? 'text-orange-400' : 'text-gray-500' }}">
+                                                    {{ $entry['temps_e2'] ? number_format($entry['temps_e2'], 2, ',', '') : '-' }}
+                                                </td>
+                                            @endif
                                             <td class="px-4 py-3 whitespace-nowrap text-sm text-center font-bold {{ $entry['is_excluded'] ? 'text-orange-400' : 'text-gray-900' }}">
                                                 {{ number_format($entry['total_points'], 2, ',', '') }}
                                             </td>
-                                            <td class="px-4 py-3 whitespace-nowrap text-sm text-center font-bold {{ $entry['is_excluded'] ? 'text-orange-400' : 'text-gray-900' }}">
-                                                {{ number_format($entry['total_temps'], 2, ',', '') }}
-                                            </td>
+                                            @if (!$usePct)
+                                                <td class="px-4 py-3 whitespace-nowrap text-sm text-center font-bold {{ $entry['is_excluded'] ? 'text-orange-400' : 'text-gray-900' }}">
+                                                    {{ number_format($entry['total_temps'], 2, ',', '') }}
+                                                </td>
+                                            @endif
                                         @endif
                                     </tr>
                                 @endforeach
@@ -215,7 +240,7 @@
 
             {{-- Classements par epreuve --}}
             @if ($resultatsEpreuve1->isNotEmpty() || $resultatsEpreuve2->isNotEmpty())
-                <div class="grid grid-cols-1 {{ $championnat->epreuve2 ? 'lg:grid-cols-2' : '' }} gap-6 mb-6">
+                <div class="grid grid-cols-1 {{ $hasE2 ? 'lg:grid-cols-2' : '' }} gap-6 mb-6">
                     {{-- Epreuve 1 --}}
                     @if ($resultatsEpreuve1->isNotEmpty())
                         <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
@@ -229,8 +254,10 @@
                                             <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Cl.</th>
                                             <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Cavalier</th>
                                             <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Cheval</th>
-                                            <th class="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase">Pts</th>
-                                            <th class="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase">Temps</th>
+                                            <th class="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase">{{ $valLabel }}</th>
+                                            @if (!$usePct)
+                                                <th class="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase">Temps</th>
+                                            @endif
                                         </tr>
                                     </thead>
                                     <tbody class="bg-white divide-y divide-gray-200">
@@ -246,9 +273,11 @@
                                                     @else {{ number_format($r->points, 2, ',', '') }}
                                                     @endif
                                                 </td>
-                                                <td class="px-3 py-2 whitespace-nowrap text-sm text-center text-gray-500">
-                                                    {{ $r->temps ? number_format($r->temps, 2, ',', '') : '-' }}
-                                                </td>
+                                                @if (!$usePct)
+                                                    <td class="px-3 py-2 whitespace-nowrap text-sm text-center text-gray-500">
+                                                        {{ $r->temps ? number_format($r->temps, 2, ',', '') : '-' }}
+                                                    </td>
+                                                @endif
                                             </tr>
                                         @endforeach
                                     </tbody>
@@ -258,7 +287,7 @@
                     @endif
 
                     {{-- Epreuve 2 --}}
-                    @if ($championnat->epreuve2 && $resultatsEpreuve2->isNotEmpty())
+                    @if ($hasE2 && $resultatsEpreuve2->isNotEmpty())
                         <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                             <div class="p-4 pb-0">
                                 <h4 class="text-sm font-medium text-gray-900">Epreuve 2 : {{ $championnat->epreuve2->numero }} - {{ $championnat->epreuve2->nom }}</h4>
@@ -270,8 +299,10 @@
                                             <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Cl.</th>
                                             <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Cavalier</th>
                                             <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Cheval</th>
-                                            <th class="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase">Pts</th>
-                                            <th class="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase">Temps</th>
+                                            <th class="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase">{{ $valLabel }}</th>
+                                            @if (!$usePct)
+                                                <th class="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase">Temps</th>
+                                            @endif
                                         </tr>
                                     </thead>
                                     <tbody class="bg-white divide-y divide-gray-200">
@@ -287,9 +318,11 @@
                                                     @else {{ number_format($r->points, 2, ',', '') }}
                                                     @endif
                                                 </td>
-                                                <td class="px-3 py-2 whitespace-nowrap text-sm text-center text-gray-500">
-                                                    {{ $r->temps ? number_format($r->temps, 2, ',', '') : '-' }}
-                                                </td>
+                                                @if (!$usePct)
+                                                    <td class="px-3 py-2 whitespace-nowrap text-sm text-center text-gray-500">
+                                                        {{ $r->temps ? number_format($r->temps, 2, ',', '') : '-' }}
+                                                    </td>
+                                                @endif
                                             </tr>
                                         @endforeach
                                     </tbody>
@@ -306,7 +339,13 @@
             </div>
             @if ($participants->isEmpty())
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                    <p class="text-gray-500 text-sm">Aucun couple cavalier/cheval ne participe aux deux epreuves.</p>
+                    <p class="text-gray-500 text-sm">
+                        @if ($hasE2)
+                            Aucun couple cavalier/cheval ne participe aux deux epreuves.
+                        @else
+                            Aucun couple cavalier/cheval engage dans cette epreuve.
+                        @endif
+                    </p>
                 </div>
             @else
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">

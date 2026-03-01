@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\DisciplineChampionnat;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -13,9 +14,17 @@ class Championnat extends Model
     protected $fillable = [
         'concours_id',
         'nom',
+        'discipline',
         'epreuve1_id',
         'epreuve2_id',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'discipline' => DisciplineChampionnat::class,
+        ];
+    }
 
     public function concours(): BelongsTo
     {

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\DisciplineChampionnat;
 use App\Models\Championnat;
 use App\Models\ChampionnatExclusion;
 use App\Models\ChampionnatResultat;
@@ -28,12 +29,19 @@ class ChampionnatController extends Controller
     {
         $validated = $request->validate([
             'nom' => 'required|string|max:255',
+            'discipline' => 'required|in:CSO,Hunter,Dressage',
             'epreuve1_id' => 'required|exists:epreuves,id',
             'epreuve2_id' => 'nullable|exists:epreuves,id|different:epreuve1_id',
         ]);
 
         // Convert empty string to null
         if (empty($validated['epreuve2_id'])) {
+            $validated['epreuve2_id'] = null;
+        }
+
+        // Dressage: toujours une seule epreuve
+        $disc = DisciplineChampionnat::from($validated['discipline']);
+        if (!$disc->hasTwoEpreuves()) {
             $validated['epreuve2_id'] = null;
         }
 
@@ -55,11 +63,15 @@ class ChampionnatController extends Controller
             ->flip();
 
         // Load resultats for each epreuve
+        $sortEpreuve = $championnat->discipline->higherIsBetter()
+            ? [['points', 'desc']]
+            : [['points', 'asc'], ['temps', 'asc']];
+
         $resultatsEpreuve1 = $championnat->resultats()
             ->where('epreuve_id', $championnat->epreuve1_id)
             ->with(['cavalier', 'cheval'])
             ->get()
-            ->sortBy([['points', 'asc'], ['temps', 'asc']])
+            ->sortBy($sortEpreuve)
             ->values();
 
         $resultatsEpreuve2 = collect();
@@ -68,7 +80,7 @@ class ChampionnatController extends Controller
                 ->where('epreuve_id', $championnat->epreuve2_id)
                 ->with(['cavalier', 'cheval'])
                 ->get()
-                ->sortBy([['points', 'asc'], ['temps', 'asc']])
+                ->sortBy($sortEpreuve)
                 ->values();
         }
 
@@ -160,6 +172,8 @@ class ChampionnatController extends Controller
             if ($chevalNom === '' || $cavalierNom === '') continue;
 
             // Parse points and statut
+            // CSO: penalty = 50 (high points = bad); Hunter/Dressage: penalty = 0 (low % = bad)
+            $penaltyValue = $championnat->discipline->higherIsBetter() ? 0 : 50;
             $statut = 'normal';
             $points = 0;
             $temps = null;
@@ -167,13 +181,13 @@ class ChampionnatController extends Controller
             $pointsLower = mb_strtolower($pointsRaw);
             if (str_contains($pointsLower, 'elimin') || str_contains($pointsLower, 'limin')) {
                 $statut = 'elimine';
-                $points = 50;
+                $points = $penaltyValue;
             } elseif (str_contains($pointsLower, 'non') && str_contains($pointsLower, 'partant')) {
                 $statut = 'non_partant';
-                $points = 50;
+                $points = $penaltyValue;
             } elseif (str_contains($pointsLower, 'abandon')) {
                 $statut = 'abandon';
-                $points = 50;
+                $points = $penaltyValue;
             } else {
                 $points = (float) str_replace(',', '.', $pointsRaw);
             }
@@ -270,19 +284,21 @@ class ChampionnatController extends Controller
             ]);
         }
 
-        // Sort by total points then total temps
-        $classement = $classement->sortBy([['total_points', 'asc'], ['total_temps', 'asc']])->values();
+        // Sort: CSO = lowest total first; Hunter = highest total first
+        if ($championnat->discipline->higherIsBetter()) {
+            $classement = $classement->sortByDesc('total_points')->values();
+        } else {
+            $classement = $classement->sortBy([['total_points', 'asc'], ['total_temps', 'asc']])->values();
+        }
 
         // Mark non-best results per cavalier as excluded (keep only best per cavalier)
         $bestCavalierSeen = [];
         $classement = $classement->map(function ($entry) use (&$bestCavalierSeen) {
             $cavId = $entry['cavalier_id'];
             if ($entry['is_excluded']) {
-                // Already excluded (doublons), keep as-is
                 return $entry;
             }
             if (isset($bestCavalierSeen[$cavId])) {
-                // This cavalier already has a better result, mark as excluded
                 $entry['is_excluded'] = true;
             } else {
                 $bestCavalierSeen[$cavId] = true;
@@ -298,9 +314,7 @@ class ChampionnatController extends Controller
         $resultats1 = $championnat->resultats()
             ->where('epreuve_id', $championnat->epreuve1_id)
             ->with(['cavalier', 'cheval'])
-            ->get()
-            ->sortBy([['points', 'asc'], ['temps', 'asc']])
-            ->values();
+            ->get();
 
         $classement = collect();
 
@@ -324,7 +338,12 @@ class ChampionnatController extends Controller
             ]);
         }
 
-        $classement = $classement->sortBy([['total_points', 'asc'], ['total_temps', 'asc']])->values();
+        // Sort: CSO/default = lowest first; Dressage = highest first
+        if ($championnat->discipline->higherIsBetter()) {
+            $classement = $classement->sortByDesc('total_points')->values();
+        } else {
+            $classement = $classement->sortBy([['total_points', 'asc'], ['total_temps', 'asc']])->values();
+        }
 
         // Mark non-best results per cavalier as excluded
         $bestCavalierSeen = [];
@@ -368,24 +387,36 @@ class ChampionnatController extends Controller
             'Content-Disposition' => "attachment; filename=\"$filename\"",
         ];
 
-        $callback = function () use ($exported, $championnat, $hasE2) {
+        $usePct = $championnat->discipline->usesPercentage();
+        $valLabel = $usePct ? '%' : 'Points';
+
+        $callback = function () use ($exported, $championnat, $hasE2, $usePct, $valLabel) {
             $handle = fopen('php://output', 'w');
             fwrite($handle, "\xEF\xBB\xBF");
 
             if ($hasE2) {
-                fputcsv($handle, [
+                $headerRow = [
                     'Classement', 'Cavalier', 'Club', 'Cheval',
-                    'Points ' . $championnat->epreuve1->numero,
-                    'Temps ' . $championnat->epreuve1->numero,
-                    'Points ' . $championnat->epreuve2->numero,
-                    'Temps ' . $championnat->epreuve2->numero,
-                    'Total Points', 'Total Temps',
-                ], ';');
+                    $valLabel . ' ' . $championnat->epreuve1->numero,
+                ];
+                if (!$usePct) {
+                    $headerRow[] = 'Temps ' . $championnat->epreuve1->numero;
+                }
+                $headerRow[] = $valLabel . ' ' . $championnat->epreuve2->numero;
+                if (!$usePct) {
+                    $headerRow[] = 'Temps ' . $championnat->epreuve2->numero;
+                }
+                $headerRow[] = 'Total ' . $valLabel;
+                if (!$usePct) {
+                    $headerRow[] = 'Total Temps';
+                }
+                fputcsv($handle, $headerRow, ';');
             } else {
-                fputcsv($handle, [
-                    'Classement', 'Cavalier', 'Club', 'Cheval',
-                    'Points', 'Temps',
-                ], ';');
+                $headerRow = ['Classement', 'Cavalier', 'Club', 'Cheval', $valLabel];
+                if (!$usePct) {
+                    $headerRow[] = 'Temps';
+                }
+                fputcsv($handle, $headerRow, ';');
             }
 
             foreach ($exported as $index => $entry) {
@@ -396,6 +427,17 @@ class ChampionnatController extends Controller
                     default => number_format($entry['points_e1'], 2, ',', ''),
                 };
 
+                $row = [
+                    $index + 1,
+                    $entry['cavalier_prenom'] . ' ' . $entry['cavalier_nom'],
+                    $entry['club'] ?? '',
+                    $entry['cheval_nom'],
+                    $ptsE1,
+                ];
+                if (!$usePct) {
+                    $row[] = $entry['temps_e1'] ? number_format($entry['temps_e1'], 2, ',', '') : '';
+                }
+
                 if ($hasE2) {
                     $ptsE2 = match ($entry['statut_e2']) {
                         'elimine' => 'EL',
@@ -403,29 +445,17 @@ class ChampionnatController extends Controller
                         'abandon' => 'AB',
                         default => number_format($entry['points_e2'], 2, ',', ''),
                     };
-
-                    fputcsv($handle, [
-                        $index + 1,
-                        $entry['cavalier_prenom'] . ' ' . $entry['cavalier_nom'],
-                        $entry['club'] ?? '',
-                        $entry['cheval_nom'],
-                        $ptsE1,
-                        $entry['temps_e1'] ? number_format($entry['temps_e1'], 2, ',', '') : '',
-                        $ptsE2,
-                        $entry['temps_e2'] ? number_format($entry['temps_e2'], 2, ',', '') : '',
-                        number_format($entry['total_points'], 2, ',', ''),
-                        number_format($entry['total_temps'], 2, ',', ''),
-                    ], ';');
-                } else {
-                    fputcsv($handle, [
-                        $index + 1,
-                        $entry['cavalier_prenom'] . ' ' . $entry['cavalier_nom'],
-                        $entry['club'] ?? '',
-                        $entry['cheval_nom'],
-                        $ptsE1,
-                        $entry['temps_e1'] ? number_format($entry['temps_e1'], 2, ',', '') : '',
-                    ], ';');
+                    $row[] = $ptsE2;
+                    if (!$usePct) {
+                        $row[] = $entry['temps_e2'] ? number_format($entry['temps_e2'], 2, ',', '') : '';
+                    }
+                    $row[] = number_format($entry['total_points'], 2, ',', '');
+                    if (!$usePct) {
+                        $row[] = number_format($entry['total_temps'], 2, ',', '');
+                    }
                 }
+
+                fputcsv($handle, $row, ';');
             }
 
             fclose($handle);
@@ -454,11 +484,14 @@ class ChampionnatController extends Controller
             )
             ->get();
 
-        // Resultats epreuve 1: build classement (rank by points then temps)
+        // Resultats epreuve 1: build classement
+        $sortE1 = $championnat->discipline->higherIsBetter()
+            ? [['points', 'desc']]
+            : [['points', 'asc'], ['temps', 'asc']];
         $resultatsE1 = $championnat->resultats()
             ->where('epreuve_id', $championnat->epreuve1_id)
             ->get()
-            ->sortBy([['points', 'asc'], ['temps', 'asc']])
+            ->sortBy($sortE1)
             ->values();
 
         // Map couple key => classement rank

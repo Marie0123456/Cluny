@@ -25,13 +25,28 @@
 
                 <form action="{{ route('concours.championnats.store', $concours) }}" method="POST">
                     @csrf
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                         <div>
                             <label for="nom" class="block text-sm font-medium text-gray-700">Nom du championnat</label>
                             <input type="text" name="nom" id="nom" required value="{{ old('nom') }}"
                                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                                 placeholder="Ex: Championnat Club 2">
                             @error('nom')
+                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <div>
+                            <label for="discipline" class="block text-sm font-medium text-gray-700">Discipline</label>
+                            <select name="discipline" id="discipline" required
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                                @foreach (\App\Enums\DisciplineChampionnat::cases() as $disc)
+                                    <option value="{{ $disc->value }}" {{ old('discipline', 'CSO') == $disc->value ? 'selected' : '' }}>
+                                        {{ $disc->value }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            @error('discipline')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                             @enderror
                         </div>
@@ -52,7 +67,7 @@
                             @enderror
                         </div>
 
-                        <div>
+                        <div id="epreuve2-wrapper">
                             <label for="epreuve2_id" class="block text-sm font-medium text-gray-700">Epreuve 2</label>
                             <select name="epreuve2_id" id="epreuve2_id"
                                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
@@ -99,6 +114,7 @@
                         <thead class="bg-gray-50">
                             <tr>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nom</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Discipline</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Epreuve 1</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Epreuve 2</th>
                                 <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
@@ -112,6 +128,13 @@
                                             class="text-indigo-600 hover:text-indigo-900">
                                             {{ $championnat->nom }}
                                         </a>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium
+                                            {{ $championnat->discipline === \App\Enums\DisciplineChampionnat::CSO ? 'bg-blue-100 text-blue-800' : '' }}
+                                            {{ $championnat->discipline === \App\Enums\DisciplineChampionnat::HUNTER ? 'bg-green-100 text-green-800' : '' }}
+                                            {{ $championnat->discipline === \App\Enums\DisciplineChampionnat::DRESSAGE ? 'bg-purple-100 text-purple-800' : '' }}
+                                        ">{{ $championnat->discipline->value }}</span>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                         {{ $championnat->epreuve1->numero }} - {{ $championnat->epreuve1->nom }}
@@ -141,4 +164,24 @@
             @endif
         </div>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const disciplineSelect = document.getElementById('discipline');
+            const epreuve2Wrapper = document.getElementById('epreuve2-wrapper');
+            const epreuve2Select = document.getElementById('epreuve2_id');
+
+            function toggleEpreuve2() {
+                if (disciplineSelect.value === 'Dressage') {
+                    epreuve2Wrapper.style.display = 'none';
+                    epreuve2Select.value = '';
+                } else {
+                    epreuve2Wrapper.style.display = '';
+                }
+            }
+
+            disciplineSelect.addEventListener('change', toggleEpreuve2);
+            toggleEpreuve2();
+        });
+    </script>
 </x-app-layout>
