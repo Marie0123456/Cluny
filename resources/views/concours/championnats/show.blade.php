@@ -87,8 +87,12 @@
             {{-- Classement General du Championnat --}}
             @if ($classementGeneral->isNotEmpty())
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
-                    <div class="p-6 pb-0">
+                    <div class="p-6 pb-0 flex items-center justify-between">
                         <h4 class="text-md font-medium text-gray-900">Classement General - {{ $championnat->nom }}</h4>
+                        <a href="{{ route('concours.championnats.export-resultats', [$concours, $championnat]) }}"
+                            class="inline-flex items-center px-3 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 transition">
+                            Exporter CSV
+                        </a>
                     </div>
                     <div class="overflow-x-auto">
                         <table class="min-w-full divide-y divide-gray-200">

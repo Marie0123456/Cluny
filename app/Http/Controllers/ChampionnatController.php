@@ -253,7 +253,95 @@ class ChampionnatController extends Controller
             ]);
         }
 
-        return $classement->sortBy([['total_points', 'asc'], ['total_temps', 'asc']])->values();
+        // Sort by total points then total temps
+        $classement = $classement->sortBy([['total_points', 'asc'], ['total_temps', 'asc']])->values();
+
+        // Mark non-best results per cavalier as excluded (keep only best per cavalier)
+        $bestCavalierSeen = [];
+        $classement = $classement->map(function ($entry) use (&$bestCavalierSeen) {
+            $cavId = $entry['cavalier_id'];
+            if ($entry['is_excluded']) {
+                // Already excluded (doublons), keep as-is
+                return $entry;
+            }
+            if (isset($bestCavalierSeen[$cavId])) {
+                // This cavalier already has a better result, mark as excluded
+                $entry['is_excluded'] = true;
+            } else {
+                $bestCavalierSeen[$cavId] = true;
+            }
+            return $entry;
+        });
+
+        return $classement;
+    }
+
+    public function exportResultats(Concours $concours, Championnat $championnat)
+    {
+        $championnat->load(['epreuve1', 'epreuve2']);
+
+        $exclusionKeys = $championnat->exclusions
+            ->map(fn ($e) => $e->cavalier_id . '-' . $e->cheval_id)
+            ->flip();
+
+        $classement = $this->calculerClassement($championnat, $exclusionKeys);
+
+        // Filter: only non-excluded entries (one per cavalier, best result)
+        $exported = $classement->filter(fn ($e) => !$e['is_excluded'])->values();
+
+        $filename = 'classement_' . str_replace(' ', '_', $championnat->nom) . '.csv';
+
+        $headers = [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => "attachment; filename=\"$filename\"",
+        ];
+
+        $callback = function () use ($exported, $championnat) {
+            $handle = fopen('php://output', 'w');
+            // BOM for Excel UTF-8
+            fwrite($handle, "\xEF\xBB\xBF");
+
+            fputcsv($handle, [
+                'Classement', 'Cavalier', 'Club', 'Cheval',
+                'Points ' . $championnat->epreuve1->numero,
+                'Temps ' . $championnat->epreuve1->numero,
+                'Points ' . $championnat->epreuve2->numero,
+                'Temps ' . $championnat->epreuve2->numero,
+                'Total Points', 'Total Temps',
+            ], ';');
+
+            foreach ($exported as $index => $entry) {
+                $ptsE1 = match ($entry['statut_e1']) {
+                    'elimine' => 'EL',
+                    'non_partant' => 'NP',
+                    'abandon' => 'AB',
+                    default => number_format($entry['points_e1'], 2, ',', ''),
+                };
+                $ptsE2 = match ($entry['statut_e2']) {
+                    'elimine' => 'EL',
+                    'non_partant' => 'NP',
+                    'abandon' => 'AB',
+                    default => number_format($entry['points_e2'], 2, ',', ''),
+                };
+
+                fputcsv($handle, [
+                    $index + 1,
+                    $entry['cavalier_prenom'] . ' ' . $entry['cavalier_nom'],
+                    $entry['club'] ?? '',
+                    $entry['cheval_nom'],
+                    $ptsE1,
+                    $entry['temps_e1'] ? number_format($entry['temps_e1'], 2, ',', '') : '',
+                    $ptsE2,
+                    $entry['temps_e2'] ? number_format($entry['temps_e2'], 2, ',', '') : '',
+                    number_format($entry['total_points'], 2, ',', ''),
+                    number_format($entry['total_temps'], 2, ',', ''),
+                ], ';');
+            }
+
+            fclose($handle);
+        };
+
+        return response()->stream($callback, 200, $headers);
     }
 
     public function doublons(Concours $concours)

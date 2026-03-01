@@ -67,6 +67,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/championnats/doublons', [ChampionnatController::class, 'storeDoublons'])->name('championnats.doublons.store');
         Route::get('/championnats/{championnat}', [ChampionnatController::class, 'show'])->name('championnats.show');
         Route::post('/championnats/{championnat}/import-resultats', [ChampionnatController::class, 'importResultats'])->name('championnats.import-resultats');
+        Route::get('/championnats/{championnat}/export-resultats', [ChampionnatController::class, 'exportResultats'])->name('championnats.export-resultats');
         Route::delete('/championnats/{championnat}', [ChampionnatController::class, 'destroy'])->name('championnats.destroy');
     });
 
