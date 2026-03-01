@@ -26,7 +26,7 @@
 
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 mb-6">
                 <h3 class="text-lg font-medium text-gray-900">Couples multi-championnats</h3>
-                <p class="mt-1 text-sm text-gray-500">Pour chaque couple, selectionnez le championnat auquel il participe. Il apparaitra en orange/effac&eacute; dans les autres.</p>
+                <p class="mt-1 text-sm text-gray-500">Pour chaque couple, cochez les championnats auxquels il participe. Les championnats d&eacute;coch&eacute;s apparaitront en orange/effac&eacute;.</p>
             </div>
 
             @if ($doublons->isEmpty())
@@ -51,12 +51,13 @@
                                 @foreach ($doublons as $index => $doublon)
                                     @php
                                         $coupleKey = $doublon['cavalier_id'] . '-' . $doublon['cheval_id'];
-                                        // Determine which championnat is currently selected (not excluded)
-                                        $selectedId = null;
+                                        // Determine which championnats are currently selected (not excluded)
+                                        // Default: all checked if no exclusions exist
+                                        $hasAnyExclusion = false;
                                         foreach ($doublon['championnats'] as $ch) {
-                                            $exclKey = $coupleKey . '-' . $ch['id'];
-                                            if (!$existingExclusions->has($exclKey)) {
-                                                $selectedId = $ch['id'];
+                                            if ($existingExclusions->has($coupleKey . '-' . $ch['id'])) {
+                                                $hasAnyExclusion = true;
+                                                break;
                                             }
                                         }
                                     @endphp
@@ -72,14 +73,20 @@
                                             {{ $doublon['cheval_nom'] }}
                                         </td>
                                         <td class="px-6 py-4 text-sm">
+                                            <input type="hidden" name="couples[]" value="{{ $coupleKey }}">
                                             <div class="flex flex-col gap-1">
                                                 @foreach ($doublon['championnats'] as $ch)
+                                                    @php
+                                                        $exclKey = $coupleKey . '-' . $ch['id'];
+                                                        // Checked if: no exclusions saved yet (default all), or not excluded
+                                                        $isChecked = !$hasAnyExclusion || !$existingExclusions->has($exclKey);
+                                                    @endphp
                                                     <label class="inline-flex items-center cursor-pointer">
-                                                        <input type="radio"
-                                                            name="selections[{{ $coupleKey }}]"
+                                                        <input type="checkbox"
+                                                            name="selections[{{ $coupleKey }}][]"
                                                             value="{{ $ch['id'] }}"
-                                                            {{ $selectedId == $ch['id'] ? 'checked' : '' }}
-                                                            class="h-4 w-4 text-indigo-600 border-gray-300 focus:ring-indigo-500">
+                                                            {{ $isChecked ? 'checked' : '' }}
+                                                            class="h-4 w-4 rounded text-indigo-600 border-gray-300 focus:ring-indigo-500">
                                                         <span class="ml-2 text-sm text-gray-700">{{ $ch['nom'] }}</span>
                                                     </label>
                                                 @endforeach

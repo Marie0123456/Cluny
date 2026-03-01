@@ -394,16 +394,26 @@ class ChampionnatController extends Controller
     public function storeDoublons(Request $request, Concours $concours)
     {
         $selections = $request->input('selections', []);
+        $allCouples = $request->input('couples', []);
         $championnats = $concours->championnats()->get();
         $championnatIds = $championnats->pluck('id');
 
         // Clear existing exclusions for this concours
         ChampionnatExclusion::whereIn('championnat_id', $championnatIds)->delete();
 
-        // For each couple, the selected value is the championnat they DO participate in.
-        // All others become exclusions.
-        foreach ($selections as $coupleKey => $selectedChampionnatId) {
+        // Ensure all couples are processed (even those with no checkbox checked)
+        foreach ($allCouples as $coupleKey) {
+            if (!isset($selections[$coupleKey])) {
+                $selections[$coupleKey] = [];
+            }
+        }
+
+        // For each couple, selections is an array of checked championnat IDs.
+        // Unchecked championnats become exclusions.
+        foreach ($selections as $coupleKey => $selectedChampionnatIds) {
             [$cavalierId, $chevalId] = explode('-', $coupleKey);
+
+            $selectedIds = array_map('intval', (array) $selectedChampionnatIds);
 
             // Find all championnats this couple participates in
             $coupleChampionnatIds = [];
@@ -418,9 +428,9 @@ class ChampionnatController extends Controller
                 }
             }
 
-            // Create exclusions for all championnats except the selected one
+            // Create exclusions for championnats that were NOT checked
             foreach ($coupleChampionnatIds as $champId) {
-                if ((int) $champId !== (int) $selectedChampionnatId) {
+                if (!in_array((int) $champId, $selectedIds, true)) {
                     ChampionnatExclusion::create([
                         'championnat_id' => $champId,
                         'cavalier_id' => $cavalierId,
