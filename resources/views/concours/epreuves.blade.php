@@ -175,7 +175,7 @@
                         @if ($concours->type_ffe_sif)
                             <code class="text-xs bg-gray-100 px-1.5 py-0.5 rounded">Discipline;Epreuve;Numero Depart;Licence;Nom;Prenom;Club;Sire;Cheval</code>
                         @else
-                            <code class="text-xs bg-gray-100 px-1.5 py-0.5 rounded">Epreuve_numero;Epreuve_nom;Epreuve_date;Num_depart;Licence;Nom;Prenom;Club;...</code>
+                            <code class="text-xs bg-gray-100 px-1.5 py-0.5 rounded">Epreuve_numero;Epreuve_nom;Epreuve_date;Num_depart;Nom;Prenom;Role_cavalier;Licence;Club;CRE;Departement;Num_dept;Dept_groom;Cheval;Role_cheval;SIRE;Age;Sexe;Robe;Race</code>
                         @endif
                     </p>
                     <form method="POST" action="{{ route('concours.import.store', $concours) }}" enctype="multipart/form-data" class="flex items-end space-x-4">
