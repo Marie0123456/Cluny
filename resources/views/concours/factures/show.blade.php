@@ -62,32 +62,46 @@
                             <thead class="bg-gray-50">
                                 <tr>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Client</th>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Produits</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Produit</th>
+                                    <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Qte</th>
+                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">P.U. TTC</th>
+                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">TVA</th>
+                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Total HT</th>
                                     <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Total TTC</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Paiement</th>
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200">
                                 @foreach ($ventes as $vente)
-                                    <tr>
-                                        <td class="px-4 py-3 text-sm font-medium text-gray-900">{{ $vente->nom_client }}</td>
-                                        <td class="px-4 py-3 text-sm text-gray-500">
-                                            @foreach ($vente->lignes as $ligne)
-                                                {{ $ligne->produit->nom }} x{{ $ligne->quantite }}@if (!$loop->last), @endif
-                                            @endforeach
-                                        </td>
-                                        <td class="px-4 py-3 text-sm text-gray-900 font-medium text-right">{{ number_format($vente->total_ttc, 2, ',', ' ') }} &euro;</td>
-                                        <td class="px-4 py-3 text-sm text-gray-500">
-                                            @if ($vente->paiement_cb)<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">CB</span>@endif
-                                            @if ($vente->paiement_especes)<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">Especes</span>@endif
-                                            @if ($vente->paiement_cheque)<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">Cheque</span>@endif
-                                        </td>
-                                    </tr>
+                                    @php $ligneCount = $vente->lignes->count(); @endphp
+                                    @foreach ($vente->lignes as $index => $ligne)
+                                        <tr class="{{ $index === 0 ? 'border-t-2 border-gray-300' : '' }}">
+                                            @if ($index === 0)
+                                                <td class="px-4 py-3 text-sm font-medium text-gray-900" rowspan="{{ $ligneCount }}">{{ $vente->nom_client }}</td>
+                                            @endif
+                                            <td class="px-4 py-3 text-sm text-gray-900">{{ $ligne->produit->nom }}</td>
+                                            <td class="px-4 py-3 text-sm text-gray-900 text-center">{{ $ligne->quantite }}</td>
+                                            <td class="px-4 py-3 text-sm text-gray-900 text-right">{{ number_format($ligne->prix_unitaire_ttc, 2, ',', ' ') }} &euro;</td>
+                                            <td class="px-4 py-3 text-sm text-gray-900 text-right">{{ number_format($ligne->produit->tva, 1) }}%</td>
+                                            @php
+                                                $totalHt = round($ligne->total_ttc / (1 + $ligne->produit->tva / 100), 2);
+                                            @endphp
+                                            <td class="px-4 py-3 text-sm text-gray-900 text-right">{{ number_format($totalHt, 2, ',', ' ') }} &euro;</td>
+                                            <td class="px-4 py-3 text-sm text-gray-900 font-medium text-right">{{ number_format($ligne->total_ttc, 2, ',', ' ') }} &euro;</td>
+                                            @if ($index === 0)
+                                                <td class="px-4 py-3 text-sm text-gray-500" rowspan="{{ $ligneCount }}">
+                                                    @if ($vente->paiement_cb)<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">CB</span>@endif
+                                                    @if ($vente->paiement_especes)<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">Especes</span>@endif
+                                                    @if ($vente->paiement_cheque)<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">Cheque</span>@endif
+                                                </td>
+                                            @endif
+                                        </tr>
+                                    @endforeach
                                 @endforeach
                             </tbody>
                             <tfoot class="bg-gray-50">
                                 <tr>
-                                    <td colspan="2" class="px-4 py-3 text-sm font-bold text-gray-900 text-right">Sous-total ventes</td>
+                                    <td colspan="6" class="px-4 py-3 text-sm font-bold text-gray-900 text-right">Sous-total ventes</td>
                                     <td class="px-4 py-3 text-sm font-bold text-gray-900 text-right">{{ number_format($totalVentes, 2, ',', ' ') }} &euro;</td>
                                     <td></td>
                                 </tr>
@@ -111,6 +125,7 @@
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cavalier</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cheval</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
+                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">PF</th>
                                     <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Prix</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Paiement</th>
                                 </tr>
@@ -127,6 +142,9 @@
                                             <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {{ $mod->type->badgeClass() }}">
                                                 {{ $mod->type->label() }}
                                             </span>
+                                        </td>
+                                        <td class="px-4 py-3 text-sm text-gray-900 text-right">
+                                            {{ $mod->pf ? number_format($mod->pf, 2, ',', ' ') . ' €' : '-' }}
                                         </td>
                                         <td class="px-4 py-3 text-sm text-gray-900 font-medium text-right">
                                             {{ $mod->prix ? number_format($mod->prix, 2, ',', ' ') . ' €' : '-' }}
@@ -145,7 +163,7 @@
                             </tbody>
                             <tfoot class="bg-gray-50">
                                 <tr>
-                                    <td colspan="4" class="px-4 py-3 text-sm font-bold text-gray-900 text-right">Sous-total modifications</td>
+                                    <td colspan="5" class="px-4 py-3 text-sm font-bold text-gray-900 text-right">Sous-total modifications</td>
                                     <td class="px-4 py-3 text-sm font-bold text-gray-900 text-right">{{ number_format($totalModifications, 2, ',', ' ') }} &euro;</td>
                                     <td></td>
                                 </tr>
