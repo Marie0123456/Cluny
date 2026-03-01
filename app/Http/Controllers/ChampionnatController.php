@@ -322,6 +322,10 @@ class ChampionnatController extends Controller
             $key = $r1->cavalier_id . '-' . $r1->cheval_id;
             $isExcluded = $exclusionKeys->has($key);
 
+            // Dressage libre: +1 au pourcentage final
+            $libreBonus = ($r1->libre && $championnat->discipline === DisciplineChampionnat::DRESSAGE) ? 1 : 0;
+            $totalPoints = (float) $r1->points + $libreBonus;
+
             $classement->push([
                 'cavalier_id' => $r1->cavalier_id,
                 'cheval_id' => $r1->cheval_id,
@@ -332,7 +336,8 @@ class ChampionnatController extends Controller
                 'points_e1' => (float) $r1->points,
                 'temps_e1' => $r1->temps,
                 'statut_e1' => $r1->statut,
-                'total_points' => (float) $r1->points,
+                'libre' => (bool) $r1->libre,
+                'total_points' => $totalPoints,
                 'total_temps' => $r1->temps ?? 0,
                 'is_excluded' => $isExcluded,
             ]);
@@ -416,6 +421,10 @@ class ChampionnatController extends Controller
                 if (!$usePct) {
                     $headerRow[] = 'Temps';
                 }
+                if ($championnat->discipline === DisciplineChampionnat::DRESSAGE) {
+                    $headerRow[] = 'Libre';
+                    $headerRow[] = 'Total %';
+                }
                 fputcsv($handle, $headerRow, ';');
             }
 
@@ -436,6 +445,11 @@ class ChampionnatController extends Controller
                 ];
                 if (!$usePct) {
                     $row[] = $entry['temps_e1'] ? number_format($entry['temps_e1'], 2, ',', '') : '';
+                }
+
+                if ($championnat->discipline === DisciplineChampionnat::DRESSAGE) {
+                    $row[] = ($entry['libre'] ?? false) ? 'Oui' : 'Non';
+                    $row[] = number_format($entry['total_points'], 2, ',', '');
                 }
 
                 if ($hasE2) {
@@ -706,6 +720,26 @@ class ChampionnatController extends Controller
 
         return redirect()->route('concours.championnats.doublons', $concours)
             ->with('success', 'Selections enregistrees.');
+    }
+
+    public function toggleLibre(Request $request, Concours $concours, Championnat $championnat)
+    {
+        $request->validate([
+            'cavalier_id' => 'required|integer',
+            'cheval_id' => 'required|integer',
+        ]);
+
+        $resultat = $championnat->resultats()
+            ->where('epreuve_id', $championnat->epreuve1_id)
+            ->where('cavalier_id', $request->cavalier_id)
+            ->where('cheval_id', $request->cheval_id)
+            ->first();
+
+        if ($resultat) {
+            $resultat->update(['libre' => !$resultat->libre]);
+        }
+
+        return redirect()->route('concours.championnats.show', [$concours, $championnat]);
     }
 
     public function destroy(Concours $concours, Championnat $championnat)

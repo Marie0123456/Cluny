@@ -131,8 +131,8 @@
                 </div>
             </div>
 
-            {{-- Bouton Exporter LDP (visible quand epreuve 2 existe et epreuve 1 a des resultats) --}}
-            @if ($hasE2 && $resultatsEpreuve1->isNotEmpty())
+            {{-- Bouton Exporter LDP (CSO uniquement, quand epreuve 2 existe et epreuve 1 a des resultats) --}}
+            @if ($championnat->discipline === \App\Enums\DisciplineChampionnat::CSO && $hasE2 && $resultatsEpreuve1->isNotEmpty())
                 <div class="mb-6">
                     <a href="{{ route('concours.championnats.export-ldp', [$concours, $championnat]) }}"
                         class="inline-flex items-center px-4 py-2 bg-amber-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-amber-700 transition">
@@ -162,6 +162,10 @@
                                     <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">{{ $hasE2 ? $valLabel . ' E1' : $valLabel }}</th>
                                     @if (!$usePct)
                                         <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">{{ $hasE2 ? 'Tps E1' : 'Temps' }}</th>
+                                    @endif
+                                    @if ($championnat->discipline === \App\Enums\DisciplineChampionnat::DRESSAGE)
+                                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Libre</th>
+                                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider font-bold">Total %</th>
                                     @endif
                                     @if ($hasE2)
                                         <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">{{ $valLabel }} E2</th>
@@ -206,6 +210,25 @@
                                         @if (!$usePct)
                                             <td class="px-4 py-3 whitespace-nowrap text-sm text-center {{ $entry['is_excluded'] ? 'text-orange-400' : 'text-gray-500' }}">
                                                 {{ $entry['temps_e1'] ? number_format($entry['temps_e1'], 2, ',', '') : '-' }}
+                                            </td>
+                                        @endif
+                                        @if ($championnat->discipline === \App\Enums\DisciplineChampionnat::DRESSAGE)
+                                            <td class="px-4 py-3 whitespace-nowrap text-sm text-center">
+                                                <form action="{{ route('concours.championnats.toggle-libre', [$concours, $championnat]) }}" method="POST" class="inline">
+                                                    @csrf
+                                                    <input type="hidden" name="cavalier_id" value="{{ $entry['cavalier_id'] }}">
+                                                    <input type="hidden" name="cheval_id" value="{{ $entry['cheval_id'] }}">
+                                                    <button type="submit" class="p-1 rounded hover:bg-gray-100" title="Basculer Libre">
+                                                        @if ($entry['libre'] ?? false)
+                                                            <span class="text-green-600 font-bold">&#10003;</span>
+                                                        @else
+                                                            <span class="text-gray-300">&#9744;</span>
+                                                        @endif
+                                                    </button>
+                                                </form>
+                                            </td>
+                                            <td class="px-4 py-3 whitespace-nowrap text-sm text-center font-bold {{ $entry['is_excluded'] ? 'text-orange-400' : 'text-gray-900' }}">
+                                                {{ number_format($entry['total_points'], 2, ',', '') }}
                                             </td>
                                         @endif
                                         @if ($hasE2)

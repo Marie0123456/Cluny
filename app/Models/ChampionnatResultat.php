@@ -15,6 +15,7 @@ class ChampionnatResultat extends Model
         'points',
         'temps',
         'statut',
+        'libre',
     ];
 
     protected function casts(): array
@@ -22,6 +23,7 @@ class ChampionnatResultat extends Model
         return [
             'points' => 'decimal:2',
             'temps' => 'decimal:2',
+            'libre' => 'boolean',
         ];
     }
 

@@ -72,6 +72,7 @@ Route::middleware(['auth'])->group(function () {
         Route::delete('/championnats/{championnat}/delete-resultats', [ChampionnatController::class, 'deleteResultats'])->name('championnats.delete-resultats');
         Route::get('/championnats/{championnat}/export-resultats', [ChampionnatController::class, 'exportResultats'])->name('championnats.export-resultats');
         Route::get('/championnats/{championnat}/export-ldp', [ChampionnatController::class, 'exportLDP'])->name('championnats.export-ldp');
+        Route::post('/championnats/{championnat}/toggle-libre', [ChampionnatController::class, 'toggleLibre'])->name('championnats.toggle-libre');
         Route::delete('/championnats/{championnat}', [ChampionnatController::class, 'destroy'])->name('championnats.destroy');
     });
 
