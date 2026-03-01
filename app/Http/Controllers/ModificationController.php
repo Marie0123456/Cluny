@@ -61,7 +61,19 @@ class ModificationController extends Controller
             ];
         })->values();
 
-        return view('concours.modifications.index', compact('concours', 'modifications', 'epreuves', 'epreuvesJson'));
+        // Tous les cavaliers uniques du concours (pour le formulaire invitation)
+        $allCavaliersJson = $epreuves->flatMap(function ($e) {
+            return $e->engagements->map(function ($eng) {
+                return [
+                    'cavalier_id' => $eng->cavalier?->id,
+                    'cavalier_nom' => $eng->cavalier?->nom ?? '',
+                    'cavalier_prenom' => $eng->cavalier?->prenom ?? '',
+                    'num_licence' => $eng->cavalier?->num_licence ?? '',
+                ];
+            });
+        })->filter(fn($c) => $c['cavalier_id'])->unique('cavalier_id')->sortBy('cavalier_nom')->values();
+
+        return view('concours.modifications.index', compact('concours', 'modifications', 'epreuves', 'epreuvesJson', 'allCavaliersJson'));
     }
 
     public function changementCheval(Request $request, Concours $concours)

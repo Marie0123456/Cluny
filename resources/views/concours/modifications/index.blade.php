@@ -352,12 +352,12 @@
                                 <label class="flex items-center gap-2">
                                     <input type="radio" x-model="cavalierMode" value="existing"
                                         class="border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
-                                    <span class="text-sm text-gray-700">Dans la liste des engages</span>
+                                    <span class="text-sm text-gray-700">Cavalier du concours</span>
                                 </label>
                                 <label class="flex items-center gap-2">
                                     <input type="radio" x-model="cavalierMode" value="new"
                                         class="border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
-                                    <span class="text-sm text-gray-700">Nouveau cavalier</span>
+                                    <span class="text-sm text-gray-700">Nouveau cavalier (pas engage sur le concours)</span>
                                 </label>
                             </div>
 
@@ -378,10 +378,11 @@
                                 <ul x-show="showCavalierList && filteredCavaliers.length > 0"
                                     @click.away="showCavalierList = false"
                                     class="absolute z-50 w-full bg-white border border-gray-300 rounded-md shadow-lg mt-1 max-h-60 overflow-y-auto">
-                                    <template x-for="c in filteredCavaliers" :key="c.cavalier_id || c.engagement_id">
+                                    <template x-for="c in filteredCavaliers" :key="c.cavalier_id">
                                         <li @click="selectCavalier(c)"
                                             class="cursor-pointer hover:bg-indigo-50 px-4 py-3 border-b border-gray-100">
                                             <span class="font-semibold text-sm text-gray-900" x-text="`${c.cavalier_nom} ${c.cavalier_prenom}`"></span>
+                                            <span x-show="c.num_licence" class="ml-2 text-xs text-gray-500" x-text="`(${c.num_licence})`"></span>
                                         </li>
                                     </template>
                                 </ul>
@@ -1483,6 +1484,7 @@
         function invitationForm() {
             const epreuves = @json($epreuvesJson);
             const isGrandNational = @json($concours->grand_national);
+            const allCavaliersConcours = @json($allCavaliersJson);
 
             return {
                 open: false,
@@ -1496,7 +1498,7 @@
                 showCavalierList: false,
                 selectedCavalierLabel: '',
                 filteredCavaliers: [],
-                allCavaliers: [],
+                allCavaliers: allCavaliersConcours,
                 nouveauCavalierNom: '',
                 nouveauCavalierPrenom: '',
                 nouveauCavalierLicence: '',
@@ -1552,19 +1554,11 @@
                     if (ep) {
                         this.epreuvePrix = parseFloat(ep.prix) || 0;
                         this.epreuveTypeDetecte = ep.type_detecte;
-                        const seen = new Set();
-                        this.allCavaliers = ep.engagements.filter(eng => {
-                            if (!eng.cavalier_id || seen.has(eng.cavalier_id)) return false;
-                            seen.add(eng.cavalier_id);
-                            return true;
-                        });
-                        this.filteredCavaliers = this.allCavaliers;
                     } else {
                         this.epreuvePrix = 0;
                         this.epreuveTypeDetecte = null;
-                        this.allCavaliers = [];
-                        this.filteredCavaliers = [];
                     }
+                    this.filteredCavaliers = this.allCavaliers;
                 },
 
                 filterCavaliers() {
