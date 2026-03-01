@@ -657,6 +657,7 @@ class ChampionnatController extends Controller
                 $coupleChampionnats[$key]['championnats'][] = [
                     'id' => $championnat->id,
                     'nom' => $championnat->nom,
+                    'discipline' => $championnat->discipline->value,
                 ];
             }
         }

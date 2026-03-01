@@ -44,26 +44,25 @@
                             <input type="text" id="filtre-cavalier" placeholder="Rechercher un cavalier..."
                                 class="block w-full max-w-sm rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
                         </div>
-                        {{-- Filtre championnats par prefixe --}}
+                        {{-- Filtre par discipline --}}
                         <div>
-                            <span class="block text-sm font-medium text-gray-700 mb-1">Championnats</span>
-                            <div class="flex flex-wrap gap-2" id="filtre-championnats">
-                                @php
-                                    $prefixes = $championnats->map(function ($ch) {
-                                        // Extract prefix: first word before space, or first 3+ uppercase letters
-                                        if (preg_match('/^([A-Z]{2,})/', $ch->nom, $m)) {
-                                            return $m[1];
-                                        }
-                                        return explode(' ', $ch->nom)[0];
-                                    })->unique()->sort()->values();
-                                @endphp
-                                @foreach ($prefixes as $prefix)
-                                    <button type="button" data-prefix="{{ $prefix }}" data-active="true"
-                                        class="filtre-prefix-btn inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold border transition
-                                               bg-indigo-100 text-indigo-700 border-indigo-300 hover:bg-indigo-200">
-                                        {{ $prefix }}
-                                    </button>
-                                @endforeach
+                            <span class="block text-sm font-medium text-gray-700 mb-1">Discipline</span>
+                            <div class="flex flex-wrap gap-2" id="filtre-disciplines">
+                                <button type="button" data-discipline="CSO" data-active="true"
+                                    class="filtre-disc-btn inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold border transition
+                                           bg-blue-100 text-blue-700 border-blue-300 hover:bg-blue-200">
+                                    CSO
+                                </button>
+                                <button type="button" data-discipline="Hunter" data-active="true"
+                                    class="filtre-disc-btn inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold border transition
+                                           bg-green-100 text-green-700 border-green-300 hover:bg-green-200">
+                                    Hunter
+                                </button>
+                                <button type="button" data-discipline="Dressage" data-active="true"
+                                    class="filtre-disc-btn inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold border transition
+                                           bg-purple-100 text-purple-700 border-purple-300 hover:bg-purple-200">
+                                    Dressage
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -93,10 +92,10 @@
                                                 break;
                                             }
                                         }
-                                        $championnatNoms = collect($doublon['championnats'])->pluck('nom')->implode('|');
+                                        $championnatDisciplines = collect($doublon['championnats'])->pluck('discipline')->unique()->implode('|');
                                     @endphp
                                     <tr data-cavalier="{{ mb_strtolower($doublon['cavalier_prenom'] . ' ' . $doublon['cavalier_nom']) }}"
-                                        data-championnats="{{ $championnatNoms }}">
+                                        data-disciplines="{{ $championnatDisciplines }}">
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 row-numero">{{ $index + 1 }}</td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                                             {{ $doublon['cavalier_prenom'] }} {{ $doublon['cavalier_nom'] }}
@@ -147,27 +146,30 @@
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             const input = document.getElementById('filtre-cavalier');
-            const prefixBtns = document.querySelectorAll('.filtre-prefix-btn');
+            const discBtns = document.querySelectorAll('.filtre-disc-btn');
             const rows = document.querySelectorAll('#doublons-table tbody tr');
 
-            function getActivePrefixes() {
+            const discColors = {
+                CSO:      { on: 'bg-blue-100 text-blue-700 border-blue-300 hover:bg-blue-200',     off: 'bg-gray-100 text-gray-400 border-gray-200 hover:bg-gray-200' },
+                Hunter:   { on: 'bg-green-100 text-green-700 border-green-300 hover:bg-green-200',  off: 'bg-gray-100 text-gray-400 border-gray-200 hover:bg-gray-200' },
+                Dressage: { on: 'bg-purple-100 text-purple-700 border-purple-300 hover:bg-purple-200', off: 'bg-gray-100 text-gray-400 border-gray-200 hover:bg-gray-200' },
+            };
+
+            function getActiveDisciplines() {
                 const active = [];
-                prefixBtns.forEach(btn => {
+                discBtns.forEach(btn => {
                     if (btn.dataset.active === 'true') {
-                        active.push(btn.dataset.prefix.toUpperCase());
+                        active.push(btn.dataset.discipline);
                     }
                 });
                 return active;
             }
 
-            function matchesChampionnatFilter(row) {
-                const activePrefixes = getActivePrefixes();
-                if (activePrefixes.length === prefixBtns.length) return true; // all active = no filter
-                const championnats = row.dataset.championnats.split('|');
-                return championnats.some(nom => {
-                    const nomUpper = nom.toUpperCase();
-                    return activePrefixes.some(prefix => nomUpper.startsWith(prefix));
-                });
+            function matchesDisciplineFilter(row) {
+                const activeDisciplines = getActiveDisciplines();
+                if (activeDisciplines.length === discBtns.length) return true;
+                const rowDisciplines = (row.dataset.disciplines || '').split('|');
+                return rowDisciplines.some(d => activeDisciplines.includes(d));
             }
 
             function applyFilters() {
@@ -177,9 +179,9 @@
                 rows.forEach(row => {
                     const cavalier = row.dataset.cavalier || '';
                     const matchesCavalier = !search || cavalier.includes(search);
-                    const matchesChamp = matchesChampionnatFilter(row);
+                    const matchesDisc = matchesDisciplineFilter(row);
 
-                    if (matchesCavalier && matchesChamp) {
+                    if (matchesCavalier && matchesDisc) {
                         row.style.display = '';
                         visibleIndex++;
                         row.querySelector('.row-numero').textContent = visibleIndex;
@@ -191,17 +193,15 @@
 
             input.addEventListener('input', applyFilters);
 
-            prefixBtns.forEach(btn => {
+            discBtns.forEach(btn => {
                 btn.addEventListener('click', function () {
                     const isActive = this.dataset.active === 'true';
                     this.dataset.active = isActive ? 'false' : 'true';
+                    const disc = this.dataset.discipline;
+                    const colors = discColors[disc] || discColors.CSO;
+                    const baseClass = 'filtre-disc-btn inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold border transition ';
 
-                    if (this.dataset.active === 'true') {
-                        this.className = 'filtre-prefix-btn inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold border transition bg-indigo-100 text-indigo-700 border-indigo-300 hover:bg-indigo-200';
-                    } else {
-                        this.className = 'filtre-prefix-btn inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold border transition bg-gray-100 text-gray-400 border-gray-200 hover:bg-gray-200';
-                    }
-
+                    this.className = baseClass + (this.dataset.active === 'true' ? colors.on : colors.off);
                     applyFilters();
                 });
             });
