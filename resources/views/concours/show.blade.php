@@ -131,6 +131,14 @@
             @can('admin')
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
                     <h3 class="text-lg font-medium text-gray-900 mb-4">Importer les engages ({{ $concours->type_ffe_sif ? 'FFE SIF' : 'FFE Compet' }})</h3>
+                    <p class="text-sm text-gray-500 mb-3">
+                        Colonnes attendues :
+                        @if ($concours->type_ffe_sif)
+                            <code class="text-xs bg-gray-100 px-1.5 py-0.5 rounded">Discipline;Epreuve;Numero Depart;Licence;Nom;Prenom;Club;Sire;Cheval</code>
+                        @else
+                            <code class="text-xs bg-gray-100 px-1.5 py-0.5 rounded">Epreuve_numero;Epreuve_nom;Epreuve_date;Num_depart;Licence;Nom;Prenom;Club;...</code>
+                        @endif
+                    </p>
                     <form method="POST" action="{{ route('concours.import.store', $concours) }}" enctype="multipart/form-data" class="flex items-end space-x-4">
                         @csrf
                         <div class="flex-1">
