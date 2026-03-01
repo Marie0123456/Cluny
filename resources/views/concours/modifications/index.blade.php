@@ -27,19 +27,41 @@
 
             @include('concours.partials.tabs', ['active' => 'modifications'])
 
-            <!-- Changement de cheval form -->
-            <div class="bg-white shadow-sm sm:rounded-lg p-6 mb-6"
-                x-data="changementCheval()" x-cloak>
-
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-lg font-medium text-gray-900">Changement de cheval</h3>
-                    <button @click="open = !open"
-                        class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700">
-                        <span x-text="open ? 'Fermer' : 'Nouveau changement'"></span>
-                    </button>
+            <!-- Barre de boutons modifications -->
+            <div x-data="{ activeForm: '' }">
+                <div class="bg-white shadow-sm sm:rounded-lg p-4 mb-6">
+                    <div class="flex flex-wrap gap-3">
+                        <button @click="activeForm = activeForm === 'cheval' ? '' : 'cheval'"
+                            :class="activeForm === 'cheval' ? 'bg-indigo-700 ring-2 ring-indigo-300' : 'bg-indigo-600'"
+                            class="inline-flex items-center px-4 py-2 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 transition">
+                            Chgt Cheval
+                        </button>
+                        <button @click="activeForm = activeForm === 'cavalier' ? '' : 'cavalier'"
+                            :class="activeForm === 'cavalier' ? 'bg-purple-700 ring-2 ring-purple-300' : 'bg-purple-600'"
+                            class="inline-flex items-center px-4 py-2 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-purple-700 transition">
+                            Chgt Cavalier
+                        </button>
+                        <button @click="activeForm = activeForm === 'invitation' ? '' : 'invitation'"
+                            :class="activeForm === 'invitation' ? 'bg-blue-700 ring-2 ring-blue-300' : 'bg-blue-600'"
+                            class="inline-flex items-center px-4 py-2 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 transition">
+                            Invitation
+                        </button>
+                        <button @click="activeForm = activeForm === 'epreuve' ? '' : 'epreuve'"
+                            :class="activeForm === 'epreuve' ? 'bg-yellow-700 ring-2 ring-yellow-300' : 'bg-yellow-600'"
+                            class="inline-flex items-center px-4 py-2 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-yellow-700 transition">
+                            Chgt Epreuve
+                        </button>
+                        <button @click="activeForm = activeForm === 'np' ? '' : 'np'"
+                            :class="activeForm === 'np' ? 'bg-gray-700 ring-2 ring-gray-300' : 'bg-gray-600'"
+                            class="inline-flex items-center px-4 py-2 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 transition">
+                            Declarer NP
+                        </button>
+                    </div>
                 </div>
 
-                <div x-show="open" x-transition class="space-y-4">
+                <!-- Changement de cheval form -->
+                <div x-show="activeForm === 'cheval'" x-transition x-cloak>
+                    <div x-data="changementCheval()" class="bg-white shadow-sm sm:rounded-lg p-6 mb-6 space-y-4">
                     <!-- Step 1: Epreuve -->
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Epreuve</label>
@@ -159,22 +181,12 @@
                             </button>
                         </form>
                     </div>
-                </div>
-            </div>
-
-            <!-- Changement de cavalier form -->
-            <div class="bg-white shadow-sm sm:rounded-lg p-6 mb-6"
-                x-data="changementCavalier()" x-cloak>
-
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-lg font-medium text-gray-900">Changement de cavalier</h3>
-                    <button @click="open = !open"
-                        class="inline-flex items-center px-4 py-2 bg-purple-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-purple-700">
-                        <span x-text="open ? 'Fermer' : 'Nouveau changement'"></span>
-                    </button>
+                    </div>
                 </div>
 
-                <div x-show="open" x-transition class="space-y-4">
+                <!-- Changement de cavalier form -->
+                <div x-show="activeForm === 'cavalier'" x-transition x-cloak>
+                    <div x-data="changementCavalier()" class="bg-white shadow-sm sm:rounded-lg p-6 mb-6 space-y-4">
                     @if ($concours->grand_national)
                         <div class="p-3 bg-yellow-50 border border-yellow-200 rounded-md text-sm text-yellow-800">
                             Concours Grand National : le changement de cavalier n'est pas autorise sur les epreuves Pro.
@@ -307,22 +319,12 @@
                             </button>
                         </form>
                     </div>
-                </div>
-            </div>
-
-            <!-- Invitation form -->
-            <div class="bg-white shadow-sm sm:rounded-lg p-6 mb-6"
-                x-data="invitationForm()" x-cloak>
-
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-lg font-medium text-gray-900">Invitation (ajout engagement)</h3>
-                    <button @click="open = !open"
-                        class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700">
-                        <span x-text="open ? 'Fermer' : 'Nouvelle invitation'"></span>
-                    </button>
+                    </div>
                 </div>
 
-                <div x-show="open" x-transition>
+                <!-- Invitation form -->
+                <div x-show="activeForm === 'invitation'" x-transition x-cloak>
+                    <div x-data="invitationForm()" class="bg-white shadow-sm sm:rounded-lg p-6 mb-6">
                     <form method="POST" action="{{ route('concours.modifications.invitation', $concours) }}" class="space-y-4">
                         @csrf
 
@@ -613,22 +615,12 @@
                             </button>
                         </div>
                     </form>
-                </div>
-            </div>
-
-            <!-- Changement d'epreuve form -->
-            <div class="bg-white shadow-sm sm:rounded-lg p-6 mb-6"
-                x-data="changementEpreuveForm()" x-cloak>
-
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-lg font-medium text-gray-900">Changement d'epreuve</h3>
-                    <button @click="open = !open"
-                        class="inline-flex items-center px-4 py-2 bg-yellow-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-yellow-700">
-                        <span x-text="open ? 'Fermer' : 'Nouveau changement'"></span>
-                    </button>
+                    </div>
                 </div>
 
-                <div x-show="open" x-transition class="space-y-4">
+                <!-- Changement d'epreuve form -->
+                <div x-show="activeForm === 'epreuve'" x-transition x-cloak>
+                    <div x-data="changementEpreuveForm()" class="bg-white shadow-sm sm:rounded-lg p-6 mb-6 space-y-4">
                     <form method="POST" action="{{ route('concours.modifications.changement-epreuve', $concours) }}" class="space-y-4">
                         @csrf
 
@@ -833,22 +825,12 @@
                             </button>
                         </div>
                     </form>
-                </div>
-            </div>
-
-            <!-- Non-partant form -->
-            <div class="bg-white shadow-sm sm:rounded-lg p-6 mb-6"
-                x-data="nonPartantForm()" x-cloak>
-
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-lg font-medium text-gray-900">Non-partant</h3>
-                    <button @click="open = !open"
-                        class="inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700">
-                        <span x-text="open ? 'Fermer' : 'Declarer un non-partant'"></span>
-                    </button>
+                    </div>
                 </div>
 
-                <div x-show="open" x-transition class="space-y-4">
+                <!-- Non-partant form -->
+                <div x-show="activeForm === 'np'" x-transition x-cloak>
+                    <div x-data="nonPartantForm()" class="bg-white shadow-sm sm:rounded-lg p-6 mb-6 space-y-4">
                     <form method="POST" action="{{ route('concours.modifications.non-partant', $concours) }}" class="space-y-4">
                         @csrf
 
@@ -905,6 +887,7 @@
                             </button>
                         </div>
                     </form>
+                    </div>
                 </div>
             </div>
 
