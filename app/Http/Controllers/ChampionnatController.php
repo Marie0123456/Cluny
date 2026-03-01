@@ -439,6 +439,23 @@ class ChampionnatController extends Controller
         return response()->stream($callback, 200, $headers);
     }
 
+    public function deleteResultats(Request $request, Concours $concours, Championnat $championnat)
+    {
+        $request->validate([
+            'epreuve' => 'required|in:1,2',
+        ]);
+
+        $epreuveId = $request->input('epreuve') == '1'
+            ? $championnat->epreuve1_id
+            : $championnat->epreuve2_id;
+
+        $count = $championnat->resultats()->where('epreuve_id', $epreuveId)->count();
+        $championnat->resultats()->where('epreuve_id', $epreuveId)->delete();
+
+        return redirect()->route('concours.championnats.show', [$concours, $championnat])
+            ->with('success', "$count resultats supprimes pour l'epreuve $request->epreuve.");
+    }
+
     public function doublons(Concours $concours)
     {
         $concours->loadCount(['epreuves', 'engagements', 'modifications', 'ventes']);

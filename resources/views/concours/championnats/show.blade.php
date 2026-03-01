@@ -39,48 +39,76 @@
                 <h4 class="text-md font-medium text-gray-900 mb-4">Importer les resultats (CSV)</h4>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {{-- Import Epreuve 1 --}}
-                    <form action="{{ route('concours.championnats.import-resultats', [$concours, $championnat]) }}" method="POST" enctype="multipart/form-data">
-                        @csrf
-                        <input type="hidden" name="epreuve" value="1">
-                        <div class="flex items-end gap-3">
-                            <div class="flex-1">
-                                <label class="block text-sm font-medium text-gray-700 mb-1">
-                                    Epreuve 1 : {{ $championnat->epreuve1->numero }}
-                                    @if ($resultatsEpreuve1->isNotEmpty())
-                                        <span class="text-green-600">({{ $resultatsEpreuve1->count() }} resultats)</span>
-                                    @endif
-                                </label>
-                                <input type="file" name="csv_file" accept=".csv,.txt" required
-                                    class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
+                    <div>
+                        <form action="{{ route('concours.championnats.import-resultats', [$concours, $championnat]) }}" method="POST" enctype="multipart/form-data">
+                            @csrf
+                            <input type="hidden" name="epreuve" value="1">
+                            <div class="flex items-end gap-3">
+                                <div class="flex-1">
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                                        Epreuve 1 : {{ $championnat->epreuve1->numero }}
+                                        @if ($resultatsEpreuve1->isNotEmpty())
+                                            <span class="text-green-600">({{ $resultatsEpreuve1->count() }} resultats)</span>
+                                        @endif
+                                    </label>
+                                    <input type="file" name="csv_file" accept=".csv,.txt" required
+                                        class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
+                                </div>
+                                <button type="submit"
+                                    class="inline-flex items-center px-3 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 transition">
+                                    Importer
+                                </button>
                             </div>
-                            <button type="submit"
-                                class="inline-flex items-center px-3 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 transition">
-                                Importer
-                            </button>
-                        </div>
-                    </form>
+                        </form>
+                        @if ($resultatsEpreuve1->isNotEmpty())
+                            <form action="{{ route('concours.championnats.delete-resultats', [$concours, $championnat]) }}" method="POST" class="mt-2"
+                                onsubmit="return confirm('Supprimer les {{ $resultatsEpreuve1->count() }} resultats de l\'epreuve 1 ?')">
+                                @csrf
+                                @method('DELETE')
+                                <input type="hidden" name="epreuve" value="1">
+                                <button type="submit"
+                                    class="inline-flex items-center px-3 py-1.5 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700 transition">
+                                    Supprimer resultats E1
+                                </button>
+                            </form>
+                        @endif
+                    </div>
 
                     {{-- Import Epreuve 2 --}}
-                    <form action="{{ route('concours.championnats.import-resultats', [$concours, $championnat]) }}" method="POST" enctype="multipart/form-data">
-                        @csrf
-                        <input type="hidden" name="epreuve" value="2">
-                        <div class="flex items-end gap-3">
-                            <div class="flex-1">
-                                <label class="block text-sm font-medium text-gray-700 mb-1">
-                                    Epreuve 2 : {{ $championnat->epreuve2->numero }}
-                                    @if ($resultatsEpreuve2->isNotEmpty())
-                                        <span class="text-green-600">({{ $resultatsEpreuve2->count() }} resultats)</span>
-                                    @endif
-                                </label>
-                                <input type="file" name="csv_file" accept=".csv,.txt" required
-                                    class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
+                    <div>
+                        <form action="{{ route('concours.championnats.import-resultats', [$concours, $championnat]) }}" method="POST" enctype="multipart/form-data">
+                            @csrf
+                            <input type="hidden" name="epreuve" value="2">
+                            <div class="flex items-end gap-3">
+                                <div class="flex-1">
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                                        Epreuve 2 : {{ $championnat->epreuve2->numero }}
+                                        @if ($resultatsEpreuve2->isNotEmpty())
+                                            <span class="text-green-600">({{ $resultatsEpreuve2->count() }} resultats)</span>
+                                        @endif
+                                    </label>
+                                    <input type="file" name="csv_file" accept=".csv,.txt" required
+                                        class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
+                                </div>
+                                <button type="submit"
+                                    class="inline-flex items-center px-3 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 transition">
+                                    Importer
+                                </button>
                             </div>
-                            <button type="submit"
-                                class="inline-flex items-center px-3 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 transition">
-                                Importer
-                            </button>
-                        </div>
-                    </form>
+                        </form>
+                        @if ($resultatsEpreuve2->isNotEmpty())
+                            <form action="{{ route('concours.championnats.delete-resultats', [$concours, $championnat]) }}" method="POST" class="mt-2"
+                                onsubmit="return confirm('Supprimer les {{ $resultatsEpreuve2->count() }} resultats de l\'epreuve 2 ?')">
+                                @csrf
+                                @method('DELETE')
+                                <input type="hidden" name="epreuve" value="2">
+                                <button type="submit"
+                                    class="inline-flex items-center px-3 py-1.5 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700 transition">
+                                    Supprimer resultats E2
+                                </button>
+                            </form>
+                        @endif
+                    </div>
                 </div>
             </div>
 
