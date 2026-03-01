@@ -126,6 +126,7 @@
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cheval</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
                                     <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">PF</th>
+                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">P.U. HT</th>
                                     <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Prix</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Paiement</th>
                                 </tr>
@@ -146,6 +147,13 @@
                                         <td class="px-4 py-3 text-sm text-gray-900 text-right">
                                             {{ $mod->pf ? number_format($mod->pf, 2, ',', ' ') . ' €' : '-' }}
                                         </td>
+                                        <td class="px-4 py-3 text-sm text-gray-900 text-right">
+                                            @if ($mod->prix && $mod->pf !== null)
+                                                {{ number_format(($mod->prix - $mod->pf) / 1.055, 2, ',', ' ') }} &euro;
+                                            @else
+                                                -
+                                            @endif
+                                        </td>
                                         <td class="px-4 py-3 text-sm text-gray-900 font-medium text-right">
                                             {{ $mod->prix ? number_format($mod->prix, 2, ',', ' ') . ' €' : '-' }}
                                         </td>
@@ -163,7 +171,7 @@
                             </tbody>
                             <tfoot class="bg-gray-50">
                                 <tr>
-                                    <td colspan="5" class="px-4 py-3 text-sm font-bold text-gray-900 text-right">Sous-total modifications</td>
+                                    <td colspan="6" class="px-4 py-3 text-sm font-bold text-gray-900 text-right">Sous-total modifications</td>
                                     <td class="px-4 py-3 text-sm font-bold text-gray-900 text-right">{{ number_format($totalModifications, 2, ',', ' ') }} &euro;</td>
                                     <td></td>
                                 </tr>
