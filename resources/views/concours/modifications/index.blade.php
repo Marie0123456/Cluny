@@ -987,7 +987,7 @@
                                         {{-- Depart --}}
                                         <td class="px-4 py-2 text-sm text-gray-500">
                                             @if ($mod->type === \App\Enums\ModificationType::NON_PARTANT)
-                                                <span class="font-bold text-red-600">NP</span>
+                                                {{ $mod->engagement->numero_depart ?? '-' }} <span class="font-bold text-red-600">NP</span>
                                             @elseif ($mod->type === \App\Enums\ModificationType::CHANGEMENT_EPREUVE && $mod->linkedModification)
                                                 <span class="text-gray-400">{{ $mod->linkedModification->engagement->numero_depart ?? '?' }}</span>
                                                 <span class="mx-1">&rarr;</span>
