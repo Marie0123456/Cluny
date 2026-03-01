@@ -59,6 +59,8 @@ Route::middleware(['auth'])->group(function () {
 
         // Statistiques (FFE SIF Open)
         Route::get('/statistiques', [StatistiqueController::class, 'index'])->name('statistiques.index');
+        Route::get('/statistiques/export-cavaliers', [StatistiqueController::class, 'exportCavaliers'])->name('statistiques.export-cavaliers');
+        Route::get('/statistiques/export-clubs', [StatistiqueController::class, 'exportClubs'])->name('statistiques.export-clubs');
 
         // Championnats (FFE SIF Open)
         Route::get('/championnats', [ChampionnatController::class, 'index'])->name('championnats.index');

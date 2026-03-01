@@ -15,12 +15,28 @@
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                    <p class="text-sm text-gray-500">Cavaliers uniques</p>
-                    <p class="text-3xl font-bold text-gray-900 mt-1">{{ $stats->nb_cavaliers_uniques }}</p>
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-500">Cavaliers uniques</p>
+                            <p class="text-3xl font-bold text-gray-900 mt-1">{{ $stats->nb_cavaliers_uniques }}</p>
+                        </div>
+                        <a href="{{ route('concours.statistiques.export-cavaliers', $concours) }}"
+                            class="inline-flex items-center px-3 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 transition">
+                            Exporter CSV
+                        </a>
+                    </div>
                 </div>
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                    <p class="text-sm text-gray-500">Clubs differents</p>
-                    <p class="text-3xl font-bold text-gray-900 mt-1">{{ $stats->nb_clubs }}</p>
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-500">Clubs differents</p>
+                            <p class="text-3xl font-bold text-gray-900 mt-1">{{ $stats->nb_clubs }}</p>
+                        </div>
+                        <a href="{{ route('concours.statistiques.export-clubs', $concours) }}"
+                            class="inline-flex items-center px-3 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 transition">
+                            Exporter CSV
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
