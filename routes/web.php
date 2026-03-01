@@ -14,6 +14,7 @@ use App\Http\Controllers\FactureController;
 use App\Http\Controllers\ImportController;
 use App\Http\Controllers\ModificationController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\StatistiqueController;
 use App\Http\Controllers\VenteController;
 use Illuminate\Support\Facades\Route;
 
@@ -54,6 +55,9 @@ Route::middleware(['auth'])->group(function () {
         // Factures
         Route::get('/factures', [FactureController::class, 'index'])->name('factures.index');
         Route::get('/factures/{client}', [FactureController::class, 'show'])->name('factures.show');
+
+        // Statistiques (FFE SIF Open)
+        Route::get('/statistiques', [StatistiqueController::class, 'index'])->name('statistiques.index');
     });
 
     // Modification actions
