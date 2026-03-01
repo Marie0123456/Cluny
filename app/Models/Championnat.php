@@ -37,6 +37,11 @@ class Championnat extends Model
         return $this->hasMany(ChampionnatExclusion::class);
     }
 
+    public function resultats(): HasMany
+    {
+        return $this->hasMany(ChampionnatResultat::class);
+    }
+
     /**
      * Couples cavalier+cheval engagés dans les DEUX épreuves.
      */
