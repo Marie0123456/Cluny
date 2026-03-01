@@ -14,6 +14,7 @@ class ImportLog extends Model
         'concours_id',
         'user_id',
         'nom_fichier',
+        'format',
         'nb_epreuves',
         'nb_engagements',
         'nb_cavaliers',

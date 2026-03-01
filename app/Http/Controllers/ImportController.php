@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Concours;
 use App\Models\ImportLog;
 use App\Services\CsvImportService;
+use App\Services\SifCsvImportService;
 use Illuminate\Http\Request;
 
 class ImportController extends Controller
@@ -17,10 +18,15 @@ class ImportController extends Controller
 
         $request->validate([
             'fichier' => 'required|file|max:10240',
+            'format' => 'required|in:ffe_compet,ffe_sif',
         ]);
 
         $file = $request->file('fichier');
-        $service = new CsvImportService();
+        $format = $request->input('format');
+
+        $service = $format === 'ffe_sif'
+            ? new SifCsvImportService()
+            : new CsvImportService();
 
         try {
             $result = $service->import($concours, $file);
@@ -29,6 +35,7 @@ class ImportController extends Controller
                 'concours_id' => $concours->id,
                 'user_id' => auth()->id(),
                 'nom_fichier' => $file->getClientOriginalName(),
+                'format' => $format,
                 'nb_epreuves' => $result['nb_epreuves'],
                 'nb_engagements' => $result['nb_engagements'],
                 'nb_cavaliers' => $result['nb_cavaliers'],
@@ -43,6 +50,7 @@ class ImportController extends Controller
                 'concours_id' => $concours->id,
                 'user_id' => auth()->id(),
                 'nom_fichier' => $file->getClientOriginalName(),
+                'format' => $format,
                 'statut' => 'erreur',
                 'message_erreur' => $e->getMessage(),
             ]);
