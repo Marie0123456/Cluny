@@ -30,14 +30,14 @@ class ModificationController extends Controller
             ])
             ->join('engagements', 'modifications.engagement_id', '=', 'engagements.id')
             ->join('epreuves', 'engagements.epreuve_id', '=', 'epreuves.id')
-            ->orderByRaw('CAST(epreuves.numero AS UNSIGNED), epreuves.numero')
+            ->orderByRaw('CAST(epreuves.numero AS INTEGER), epreuves.numero')
             ->orderBy('modifications.created_at', 'desc')
             ->select('modifications.*')
             ->get();
 
         $epreuves = $concours->epreuves()
             ->with(['engagements.cavalier', 'engagements.cheval'])
-            ->orderByRaw('CAST(numero AS UNSIGNED), numero')
+            ->orderByRaw('CAST(numero AS INTEGER), numero')
             ->get();
 
         $epreuvesJson = $epreuves->map(function ($e) {

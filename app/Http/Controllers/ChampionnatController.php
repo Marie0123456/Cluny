@@ -19,7 +19,7 @@ class ChampionnatController extends Controller
         $championnats = $concours->championnats()->with(['epreuve1', 'epreuve2'])->get();
 
         $epreuves = $concours->epreuves()
-            ->orderByRaw('CAST(numero AS UNSIGNED), numero')
+            ->orderByRaw('CAST(numero AS INTEGER), numero')
             ->get();
 
         return view('concours.championnats.index', compact('concours', 'championnats', 'epreuves'));
