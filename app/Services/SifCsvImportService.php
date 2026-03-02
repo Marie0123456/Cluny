@@ -39,6 +39,40 @@ class SifCsvImportService
 
         $separator = $this->detectSeparator($header);
 
+        // Parse all lines upfront
+        $parsedRows = [];
+        foreach ($lines as $line) {
+            $cols = array_map('trim', explode($separator, $line));
+            if (count($cols) < 9) {
+                continue;
+            }
+
+            $nom = $cols[4];
+            $chevalNom = $cols[8];
+            if (empty($nom) && empty($chevalNom)) {
+                continue;
+            }
+
+            // Build epreuve display name
+            $discipline = $cols[0];
+            $epreuveNom = $cols[1];
+            $epreuveLabel = $epreuveNom;
+            if (! empty($discipline) && ! str_contains(mb_strtolower($epreuveNom), mb_strtolower($discipline))) {
+                $epreuveLabel = $discipline . ' - ' . $epreuveNom;
+            }
+
+            $parsedRows[] = [
+                'epreuveLabel' => $epreuveLabel,
+                'numeroDepart' => $cols[2],
+                'licence' => $cols[3],
+                'nom' => $nom,
+                'prenom' => $cols[5],
+                'club' => $cols[6],
+                'sire' => $cols[7],
+                'chevalNom' => $chevalNom,
+            ];
+        }
+
         $counters = [
             'nb_epreuves' => 0,
             'nb_cavaliers' => 0,
@@ -46,105 +80,204 @@ class SifCsvImportService
             'nb_engagements' => 0,
         ];
 
-        DB::transaction(function () use ($concours, $lines, &$counters, $separator) {
+        DB::transaction(function () use ($concours, $parsedRows, &$counters) {
+            $now = now();
+
+            // === Phase 1: Epreuves ===
+            $epreuveCache = $concours->epreuves()->get()->keyBy('nom');
+            $nextNumero = (int) ($concours->epreuves()->max('numero') ?? 0) + 1;
+
+            $newEpreuves = [];
             $epreuveNumeros = [];
-            $nextNumero = ($concours->epreuves()->max('numero') ?? 0) + 1;
-
-            foreach ($lines as $line) {
-                $cols = explode($separator, $line);
-
-                if (count($cols) < 9) {
-                    continue;
-                }
-
-                $cols = array_map('trim', $cols);
-
-                $discipline = $cols[0];
-                $epreuveNom = $cols[1];
-                $numeroDepart = $cols[2];
-                $licence = $cols[3];
-                $nom = $cols[4];
-                $prenom = $cols[5];
-                $club = $cols[6];
-                $sire = $cols[7];
-                $cheval = $cols[8];
-
-                // Skip empty lines
-                if (empty($nom) && empty($cheval)) {
-                    continue;
-                }
-
-                // Build epreuve display name: "Discipline - Epreuve" or just "Epreuve"
-                $epreuveLabel = $epreuveNom;
-                if (! empty($discipline) && ! str_contains(mb_strtolower($epreuveNom), mb_strtolower($discipline))) {
-                    $epreuveLabel = $discipline . ' - ' . $epreuveNom;
-                }
-
-                // Auto-assign epreuve numero based on first appearance
-                if (! isset($epreuveNumeros[$epreuveLabel])) {
-                    $epreuveNumeros[$epreuveLabel] = $nextNumero++;
-                }
-
-                // Epreuve
-                $epreuve = Epreuve::firstOrCreate(
-                    [
+            foreach ($parsedRows as $row) {
+                $label = $row['epreuveLabel'];
+                if (! $epreuveCache->has($label) && ! isset($newEpreuves[$label])) {
+                    $epreuveNumeros[$label] = $nextNumero++;
+                    $newEpreuves[$label] = [
                         'concours_id' => $concours->id,
-                        'nom' => $epreuveLabel,
-                    ],
-                    [
-                        'numero' => $epreuveNumeros[$epreuveLabel],
-                    ]
-                );
-                if ($epreuve->wasRecentlyCreated) {
-                    $counters['nb_epreuves']++;
+                        'nom' => $label,
+                        'numero' => $epreuveNumeros[$label],
+                        'created_at' => $now,
+                        'updated_at' => $now,
+                    ];
                 }
+            }
+            if (! empty($newEpreuves)) {
+                Epreuve::insert(array_values($newEpreuves));
+                $counters['nb_epreuves'] = count($newEpreuves);
+                $epreuveCache = $concours->epreuves()->get()->keyBy('nom');
+            }
 
-                // Cavalier
-                $cavalierData = ['nom' => $nom, 'prenom' => $prenom];
-                if (! empty($licence)) {
-                    $cavalierData['num_licence'] = $licence;
+            // === Phase 2: Cavaliers ===
+            // SIF uses dual-key lookup: by num_licence if available, otherwise by (nom, prenom)
+            $csvLicences = [];
+            $csvCavalierNoms = [];
+            foreach ($parsedRows as $row) {
+                if (! empty($row['licence'])) {
+                    $csvLicences[] = $row['licence'];
+                } else {
+                    $csvCavalierNoms[] = $row['nom'];
                 }
+            }
 
-                $cavalier = Cavalier::firstOrCreate(
-                    ! empty($licence)
-                        ? ['num_licence' => $licence]
-                        : ['nom' => $nom, 'prenom' => $prenom],
-                    array_merge($cavalierData, [
-                        'club' => $club ?: null,
-                    ])
-                );
-                if ($cavalier->wasRecentlyCreated) {
-                    $counters['nb_cavaliers']++;
+            $cavaliersByLicence = collect();
+            if (! empty($csvLicences)) {
+                $cavaliersByLicence = Cavalier::whereIn('num_licence', array_unique($csvLicences))
+                    ->get()->keyBy('num_licence');
+            }
+            $cavaliersByName = collect();
+            $csvCavalierNoms = array_values(array_unique($csvCavalierNoms));
+            if (! empty($csvCavalierNoms)) {
+                $cavaliersByName = Cavalier::whereIn('nom', $csvCavalierNoms)->get()
+                    ->keyBy(fn ($c) => $c->nom . '|' . $c->prenom);
+            }
+
+            $newCavaliers = [];
+            // Track which keys we've already queued for creation
+            $newCavaliersByLicence = [];
+            $newCavaliersByName = [];
+
+            foreach ($parsedRows as $row) {
+                if (! empty($row['licence'])) {
+                    if (! $cavaliersByLicence->has($row['licence']) && ! isset($newCavaliersByLicence[$row['licence']])) {
+                        $newCavaliersByLicence[$row['licence']] = true;
+                        $newCavaliers[] = [
+                            'nom' => $row['nom'],
+                            'prenom' => $row['prenom'],
+                            'num_licence' => $row['licence'],
+                            'club' => $row['club'] ?: null,
+                            'created_at' => $now,
+                            'updated_at' => $now,
+                        ];
+                    }
+                } else {
+                    $nameKey = $row['nom'] . '|' . $row['prenom'];
+                    if (! $cavaliersByName->has($nameKey) && ! isset($newCavaliersByName[$nameKey])) {
+                        $newCavaliersByName[$nameKey] = true;
+                        $newCavaliers[] = [
+                            'nom' => $row['nom'],
+                            'prenom' => $row['prenom'],
+                            'num_licence' => null,
+                            'club' => $row['club'] ?: null,
+                            'created_at' => $now,
+                            'updated_at' => $now,
+                        ];
+                    }
                 }
-
-                // Cheval
-                $cheval = Cheval::firstOrCreate(
-                    ! empty($sire)
-                        ? ['num_sire' => $sire]
-                        : ['nom' => $cols[8]],
-                    [
-                        'nom' => $cols[8],
-                        'num_sire' => $sire ?: null,
-                    ]
-                );
-                if ($cheval->wasRecentlyCreated) {
-                    $counters['nb_chevaux']++;
+            }
+            if (! empty($newCavaliers)) {
+                foreach (array_chunk($newCavaliers, 500) as $chunk) {
+                    Cavalier::insert($chunk);
                 }
+                $counters['nb_cavaliers'] = count($newCavaliers);
+                // Reload caches
+                $allLicences = array_values(array_unique(array_map(fn ($r) => $r['licence'], array_filter($parsedRows, fn ($r) => ! empty($r['licence'])))));
+                if (! empty($allLicences)) {
+                    $cavaliersByLicence = Cavalier::whereIn('num_licence', $allLicences)->get()->keyBy('num_licence');
+                }
+                $allNoms = array_values(array_unique(array_map(fn ($r) => $r['nom'], $parsedRows)));
+                $cavaliersByName = Cavalier::whereIn('nom', $allNoms)->get()
+                    ->keyBy(fn ($c) => $c->nom . '|' . $c->prenom);
+            }
 
-                // Engagement
-                $engagement = Engagement::firstOrCreate(
-                    [
+            // === Phase 3: Chevaux ===
+            // SIF uses dual-key: by num_sire if available, otherwise by nom
+            $csvSires = [];
+            $csvChevalNoms = [];
+            foreach ($parsedRows as $row) {
+                if (! empty($row['sire'])) {
+                    $csvSires[] = $row['sire'];
+                } else {
+                    $csvChevalNoms[] = $row['chevalNom'];
+                }
+            }
+
+            $chevauxBySire = collect();
+            if (! empty($csvSires)) {
+                $chevauxBySire = Cheval::whereIn('num_sire', array_unique($csvSires))
+                    ->get()->keyBy('num_sire');
+            }
+            $chevauxByName = collect();
+            $csvChevalNoms = array_values(array_unique($csvChevalNoms));
+            if (! empty($csvChevalNoms)) {
+                $chevauxByName = Cheval::whereIn('nom', $csvChevalNoms)->get()->keyBy('nom');
+            }
+
+            $newChevaux = [];
+            $newChevauxBySire = [];
+            $newChevauxByName = [];
+
+            foreach ($parsedRows as $row) {
+                if (! empty($row['sire'])) {
+                    if (! $chevauxBySire->has($row['sire']) && ! isset($newChevauxBySire[$row['sire']])) {
+                        $newChevauxBySire[$row['sire']] = true;
+                        $newChevaux[] = [
+                            'nom' => $row['chevalNom'],
+                            'num_sire' => $row['sire'],
+                            'created_at' => $now,
+                            'updated_at' => $now,
+                        ];
+                    }
+                } else {
+                    if (! $chevauxByName->has($row['chevalNom']) && ! isset($newChevauxByName[$row['chevalNom']])) {
+                        $newChevauxByName[$row['chevalNom']] = true;
+                        $newChevaux[] = [
+                            'nom' => $row['chevalNom'],
+                            'num_sire' => null,
+                            'created_at' => $now,
+                            'updated_at' => $now,
+                        ];
+                    }
+                }
+            }
+            if (! empty($newChevaux)) {
+                foreach (array_chunk($newChevaux, 500) as $chunk) {
+                    Cheval::insert($chunk);
+                }
+                $counters['nb_chevaux'] = count($newChevaux);
+                // Reload caches
+                $allSires = array_values(array_unique(array_map(fn ($r) => $r['sire'], array_filter($parsedRows, fn ($r) => ! empty($r['sire'])))));
+                if (! empty($allSires)) {
+                    $chevauxBySire = Cheval::whereIn('num_sire', $allSires)->get()->keyBy('num_sire');
+                }
+                $allChevalNoms = array_values(array_unique(array_map(fn ($r) => $r['chevalNom'], $parsedRows)));
+                $chevauxByName = Cheval::whereIn('nom', $allChevalNoms)->get()->keyBy('nom');
+            }
+
+            // === Phase 4: Engagements ===
+            $existingEngagements = Engagement::whereIn('epreuve_id', $epreuveCache->pluck('id'))
+                ->get()
+                ->keyBy(fn ($e) => $e->epreuve_id . '|' . $e->cavalier_id . '|' . $e->cheval_id);
+
+            $newEngagements = [];
+            foreach ($parsedRows as $row) {
+                $epreuve = $epreuveCache[$row['epreuveLabel']];
+
+                $cavalier = ! empty($row['licence'])
+                    ? $cavaliersByLicence[$row['licence']]
+                    : $cavaliersByName[$row['nom'] . '|' . $row['prenom']];
+
+                $cheval = ! empty($row['sire'])
+                    ? $chevauxBySire[$row['sire']]
+                    : $chevauxByName[$row['chevalNom']];
+
+                $engKey = $epreuve->id . '|' . $cavalier->id . '|' . $cheval->id;
+                if (! $existingEngagements->has($engKey) && ! isset($newEngagements[$engKey])) {
+                    $newEngagements[$engKey] = [
                         'epreuve_id' => $epreuve->id,
                         'cavalier_id' => $cavalier->id,
                         'cheval_id' => $cheval->id,
-                    ],
-                    [
-                        'numero_depart' => $numeroDepart ?: null,
-                    ]
-                );
-                if ($engagement->wasRecentlyCreated) {
-                    $counters['nb_engagements']++;
+                        'numero_depart' => $row['numeroDepart'] ?: null,
+                        'created_at' => $now,
+                        'updated_at' => $now,
+                    ];
                 }
+            }
+            if (! empty($newEngagements)) {
+                foreach (array_chunk(array_values($newEngagements), 500) as $chunk) {
+                    Engagement::insert($chunk);
+                }
+                $counters['nb_engagements'] = count($newEngagements);
             }
         });
 

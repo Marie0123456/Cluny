@@ -32,6 +32,17 @@ class CsvImportService
         // Skip header line
         array_shift($lines);
 
+        $separator = $this->detectSeparator(reset($lines));
+
+        // Parse all lines upfront
+        $parsedLines = [];
+        foreach ($lines as $line) {
+            $cols = array_map('trim', explode($separator, $line));
+            if (count($cols) >= 19) {
+                $parsedLines[] = $cols;
+            }
+        }
+
         $counters = [
             'nb_epreuves' => 0,
             'nb_cavaliers' => 0,
@@ -39,86 +50,125 @@ class CsvImportService
             'nb_engagements' => 0,
         ];
 
-        $separator = $this->detectSeparator($lines[0] ?? '');
+        DB::transaction(function () use ($concours, $parsedLines, &$counters) {
+            $now = now();
 
-        DB::transaction(function () use ($concours, $lines, &$counters, $separator) {
-            foreach ($lines as $line) {
-                $cols = explode($separator, $line);
-
-                if (count($cols) < 19) {
-                    continue;
-                }
-
-                // Clean columns
-                $cols = array_map('trim', $cols);
-
-                // Epreuve (columns 0-2)
-                $epreuve = Epreuve::firstOrCreate(
-                    [
+            // === Phase 1: Epreuves ===
+            $epreuveCache = $concours->epreuves()->get()->keyBy('numero');
+            $newEpreuves = [];
+            foreach ($parsedLines as $cols) {
+                $numero = $cols[0];
+                if (! $epreuveCache->has($numero) && ! isset($newEpreuves[$numero])) {
+                    $newEpreuves[$numero] = [
                         'concours_id' => $concours->id,
-                        'numero' => $cols[0],
-                    ],
-                    [
+                        'numero' => $numero,
                         'nom' => $cols[1],
                         'date' => $this->parseDate($cols[2]),
-                    ]
-                );
-                if ($epreuve->wasRecentlyCreated) {
-                    $counters['nb_epreuves']++;
+                        'created_at' => $now,
+                        'updated_at' => $now,
+                    ];
                 }
+            }
+            if (! empty($newEpreuves)) {
+                Epreuve::insert(array_values($newEpreuves));
+                $counters['nb_epreuves'] = count($newEpreuves);
+                $epreuveCache = $concours->epreuves()->get()->keyBy('numero');
+            }
 
-                // Cavalier (columns 4-11)
-                $cavalier = Cavalier::firstOrCreate(
-                    [
+            // === Phase 2: Cavaliers ===
+            $csvCavalierNoms = array_values(array_unique(array_map(fn ($c) => $c[4], $parsedLines)));
+            $cavalierCache = Cavalier::whereIn('nom', $csvCavalierNoms)->get()
+                ->keyBy(fn ($c) => $c->nom . '|' . $c->prenom . '|' . ($c->num_licence ?? ''));
+
+            $newCavaliers = [];
+            foreach ($parsedLines as $cols) {
+                $key = $cols[4] . '|' . $cols[5] . '|' . ($cols[7] ?: '');
+                if (! $cavalierCache->has($key) && ! isset($newCavaliers[$key])) {
+                    $newCavaliers[$key] = [
                         'nom' => $cols[4],
                         'prenom' => $cols[5],
                         'num_licence' => $cols[7] ?: null,
-                    ],
-                    [
                         'club' => $cols[8] ?: null,
                         'cre' => $cols[9] ?: null,
                         'departement' => $cols[10] ?: null,
                         'num_departement' => $cols[11] ?: null,
-                    ]
-                );
-                if ($cavalier->wasRecentlyCreated) {
-                    $counters['nb_cavaliers']++;
+                        'created_at' => $now,
+                        'updated_at' => $now,
+                    ];
                 }
+            }
+            if (! empty($newCavaliers)) {
+                foreach (array_chunk(array_values($newCavaliers), 500) as $chunk) {
+                    Cavalier::insert($chunk);
+                }
+                $counters['nb_cavaliers'] = count($newCavaliers);
+                $cavalierCache = Cavalier::whereIn('nom', $csvCavalierNoms)->get()
+                    ->keyBy(fn ($c) => $c->nom . '|' . $c->prenom . '|' . ($c->num_licence ?? ''));
+            }
 
-                // Cheval (columns 13-19)
-                $cheval = Cheval::firstOrCreate(
-                    [
+            // === Phase 3: Chevaux ===
+            $csvChevalNoms = array_values(array_unique(array_map(fn ($c) => $c[13], $parsedLines)));
+            $chevalCache = Cheval::whereIn('nom', $csvChevalNoms)->get()
+                ->keyBy(fn ($c) => $c->nom . '|' . ($c->num_sire ?? ''));
+
+            $newChevaux = [];
+            foreach ($parsedLines as $cols) {
+                $key = $cols[13] . '|' . ($cols[15] ?: '');
+                if (! $chevalCache->has($key) && ! isset($newChevaux[$key])) {
+                    $newChevaux[$key] = [
                         'nom' => $cols[13],
                         'num_sire' => $cols[15] ?: null,
-                    ],
-                    [
                         'age' => $this->parseAge($cols[16] ?? ''),
                         'sexe' => $cols[17] ?? null,
                         'robe' => $cols[18] ?? null,
                         'race' => $cols[19] ?? null,
-                    ]
-                );
-                if ($cheval->wasRecentlyCreated) {
-                    $counters['nb_chevaux']++;
+                        'created_at' => $now,
+                        'updated_at' => $now,
+                    ];
                 }
+            }
+            if (! empty($newChevaux)) {
+                foreach (array_chunk(array_values($newChevaux), 500) as $chunk) {
+                    Cheval::insert($chunk);
+                }
+                $counters['nb_chevaux'] = count($newChevaux);
+                $chevalCache = Cheval::whereIn('nom', $csvChevalNoms)->get()
+                    ->keyBy(fn ($c) => $c->nom . '|' . ($c->num_sire ?? ''));
+            }
 
-                // Engagement
-                $engagement = Engagement::firstOrCreate(
-                    [
+            // === Phase 4: Engagements ===
+            $existingEngagements = Engagement::whereIn('epreuve_id', $epreuveCache->pluck('id'))
+                ->get()
+                ->keyBy(fn ($e) => $e->epreuve_id . '|' . $e->cavalier_id . '|' . $e->cheval_id);
+
+            $newEngagements = [];
+            foreach ($parsedLines as $cols) {
+                $epreuve = $epreuveCache[$cols[0]];
+                $cavalierKey = $cols[4] . '|' . $cols[5] . '|' . ($cols[7] ?: '');
+                $chevalKey = $cols[13] . '|' . ($cols[15] ?: '');
+                $cavalier = $cavalierCache[$cavalierKey];
+                $cheval = $chevalCache[$chevalKey];
+
+                $engKey = $epreuve->id . '|' . $cavalier->id . '|' . $cheval->id;
+                if (! $existingEngagements->has($engKey) && ! isset($newEngagements[$engKey])) {
+                    $newEngagements[$engKey] = [
                         'epreuve_id' => $epreuve->id,
                         'cavalier_id' => $cavalier->id,
                         'cheval_id' => $cheval->id,
-                    ],
-                    [
                         'numero_depart' => $cols[3] ?: null,
                         'role_cavalier' => $cols[6] ?: null,
                         'dept_groom' => $cols[12] ?: null,
                         'role_cheval' => $cols[14] ?: null,
-                    ]
-                );
-                if ($engagement->wasRecentlyCreated) {
-                    $counters['nb_engagements']++;
+                        'created_at' => $now,
+                        'updated_at' => $now,
+                    ];
                 }
+            }
+            if (! empty($newEngagements)) {
+                foreach (array_chunk(array_values($newEngagements), 500) as $chunk) {
+                    Engagement::insert($chunk);
+                }
+                $counters['nb_engagements'] = count($newEngagements);
             }
         });
 
@@ -137,6 +187,7 @@ class CsvImportService
         if ($semicolonCount >= $commaCount) {
             return ';';
         }
+
         return ',';
     }
 
@@ -160,6 +211,7 @@ class CsvImportService
         if (preg_match('/(\d+)/', $ageStr, $matches)) {
             return (int) $matches[1];
         }
+
         return null;
     }
 }
