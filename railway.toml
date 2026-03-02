@@ -1,7 +1,9 @@
 [build]
 builder = "railpack"
+buildCommand = "npm install && npm run build && composer install --no-dev --optimize-autoloader && php artisan config:cache && php artisan route:cache && php artisan view:cache"
 
 [deploy]
+startCommand = "php artisan migrate --force --seed && php artisan serve --host=0.0.0.0 --port=${PORT:-8080}"
 healthcheckPath = "/up"
 restartPolicyType = "on_failure"
 restartPolicyMaxRetries = 3
