@@ -9,7 +9,9 @@ class EngageController extends Controller
     public function index(Concours $concours)
     {
         $epreuves = $concours->epreuves()
-            ->with(['engagements.cavalier', 'engagements.cheval'])
+            ->with(['engagements' => function ($query) {
+                $query->withCount('modifications')->with(['cavalier', 'cheval']);
+            }])
             ->orderBy('date')
             ->orderByRaw('CAST(numero AS INTEGER), numero')
             ->get();
