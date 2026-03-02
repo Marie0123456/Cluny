@@ -78,18 +78,24 @@
                     @else
                         <p class="text-sm text-gray-500 mb-3">{{ $multiEpreuveCavaliers->count() }} cavalier(s) faisant plusieurs epreuves en {{ implode(' / ', $selectedDisciplines) }}</p>
                         <div class="overflow-x-auto">
-                            <table class="min-w-full divide-y divide-gray-200">
+                            <table class="min-w-full divide-y divide-gray-200" id="multi-epreuves-table">
                                 <thead class="bg-gray-50">
                                     <tr>
-                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Cavalier</th>
-                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Club</th>
-                                        <th class="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase">Nb epreuves</th>
+                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:text-gray-700 select-none" data-sort="cavalier" data-type="text">
+                                            <span class="inline-flex items-center gap-1">Cavalier <span class="sort-arrow text-gray-400">&#x2195;</span></span>
+                                        </th>
+                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:text-gray-700 select-none" data-sort="club" data-type="text">
+                                            <span class="inline-flex items-center gap-1">Club <span class="sort-arrow text-gray-400">&#x2195;</span></span>
+                                        </th>
+                                        <th class="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase cursor-pointer hover:text-gray-700 select-none" data-sort="nb" data-type="number">
+                                            <span class="inline-flex items-center gap-1">Nb epreuves <span class="sort-arrow text-gray-400">&#x2195;</span></span>
+                                        </th>
                                         <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Epreuves</th>
                                     </tr>
                                 </thead>
                                 <tbody class="bg-white divide-y divide-gray-200">
                                     @foreach ($multiEpreuveCavaliers as $cav)
-                                        <tr>
+                                        <tr data-cavalier="{{ $cav->nom }} {{ $cav->prenom }}" data-club="{{ $cav->club ?? '' }}" data-nb="{{ $cav->nb_epreuves }}">
                                             <td class="px-4 py-2 text-sm font-medium text-gray-900">{{ $cav->nom }} {{ $cav->prenom }}</td>
                                             <td class="px-4 py-2 text-sm text-gray-500">{{ $cav->club ?? '-' }}</td>
                                             <td class="px-4 py-2 text-sm text-center">
@@ -103,6 +109,61 @@
                                 </tbody>
                             </table>
                         </div>
+
+                        <script>
+                            document.addEventListener('DOMContentLoaded', function () {
+                                const table = document.getElementById('multi-epreuves-table');
+                                if (!table) return;
+                                const headers = table.querySelectorAll('th[data-sort]');
+                                let currentSort = null;
+                                let currentDir = 'asc';
+
+                                headers.forEach(function (th) {
+                                    th.addEventListener('click', function () {
+                                        const key = th.dataset.sort;
+                                        const type = th.dataset.type;
+
+                                        if (currentSort === key) {
+                                            currentDir = currentDir === 'asc' ? 'desc' : 'asc';
+                                        } else {
+                                            currentSort = key;
+                                            currentDir = type === 'number' ? 'desc' : 'asc';
+                                        }
+
+                                        // Update arrows
+                                        headers.forEach(function (h) {
+                                            h.querySelector('.sort-arrow').innerHTML = '&#x2195;';
+                                            h.querySelector('.sort-arrow').className = 'sort-arrow text-gray-400';
+                                        });
+                                        th.querySelector('.sort-arrow').innerHTML = currentDir === 'asc' ? '&#x2191;' : '&#x2193;';
+                                        th.querySelector('.sort-arrow').className = 'sort-arrow text-indigo-600';
+
+                                        // Sort rows
+                                        const tbody = table.querySelector('tbody');
+                                        const rows = Array.from(tbody.querySelectorAll('tr'));
+
+                                        rows.sort(function (a, b) {
+                                            let valA = a.dataset[key] || '';
+                                            let valB = b.dataset[key] || '';
+
+                                            if (type === 'number') {
+                                                valA = parseInt(valA) || 0;
+                                                valB = parseInt(valB) || 0;
+                                                return currentDir === 'asc' ? valA - valB : valB - valA;
+                                            }
+
+                                            valA = valA.toLowerCase();
+                                            valB = valB.toLowerCase();
+                                            if (valA < valB) return currentDir === 'asc' ? -1 : 1;
+                                            if (valA > valB) return currentDir === 'asc' ? 1 : -1;
+                                            return 0;
+                                        });
+
+                                        rows.forEach(function (row) { tbody.appendChild(row); });
+                                    });
+                                });
+                            });
+                        </script>
                     @endif
                 @else
                     <p class="text-sm text-gray-500">Cochez une ou plusieurs disciplines puis cliquez sur Afficher.</p>
