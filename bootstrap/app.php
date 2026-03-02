@@ -11,6 +11,7 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
+        $middleware->trustProxies(at: '*');
         $middleware->alias([
             'role' => \App\Http\Middleware\EnsureUserHasRole::class,
             'concours.access' => \App\Http\Middleware\EnsureConcoursAccess::class,
