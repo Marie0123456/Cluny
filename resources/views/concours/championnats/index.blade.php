@@ -168,8 +168,46 @@
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             const disciplineSelect = document.getElementById('discipline');
-            const epreuve2Wrapper = document.getElementById('epreuve2-wrapper');
+            const epreuve1Select = document.getElementById('epreuve1_id');
             const epreuve2Select = document.getElementById('epreuve2_id');
+            const epreuve2Wrapper = document.getElementById('epreuve2-wrapper');
+
+            // Store all epreuves for filtering
+            const allEpreuves = @json($epreuves->map(fn ($e) => ['id' => $e->id, 'label' => $e->numero . ' - ' . $e->nom, 'nom' => $e->nom]));
+
+            function filterEpreuves() {
+                const disc = disciplineSelect.value.toLowerCase();
+
+                // Filter epreuves whose name starts with the discipline
+                const filtered = allEpreuves.filter(function (ep) {
+                    return ep.nom.toLowerCase().startsWith(disc);
+                });
+
+                // If no epreuves match, show all (fallback)
+                const list = filtered.length > 0 ? filtered : allEpreuves;
+
+                // Rebuild epreuve1 options
+                const oldVal1 = epreuve1Select.value;
+                epreuve1Select.innerHTML = '<option value="">-- Choisir --</option>';
+                list.forEach(function (ep) {
+                    const opt = document.createElement('option');
+                    opt.value = ep.id;
+                    opt.textContent = ep.label;
+                    if (String(ep.id) === oldVal1) opt.selected = true;
+                    epreuve1Select.appendChild(opt);
+                });
+
+                // Rebuild epreuve2 options
+                const oldVal2 = epreuve2Select.value;
+                epreuve2Select.innerHTML = '<option value="">-- Choisir --</option>';
+                list.forEach(function (ep) {
+                    const opt = document.createElement('option');
+                    opt.value = ep.id;
+                    opt.textContent = ep.label;
+                    if (String(ep.id) === oldVal2) opt.selected = true;
+                    epreuve2Select.appendChild(opt);
+                });
+            }
 
             function toggleEpreuve2() {
                 const disc = disciplineSelect.value;
@@ -185,7 +223,13 @@
                 }
             }
 
-            disciplineSelect.addEventListener('change', toggleEpreuve2);
+            disciplineSelect.addEventListener('change', function () {
+                filterEpreuves();
+                toggleEpreuve2();
+            });
+
+            // Init on page load
+            filterEpreuves();
             toggleEpreuve2();
         });
     </script>
