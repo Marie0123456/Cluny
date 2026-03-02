@@ -44,34 +44,39 @@
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 mt-6">
                 <h3 class="text-lg font-medium text-gray-900 mb-4">Cavaliers faisant plusieurs epreuves</h3>
 
-                <form method="GET" action="{{ route('concours.statistiques.index', $concours) }}" class="flex items-end space-x-4 mb-4">
-                    <div>
-                        <label for="discipline" class="block text-sm font-medium text-gray-700 mb-1">Discipline</label>
-                        <select name="discipline" id="discipline"
-                            class="block w-48 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
-                            <option value="">-- Choisir --</option>
-                            @foreach ($disciplines as $disc)
-                                <option value="{{ $disc }}" {{ $discipline === $disc ? 'selected' : '' }}>{{ $disc }}</option>
-                            @endforeach
-                        </select>
+                <form method="GET" action="{{ route('concours.statistiques.index', $concours) }}" class="mb-4">
+                    <div class="flex items-end space-x-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Disciplines</label>
+                            <div class="flex flex-wrap gap-4">
+                                @foreach ($disciplines as $disc)
+                                    <label class="inline-flex items-center">
+                                        <input type="checkbox" name="disciplines[]" value="{{ $disc }}"
+                                            {{ in_array($disc, $selectedDisciplines) ? 'checked' : '' }}
+                                            class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
+                                        <span class="ml-2 text-sm text-gray-700">{{ $disc }}</span>
+                                    </label>
+                                @endforeach
+                            </div>
+                        </div>
+                        <button type="submit"
+                            class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 transition">
+                            Afficher
+                        </button>
+                        @if (! empty($selectedDisciplines) && $multiEpreuveCavaliers->isNotEmpty())
+                            <a href="{{ route('concours.statistiques.export-multi-epreuves', array_merge([$concours], ['disciplines' => $selectedDisciplines])) }}"
+                                class="inline-flex items-center px-3 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 transition">
+                                Exporter CSV
+                            </a>
+                        @endif
                     </div>
-                    <button type="submit"
-                        class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 transition">
-                        Afficher
-                    </button>
-                    @if ($discipline && $multiEpreuveCavaliers->isNotEmpty())
-                        <a href="{{ route('concours.statistiques.export-multi-epreuves', [$concours, 'discipline' => $discipline]) }}"
-                            class="inline-flex items-center px-3 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 transition">
-                            Exporter CSV
-                        </a>
-                    @endif
                 </form>
 
-                @if ($discipline)
+                @if (! empty($selectedDisciplines))
                     @if ($multiEpreuveCavaliers->isEmpty())
-                        <p class="text-sm text-gray-500">Aucun cavalier ne fait plusieurs epreuves en {{ $discipline }}.</p>
+                        <p class="text-sm text-gray-500">Aucun cavalier ne fait plusieurs epreuves en {{ implode(' / ', $selectedDisciplines) }}.</p>
                     @else
-                        <p class="text-sm text-gray-500 mb-3">{{ $multiEpreuveCavaliers->count() }} cavalier(s) faisant plusieurs epreuves en {{ $discipline }}</p>
+                        <p class="text-sm text-gray-500 mb-3">{{ $multiEpreuveCavaliers->count() }} cavalier(s) faisant plusieurs epreuves en {{ implode(' / ', $selectedDisciplines) }}</p>
                         <div class="overflow-x-auto">
                             <table class="min-w-full divide-y divide-gray-200">
                                 <thead class="bg-gray-50">
@@ -100,7 +105,7 @@
                         </div>
                     @endif
                 @else
-                    <p class="text-sm text-gray-500">Selectionnez une discipline pour voir les cavaliers faisant plusieurs epreuves.</p>
+                    <p class="text-sm text-gray-500">Cochez une ou plusieurs disciplines puis cliquez sur Afficher.</p>
                 @endif
             </div>
         </div>

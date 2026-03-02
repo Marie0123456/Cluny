@@ -28,27 +28,32 @@ class StatistiqueController extends Controller
             ->sort()
             ->values();
 
-        // Multi-epreuve cavaliers filtered by discipline
-        $discipline = $request->query('discipline');
+        // Multi-epreuve cavaliers filtered by discipline(s)
+        $selectedDisciplines = array_filter((array) $request->query('disciplines', []));
         $multiEpreuveCavaliers = collect();
 
-        if ($discipline) {
-            $multiEpreuveCavaliers = DB::table('engagements')
+        if (! empty($selectedDisciplines)) {
+            $query = DB::table('engagements')
                 ->join('epreuves', 'engagements.epreuve_id', '=', 'epreuves.id')
                 ->join('cavaliers', 'engagements.cavalier_id', '=', 'cavaliers.id')
                 ->where('epreuves.concours_id', $concours->id)
-                ->whereRaw('LOWER(epreuves.nom) LIKE ?', [mb_strtolower($discipline) . '%'])
+                ->where(function ($q) use ($selectedDisciplines) {
+                    foreach ($selectedDisciplines as $disc) {
+                        $q->orWhereRaw('LOWER(epreuves.nom) LIKE ?', [mb_strtolower($disc) . '%']);
+                    }
+                })
                 ->select('cavaliers.id', 'cavaliers.nom', 'cavaliers.prenom', 'cavaliers.club')
                 ->selectRaw('COUNT(DISTINCT epreuves.id) as nb_epreuves')
                 ->selectRaw("STRING_AGG(DISTINCT epreuves.nom, ', ' ORDER BY epreuves.nom) as epreuves_liste")
                 ->groupBy('cavaliers.id', 'cavaliers.nom', 'cavaliers.prenom', 'cavaliers.club')
                 ->havingRaw('COUNT(DISTINCT epreuves.id) > 1')
                 ->orderBy('cavaliers.nom')
-                ->orderBy('cavaliers.prenom')
-                ->get();
+                ->orderBy('cavaliers.prenom');
+
+            $multiEpreuveCavaliers = $query->get();
         }
 
-        return view('concours.statistiques', compact('concours', 'stats', 'disciplines', 'discipline', 'multiEpreuveCavaliers'));
+        return view('concours.statistiques', compact('concours', 'stats', 'disciplines', 'selectedDisciplines', 'multiEpreuveCavaliers'));
     }
 
     public function exportCavaliers(Concours $concours)
@@ -124,8 +129,8 @@ class StatistiqueController extends Controller
 
     public function exportMultiEpreuves(Request $request, Concours $concours)
     {
-        $discipline = $request->query('discipline');
-        if (! $discipline) {
+        $selectedDisciplines = array_filter((array) $request->query('disciplines', []));
+        if (empty($selectedDisciplines)) {
             return redirect()->route('concours.statistiques.index', $concours);
         }
 
@@ -133,7 +138,11 @@ class StatistiqueController extends Controller
             ->join('epreuves', 'engagements.epreuve_id', '=', 'epreuves.id')
             ->join('cavaliers', 'engagements.cavalier_id', '=', 'cavaliers.id')
             ->where('epreuves.concours_id', $concours->id)
-            ->whereRaw('LOWER(epreuves.nom) LIKE ?', [mb_strtolower($discipline) . '%'])
+            ->where(function ($q) use ($selectedDisciplines) {
+                foreach ($selectedDisciplines as $disc) {
+                    $q->orWhereRaw('LOWER(epreuves.nom) LIKE ?', [mb_strtolower($disc) . '%']);
+                }
+            })
             ->select('cavaliers.nom', 'cavaliers.prenom', 'cavaliers.club')
             ->selectRaw('COUNT(DISTINCT epreuves.id) as nb_epreuves')
             ->selectRaw("STRING_AGG(DISTINCT epreuves.nom, ', ' ORDER BY epreuves.nom) as epreuves_liste")
@@ -143,7 +152,8 @@ class StatistiqueController extends Controller
             ->orderBy('cavaliers.prenom')
             ->get();
 
-        $filename = 'multi_epreuves_' . str_replace(' ', '_', $discipline) . '_' . str_replace(' ', '_', $concours->nom) . '.csv';
+        $discLabel = implode('_', $selectedDisciplines);
+        $filename = 'multi_epreuves_' . str_replace(' ', '_', $discLabel) . '_' . str_replace(' ', '_', $concours->nom) . '.csv';
 
         $headers = [
             'Content-Type' => 'text/csv; charset=UTF-8',
