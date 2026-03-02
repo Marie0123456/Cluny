@@ -53,7 +53,12 @@
 
             {{-- Import CSV resultats --}}
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 mb-6">
-                <h4 class="text-md font-medium text-gray-900 mb-4">Importer les resultats (CSV)</h4>
+                <h4 class="text-md font-medium text-gray-900 mb-3">Importer les resultats (CSV)</h4>
+                <p class="text-sm text-gray-500 mb-1">
+                    L'en-tete du CSV doit contenir les colonnes :
+                    <code class="text-xs bg-gray-100 px-1.5 py-0.5 rounded">Cl;...;Cheval;...;Cavalier;...;{{ $usePct ? '% (ou Note, Score)' : 'Points (ou Pts, Pen)' }}{{ !$usePct ? ';...;Temps' : '' }}</code>
+                </p>
+                <p class="text-xs text-gray-400 mb-4">Les colonnes sont detectees automatiquement par leur nom. Separateur : point-virgule, tabulation ou virgule.</p>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {{-- Import Epreuve 1 --}}
                     <div>
