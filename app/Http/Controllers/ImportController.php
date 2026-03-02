@@ -43,8 +43,13 @@ class ImportController extends Controller
                 'statut' => 'succes',
             ]);
 
-            return redirect()->route('concours.engages.index', $concours)
-                ->with('success', "Import réussi : {$result['nb_epreuves']} épreuves, {$result['nb_cavaliers']} cavaliers, {$result['nb_chevaux']} chevaux, {$result['nb_engagements']} engagements.");
+            $total = $result['nb_epreuves'] + $result['nb_cavaliers'] + $result['nb_chevaux'] + $result['nb_engagements'];
+            $message = $total > 0
+                ? "Import réussi : {$result['nb_epreuves']} épreuves, {$result['nb_cavaliers']} cavaliers, {$result['nb_chevaux']} chevaux, {$result['nb_engagements']} engagements."
+                : "Import terminé : toutes les données du fichier existent déjà, rien de nouveau à importer.";
+
+            return redirect()->route('concours.show', $concours)
+                ->with('success', $message);
         } catch (\Exception $e) {
             ImportLog::create([
                 'concours_id' => $concours->id,
