@@ -27,17 +27,19 @@ Route::middleware(['auth'])->group(function () {
     // Dashboard — Mes Concours
     Route::get('/dashboard', [ConcoursController::class, 'dashboard'])->name('dashboard');
 
-    // Concours — consultation (tous les utilisateurs)
-    Route::resource('concours', ConcoursController::class)
-        ->parameters(['concours' => 'concours'])
-        ->only(['index', 'show']);
-
     // Concours — création/modification/suppression (admin seulement)
+    // NB : ces routes doivent être déclarées AVANT index/show pour que
+    //       concours/create ne soit pas capturé par concours/{concours}
     Route::middleware('role:admin')->group(function () {
         Route::resource('concours', ConcoursController::class)
             ->parameters(['concours' => 'concours'])
             ->except(['index', 'show']);
     });
+
+    // Concours — consultation (tous les utilisateurs)
+    Route::resource('concours', ConcoursController::class)
+        ->parameters(['concours' => 'concours'])
+        ->only(['index', 'show']);
 
     // Concours sub-pages (accessible à tous les utilisateurs)
     Route::prefix('concours/{concours}')->name('concours.')->middleware('concours.access')->group(function () {
