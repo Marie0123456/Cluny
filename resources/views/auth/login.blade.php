@@ -44,4 +44,13 @@
             </x-primary-button>
         </div>
     </form>
+
+    <div class="mt-6 text-center border-t pt-4">
+        <p class="text-sm text-gray-600">
+            Pas encore de compte ?
+            <a class="underline text-sm text-indigo-600 hover:text-indigo-900 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 font-semibold" href="{{ route('register') }}">
+                Créer un compte
+            </a>
+        </p>
+    </div>
 </x-guest-layout>
