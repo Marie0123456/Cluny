@@ -295,7 +295,7 @@ class SifCsvImportService
         foreach ($required as $col) {
             $found = false;
             foreach ($cols as $headerCol) {
-                if (str_contains($headerCol, $col)) {
+                if (str_contains($headerCol, $col) || str_contains($col, $headerCol)) {
                     $found = true;
                     break;
                 }
