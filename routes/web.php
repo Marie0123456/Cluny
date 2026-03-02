@@ -27,15 +27,22 @@ Route::middleware(['auth'])->group(function () {
     // Dashboard — Mes Concours
     Route::get('/dashboard', [ConcoursController::class, 'dashboard'])->name('dashboard');
 
-    // Concours CRUD
-    Route::resource('concours', ConcoursController::class)->parameters(['concours' => 'concours']);
+    // Concours — consultation (tous les utilisateurs)
+    Route::resource('concours', ConcoursController::class)
+        ->parameters(['concours' => 'concours'])
+        ->only(['index', 'show']);
 
-    // Concours sub-pages
+    // Concours — création/modification/suppression (admin seulement)
+    Route::middleware('role:admin')->group(function () {
+        Route::resource('concours', ConcoursController::class)
+            ->parameters(['concours' => 'concours'])
+            ->except(['index', 'show']);
+    });
+
+    // Concours sub-pages (accessible à tous les utilisateurs)
     Route::prefix('concours/{concours}')->name('concours.')->middleware('concours.access')->group(function () {
-        Route::get('/engages', [EngageController::class, 'index'])->name('engages.index');
         Route::get('/epreuves', [EpreuveController::class, 'index'])->name('epreuves.index');
-        Route::post('/import', [ImportController::class, 'store'])->name('import.store');
-        Route::delete('/purge', [ConcoursController::class, 'purge'])->name('purge');
+        Route::get('/engages', [EngageController::class, 'index'])->name('engages.index');
 
         // Modifications
         Route::get('/modifications', [ModificationController::class, 'index'])->name('modifications.index');
@@ -44,6 +51,12 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/modifications/changement-epreuve', [ModificationController::class, 'changementEpreuve'])->name('modifications.changement-epreuve');
         Route::post('/modifications/invitation', [ModificationController::class, 'invitation'])->name('modifications.invitation');
         Route::post('/modifications/non-partant', [ModificationController::class, 'nonPartant'])->name('modifications.non-partant');
+    });
+
+    // Concours sub-pages (admin seulement)
+    Route::prefix('concours/{concours}')->name('concours.')->middleware(['concours.access', 'role:admin'])->group(function () {
+        Route::post('/import', [ImportController::class, 'store'])->name('import.store');
+        Route::delete('/purge', [ConcoursController::class, 'purge'])->name('purge');
 
         // Facturation ET
         Route::get('/facturation-et', [FacturationEtController::class, 'index'])->name('facturation-et.index');
@@ -81,11 +94,13 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('/modifications/{modification}', [ModificationController::class, 'destroy'])->name('modifications.destroy');
     Route::patch('/modifications/{modification}/update-paiement', [ModificationController::class, 'updatePaiement'])->name('modifications.update-paiement');
 
-    // Vente actions
-    Route::get('/ventes/{vente}', [VenteController::class, 'show'])->name('ventes.show');
-    Route::get('/ventes/{vente}/edit', [VenteController::class, 'edit'])->name('ventes.edit');
-    Route::put('/ventes/{vente}', [VenteController::class, 'update'])->name('ventes.update');
-    Route::delete('/ventes/{vente}', [VenteController::class, 'destroy'])->name('ventes.destroy');
+    // Vente actions (admin seulement)
+    Route::middleware('role:admin')->group(function () {
+        Route::get('/ventes/{vente}', [VenteController::class, 'show'])->name('ventes.show');
+        Route::get('/ventes/{vente}/edit', [VenteController::class, 'edit'])->name('ventes.edit');
+        Route::put('/ventes/{vente}', [VenteController::class, 'update'])->name('ventes.update');
+        Route::delete('/ventes/{vente}', [VenteController::class, 'destroy'])->name('ventes.destroy');
+    });
 
     // API endpoints
     Route::prefix('api')->group(function () {

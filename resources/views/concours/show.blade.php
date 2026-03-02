@@ -54,10 +54,12 @@
                     <p class="text-sm text-gray-500">Modifications</p>
                     <p class="text-2xl font-bold text-gray-900">{{ $concours->modifications_count }}</p>
                 </div>
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-4">
-                    <p class="text-sm text-gray-500">Ventes</p>
-                    <p class="text-2xl font-bold text-gray-900">{{ $concours->ventes_count }}</p>
-                </div>
+                @can('admin')
+                    <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-4">
+                        <p class="text-sm text-gray-500">Ventes</p>
+                        <p class="text-2xl font-bold text-gray-900">{{ $concours->ventes_count }}</p>
+                    </div>
+                @endcan
             </div>
 
             <!-- Mes Epreuves -->
