@@ -436,9 +436,15 @@
                                 <input type="text" x-model="searchCheval"
                                     @input.debounce.150ms="searchChevaux()"
                                     @focus="showChevalResults = true"
-                                    placeholder="Rechercher un cheval par nom..."
+                                    placeholder="Rechercher un cheval par nom (min. 2 lettres)..."
                                     class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                                 <input type="hidden" name="cheval_id" :value="chevalId">
+
+                                <div x-show="chevalSearchLoading" class="mt-1 text-sm text-gray-400">Recherche...</div>
+                                <div x-show="chevalSearchDone && chevalResults.length === 0 && searchCheval.length >= 2 && !chevalSearchLoading && !selectedChevalNom"
+                                    class="mt-1 text-sm text-orange-600">
+                                    Aucun cheval trouve. Cochez « Nouveau cheval » pour le creer.
+                                </div>
 
                                 <div x-show="selectedChevalNom" class="mt-2 flex items-center gap-2">
                                     <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
@@ -1512,6 +1518,8 @@
                 chevalResults: [],
                 showChevalResults: false,
                 selectedChevalNom: '',
+                chevalSearchLoading: false,
+                chevalSearchDone: false,
                 isNouveauCheval: false,
                 nouveauChevalNom: '',
                 nouveauChevalSire: '',
@@ -1593,16 +1601,28 @@
                     this.showChevalResults = false;
                     this.nouveauChevalNom = '';
                     this.nouveauChevalSire = '';
+                    this.chevalSearchLoading = false;
+                    this.chevalSearchDone = false;
                 },
 
                 async searchChevaux() {
                     if (this.searchCheval.length < 2) {
                         this.chevalResults = [];
+                        this.chevalSearchDone = false;
                         return;
                     }
-                    const res = await fetch(`/api/chevaux/search?q=${encodeURIComponent(this.searchCheval)}`);
-                    this.chevalResults = await res.json();
-                    this.showChevalResults = true;
+                    this.chevalSearchLoading = true;
+                    this.chevalSearchDone = false;
+                    try {
+                        const res = await fetch(`/api/chevaux/search?q=${encodeURIComponent(this.searchCheval)}`);
+                        this.chevalResults = await res.json();
+                        this.showChevalResults = true;
+                    } catch (e) {
+                        this.chevalResults = [];
+                        console.error('Erreur recherche cheval:', e);
+                    }
+                    this.chevalSearchLoading = false;
+                    this.chevalSearchDone = true;
                 },
 
                 selectCheval(ch) {
