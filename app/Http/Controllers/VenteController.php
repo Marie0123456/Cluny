@@ -111,7 +111,13 @@ class VenteController extends Controller
         $vente->load('lignes.produit', 'clientFacturation', 'concours');
         $produits = Produit::where('actif', true)->orderBy('nom')->get();
 
-        return view('concours.ventes.edit', compact('vente', 'produits'));
+        $initialLignes = $vente->lignes->map(fn ($l) => [
+            'produit_id' => (string) $l->produit_id,
+            'quantite' => $l->quantite,
+            'total' => (float) $l->total_ttc,
+        ]);
+
+        return view('concours.ventes.edit', compact('vente', 'produits', 'initialLignes'));
     }
 
     public function update(Request $request, Vente $vente)

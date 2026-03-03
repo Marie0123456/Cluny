@@ -193,11 +193,7 @@
                 @endforeach
             };
 
-            const initialLignes = @json($vente->lignes->map(fn($l) => [
-                'produit_id' => (string) $l->produit_id,
-                'quantite' => $l->quantite,
-                'total' => (float) $l->total_ttc,
-            ]));
+            const initialLignes = @json($initialLignes);
 
             return {
                 nomClient: @json($vente->nom_client),
