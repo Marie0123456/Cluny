@@ -80,7 +80,7 @@
                         <input type="text" x-model="searchCavalier"
                             @input="filterCavaliers()"
                             @focus="showCavalierList = true"
-                            placeholder="Tapez un nom de cavalier ou de cheval..."
+                            placeholder="Nom, cheval ou N° de depart..."
                             class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
 
                         <div x-show="selectedCavalierLabel" class="mt-1 text-sm text-indigo-700 font-medium">
@@ -865,7 +865,7 @@
                             <input type="text" x-model="searchCavalier"
                                 @input="filterCavaliers()"
                                 @focus="showCavalierList = true"
-                                placeholder="Rechercher un cavalier..."
+                                placeholder="Nom, cheval ou N° de depart..."
                                 class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
 
                             <div x-show="selectedCavalierLabel" class="mt-1 text-sm text-indigo-700 font-medium">
@@ -1755,7 +1755,8 @@
                     this.filteredCavaliers = this.cavaliers.filter(c =>
                         c.cavalier_nom.toLowerCase().includes(q) ||
                         c.cavalier_prenom.toLowerCase().includes(q) ||
-                        c.cheval_nom.toLowerCase().includes(q)
+                        c.cheval_nom.toLowerCase().includes(q) ||
+                        (c.numero_depart && c.numero_depart.toString().includes(q))
                     );
                 },
 
