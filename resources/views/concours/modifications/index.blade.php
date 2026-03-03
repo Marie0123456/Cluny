@@ -1138,6 +1138,47 @@
                                                         </div>
                                                     </div>
 
+                                                    {{-- Facture --}}
+                                                    <div x-data="{ facture: {{ $mod->facture ? '1' : '0' }} }" class="space-y-3">
+                                                        <div>
+                                                            <label class="block text-xs font-medium text-gray-500 mb-1">Facture</label>
+                                                            <div class="flex gap-4">
+                                                                <label class="inline-flex items-center text-sm">
+                                                                    <input type="radio" name="facture" value="1" x-model="facture"
+                                                                        class="border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
+                                                                    <span class="ml-1">Oui</span>
+                                                                </label>
+                                                                <label class="inline-flex items-center text-sm">
+                                                                    <input type="radio" name="facture" value="0" x-model="facture"
+                                                                        class="border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
+                                                                    <span class="ml-1">Non</span>
+                                                                </label>
+                                                            </div>
+                                                        </div>
+                                                        <div x-show="facture == 1" x-transition class="grid grid-cols-2 md:grid-cols-4 gap-4 p-3 bg-white rounded-lg border border-gray-200">
+                                                            <div>
+                                                                <label class="block text-xs font-medium text-gray-500 mb-1">Nom de facturation</label>
+                                                                <input type="text" name="nom_facturation" value="{{ $mod->clientFacturation?->nom }}"
+                                                                    class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                                                            </div>
+                                                            <div>
+                                                                <label class="block text-xs font-medium text-gray-500 mb-1">Telephone</label>
+                                                                <input type="text" name="telephone" value="{{ $mod->clientFacturation?->telephone }}"
+                                                                    class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                                                            </div>
+                                                            <div>
+                                                                <label class="block text-xs font-medium text-gray-500 mb-1">Email</label>
+                                                                <input type="email" name="email" value="{{ $mod->clientFacturation?->email }}"
+                                                                    class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                                                            </div>
+                                                            <div>
+                                                                <label class="block text-xs font-medium text-gray-500 mb-1">Adresse</label>
+                                                                <input type="text" name="adresse" value="{{ $mod->clientFacturation?->adresse }}"
+                                                                    class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
                                                     <div class="flex justify-end">
                                                         <button type="button" onclick="toggleEditRow({{ $mod->id }})" class="mr-3 text-sm text-gray-600 hover:text-gray-800">Fermer</button>
                                                         <button type="submit"
