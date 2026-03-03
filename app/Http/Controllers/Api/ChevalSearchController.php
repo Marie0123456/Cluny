@@ -11,6 +11,7 @@ class ChevalSearchController extends Controller
     public function search(Request $request)
     {
         $query = $request->get('q', '');
+        $concoursId = $request->get('concours_id');
 
         if (strlen($query) < 2) {
             return response()->json([]);
@@ -18,18 +19,26 @@ class ChevalSearchController extends Controller
 
         $normalizedQuery = $this->removeAccents(mb_strtolower($query));
 
-        $chevaux = Cheval::query()
+        $baseQuery = Cheval::query()
+            ->when($concoursId, function ($q) use ($concoursId) {
+                $q->whereHas('engagements.epreuve', function ($sub) use ($concoursId) {
+                    $sub->where('concours_id', $concoursId);
+                });
+            });
+
+        // Try SQL LIKE first (fast, works for non-accented searches)
+        $chevaux = (clone $baseQuery)
             ->where('nom', 'like', "%{$query}%")
             ->limit(20)
             ->get(['id', 'nom', 'num_sire', 'race', 'sexe']);
 
-        // If SQL LIKE found results, return them directly
         if ($chevaux->isNotEmpty()) {
             return response()->json($chevaux);
         }
 
-        // Fallback: accent-insensitive search in PHP (needed for SQLite)
-        $chevaux = Cheval::all(['id', 'nom', 'num_sire', 'race', 'sexe'])
+        // Fallback: accent-insensitive search in PHP
+        $chevaux = $baseQuery
+            ->get(['id', 'nom', 'num_sire', 'race', 'sexe'])
             ->filter(function ($cheval) use ($normalizedQuery) {
                 return str_contains(
                     $this->removeAccents(mb_strtolower($cheval->nom)),
