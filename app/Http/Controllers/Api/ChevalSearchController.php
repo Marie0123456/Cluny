@@ -44,14 +44,14 @@ class ChevalSearchController extends Controller
 
     private function removeAccents(string $str): string
     {
-        $transliterator = \Transliterator::create('NFD; [:Nonspacing Mark:] Remove; NFC');
-
-        if ($transliterator) {
-            return $transliterator->transliterate($str);
-        }
-
-        // Fallback if intl extension not available
         return strtr($str, [
+            'À' => 'A', 'Â' => 'A', 'Ä' => 'A', 'Á' => 'A',
+            'È' => 'E', 'Ê' => 'E', 'Ë' => 'E', 'É' => 'E',
+            'Ì' => 'I', 'Î' => 'I', 'Ï' => 'I', 'Í' => 'I',
+            'Ò' => 'O', 'Ô' => 'O', 'Ö' => 'O', 'Ó' => 'O',
+            'Ù' => 'U', 'Û' => 'U', 'Ü' => 'U', 'Ú' => 'U',
+            'Ÿ' => 'Y', 'Ý' => 'Y',
+            'Ç' => 'C', 'Ñ' => 'N',
             'à' => 'a', 'â' => 'a', 'ä' => 'a', 'á' => 'a',
             'è' => 'e', 'ê' => 'e', 'ë' => 'e', 'é' => 'e',
             'ì' => 'i', 'î' => 'i', 'ï' => 'i', 'í' => 'i',
