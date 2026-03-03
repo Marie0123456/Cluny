@@ -312,67 +312,6 @@ class ChampionnatController extends Controller
         return $value;
     }
 
-    private function detectCsvSeparator(string $line): string
-    {
-        $tabCount = substr_count($line, "\t");
-        $semicolonCount = substr_count($line, ';');
-        $commaCount = substr_count($line, ',');
-
-        if ($tabCount >= $semicolonCount && $tabCount >= $commaCount) {
-            return "\t";
-        }
-        if ($semicolonCount >= $commaCount) {
-            return ';';
-        }
-
-        return ',';
-    }
-
-    private function detectResultColumns(array $headerCols): array
-    {
-        $map = ['classement' => null, 'cheval' => null, 'cavalier' => null, 'points' => null, 'temps' => null];
-
-        foreach ($headerCols as $i => $col) {
-            $normalized = mb_strtolower($col);
-            $normalized = @iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $normalized) ?: $normalized;
-            $normalized = preg_replace('/[^a-z0-9%]/', '', $normalized);
-
-            if ($map['classement'] === null && preg_match('/^(cl|classement|place|rang)$/', $normalized)) {
-                $map['classement'] = $i;
-            } elseif ($map['cheval'] === null && str_contains($normalized, 'cheval')) {
-                $map['cheval'] = $i;
-            } elseif ($map['cavalier'] === null && str_contains($normalized, 'cavalier')) {
-                $map['cavalier'] = $i;
-            } elseif ($map['points'] === null && preg_match('/(point|pts|pen|%|pourcentage|note|score)/', $normalized)) {
-                $map['points'] = $i;
-            } elseif ($map['temps'] === null && preg_match('/(temps|tps|time|chrono|barrage)/', $normalized)) {
-                $map['temps'] = $i;
-            }
-        }
-
-        // Second pass: if cavalier not found, try "nom" (but not the cheval column)
-        if ($map['cavalier'] === null) {
-            foreach ($headerCols as $i => $col) {
-                $normalized = mb_strtolower(trim($col));
-                $normalized = @iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $normalized) ?: $normalized;
-                $normalized = preg_replace('/[^a-z0-9]/', '', $normalized);
-                if ($i !== $map['cheval'] && $normalized === 'nom') {
-                    $map['cavalier'] = $i;
-                    break;
-                }
-            }
-        }
-
-        // Fallback to hardcoded positions if header detection failed
-        if ($map['classement'] === null) $map['classement'] = 0;
-        if ($map['cheval'] === null) $map['cheval'] = 2;
-        if ($map['cavalier'] === null) $map['cavalier'] = 5;
-        if ($map['points'] === null) $map['points'] = 9;
-        // temps stays null if not detected (optional for dressage)
-
-        return $map;
-    }
-
     private function calculerClassement(Championnat $championnat, $exclusionKeys): \Illuminate\Support\Collection
     {
         $resultats1 = $championnat->resultats()
