@@ -1258,7 +1258,7 @@
                         this.resultatsChevaux = [];
                         return;
                     }
-                    const res = await fetch(`/api/chevaux/search?q=${encodeURIComponent(this.searchCheval)}`);
+                    const res = await fetch(`/api/chevaux/search?q=${encodeURIComponent(this.searchCheval)}&concours_id={{ $concours->getKey() }}`);
                     this.resultatsChevaux = await res.json();
                     this.showResults = true;
                 },
@@ -1614,7 +1614,7 @@
                     this.chevalSearchLoading = true;
                     this.chevalSearchDone = false;
                     try {
-                        const res = await fetch(`/api/chevaux/search?q=${encodeURIComponent(this.searchCheval)}`);
+                        const res = await fetch(`/api/chevaux/search?q=${encodeURIComponent(this.searchCheval)}&concours_id={{ $concours->getKey() }}`);
                         this.chevalResults = await res.json();
                         this.showChevalResults = true;
                     } catch (e) {
