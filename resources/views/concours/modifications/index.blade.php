@@ -1088,7 +1088,8 @@
                                     @if (in_array($mod->statut->value, ['cree', 'fait']) && $mod->type->isPaid())
                                         <tr id="edit-row-{{ $mod->id }}" class="hidden bg-gray-50">
                                             <td colspan="8" class="px-4 py-4">
-                                                <form method="POST" action="{{ route('modifications.update-paiement', $mod) }}" class="space-y-4">
+                                                <form method="POST" action="{{ route('modifications.update-paiement', $mod) }}" class="space-y-4"
+                                                    x-data="{ paiementCheque: {{ $mod->paiement_cheque ? 'true' : 'false' }}, facture: '{{ $mod->facture ? '1' : '0' }}' }">
                                                     @csrf
                                                     @method('PATCH')
 
@@ -1130,7 +1131,7 @@
                                                                     <span class="ml-1">Especes</span>
                                                                 </label>
                                                                 <label class="inline-flex items-center text-sm">
-                                                                    <input type="checkbox" name="paiement_cheque" value="1" {{ $mod->paiement_cheque ? 'checked' : '' }}
+                                                                    <input type="checkbox" name="paiement_cheque" value="1" x-model="paiementCheque"
                                                                         class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
                                                                     <span class="ml-1">Cheque</span>
                                                                 </label>
@@ -1138,8 +1139,15 @@
                                                         </div>
                                                     </div>
 
+                                                    {{-- Numero de cheque --}}
+                                                    <div x-show="paiementCheque" x-transition class="max-w-xs">
+                                                        <label class="block text-xs font-medium text-gray-500 mb-1">Numero de cheque</label>
+                                                        <input type="text" name="numero_cheque" value="{{ $mod->numero_cheque }}"
+                                                            class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                                                    </div>
+
                                                     {{-- Facture --}}
-                                                    <div x-data="{ facture: {{ $mod->facture ? '1' : '0' }} }" class="space-y-3">
+                                                    <div class="space-y-3">
                                                         <div>
                                                             <label class="block text-xs font-medium text-gray-500 mb-1">Facture</label>
                                                             <div class="flex gap-4">
