@@ -236,7 +236,7 @@ class ChampionnatController extends Controller
 
         $message = "$imported resultats importes.";
         if (!empty($skipped)) {
-            $message .= ' ' . count($skipped) . ' non trouves : ' . implode(', ', $skipped);
+            $message .= ' ' . count($skipped) . ' couple(s) du CSV non trouves dans les engages de l\'epreuve (nom different ou non inscrit) : ' . implode(', ', $skipped);
         }
 
         return redirect()->route('concours.championnats.show', [$concours, $championnat])
