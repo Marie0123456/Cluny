@@ -31,9 +31,10 @@ class StatistiqueController extends Controller
         // Multi-epreuve cavaliers filtered by discipline(s)
         $selectedDisciplines = array_filter((array) $request->query('disciplines', []));
         $multiEpreuveCavaliers = collect();
+        $multiEpreuveNoms = collect();
 
         if (! empty($selectedDisciplines)) {
-            $query = DB::table('engagements')
+            $rows = DB::table('engagements')
                 ->join('epreuves', 'engagements.epreuve_id', '=', 'epreuves.id')
                 ->join('cavaliers', 'engagements.cavalier_id', '=', 'cavaliers.id')
                 ->where('epreuves.concours_id', $concours->id)
@@ -42,18 +43,44 @@ class StatistiqueController extends Controller
                         $q->orWhereRaw('LOWER(epreuves.nom) LIKE ?', [mb_strtolower($disc) . '%']);
                     }
                 })
-                ->select('cavaliers.id', 'cavaliers.nom', 'cavaliers.prenom', 'cavaliers.club')
-                ->selectRaw('COUNT(DISTINCT epreuves.id) as nb_epreuves')
-                ->selectRaw("STRING_AGG(DISTINCT epreuves.nom, ', ' ORDER BY epreuves.nom) as epreuves_liste")
-                ->groupBy('cavaliers.id', 'cavaliers.nom', 'cavaliers.prenom', 'cavaliers.club')
-                ->havingRaw('COUNT(DISTINCT epreuves.id) > 1')
-                ->orderBy('cavaliers.nom')
-                ->orderBy('cavaliers.prenom');
+                ->select(
+                    'cavaliers.id as cavalier_id',
+                    'cavaliers.nom',
+                    'cavaliers.prenom',
+                    'cavaliers.club',
+                    'epreuves.nom as epreuve_nom',
+                    'engagements.numero_depart'
+                )
+                ->orderBy('epreuves.nom')
+                ->get();
 
-            $multiEpreuveCavaliers = $query->get();
+            // Collect all unique epreuve names (ordered)
+            $multiEpreuveNoms = $rows->pluck('epreuve_nom')->unique()->sort()->values();
+
+            // Group by cavalier and keep only those with > 1 epreuve
+            $multiEpreuveCavaliers = $rows->groupBy('cavalier_id')
+                ->filter(fn ($group) => $group->pluck('epreuve_nom')->unique()->count() > 1)
+                ->map(function ($group) {
+                    $first = $group->first();
+                    $epreuves = $group->map(fn ($r) => [
+                        'nom' => $r->epreuve_nom,
+                        'numero_depart' => $r->numero_depart,
+                    ])->sortBy('nom')->values();
+
+                    return (object) [
+                        'nom' => $first->nom,
+                        'prenom' => $first->prenom,
+                        'club' => $first->club,
+                        'nb_epreuves' => $epreuves->pluck('nom')->unique()->count(),
+                        'epreuves' => $epreuves,
+                        'epreuves_liste' => $epreuves->map(fn ($e) => $e['nom'] . ($e['numero_depart'] ? ' (N°' . $e['numero_depart'] . ')' : ''))->implode(', '),
+                    ];
+                })
+                ->sortBy(fn ($c) => $c->nom . ' ' . $c->prenom)
+                ->values();
         }
 
-        return view('concours.statistiques', compact('concours', 'stats', 'disciplines', 'selectedDisciplines', 'multiEpreuveCavaliers'));
+        return view('concours.statistiques', compact('concours', 'stats', 'disciplines', 'selectedDisciplines', 'multiEpreuveCavaliers', 'multiEpreuveNoms'));
     }
 
     public function exportCavaliers(Concours $concours)
@@ -134,7 +161,7 @@ class StatistiqueController extends Controller
             return redirect()->route('concours.statistiques.index', $concours);
         }
 
-        $cavaliers = DB::table('engagements')
+        $rows = DB::table('engagements')
             ->join('epreuves', 'engagements.epreuve_id', '=', 'epreuves.id')
             ->join('cavaliers', 'engagements.cavalier_id', '=', 'cavaliers.id')
             ->where('epreuves.concours_id', $concours->id)
@@ -143,14 +170,37 @@ class StatistiqueController extends Controller
                     $q->orWhereRaw('LOWER(epreuves.nom) LIKE ?', [mb_strtolower($disc) . '%']);
                 }
             })
-            ->select('cavaliers.nom', 'cavaliers.prenom', 'cavaliers.club')
-            ->selectRaw('COUNT(DISTINCT epreuves.id) as nb_epreuves')
-            ->selectRaw("STRING_AGG(DISTINCT epreuves.nom, ', ' ORDER BY epreuves.nom) as epreuves_liste")
-            ->groupBy('cavaliers.nom', 'cavaliers.prenom', 'cavaliers.club')
-            ->havingRaw('COUNT(DISTINCT epreuves.id) > 1')
-            ->orderBy('cavaliers.nom')
-            ->orderBy('cavaliers.prenom')
+            ->select(
+                'cavaliers.id as cavalier_id',
+                'cavaliers.nom',
+                'cavaliers.prenom',
+                'cavaliers.club',
+                'epreuves.nom as epreuve_nom',
+                'engagements.numero_depart'
+            )
+            ->orderBy('epreuves.nom')
             ->get();
+
+        $epreuveNoms = $rows->pluck('epreuve_nom')->unique()->sort()->values();
+
+        $cavaliers = $rows->groupBy('cavalier_id')
+            ->filter(fn ($group) => $group->pluck('epreuve_nom')->unique()->count() > 1)
+            ->map(function ($group) use ($epreuveNoms) {
+                $first = $group->first();
+                $epreuveMap = $group->keyBy('epreuve_nom');
+
+                $columns = $epreuveNoms->map(fn ($epNom) => isset($epreuveMap[$epNom]) ? ('N°' . ($epreuveMap[$epNom]->numero_depart ?? '-')) : '');
+
+                return [
+                    'nom' => $first->nom,
+                    'prenom' => $first->prenom,
+                    'club' => $first->club ?? '',
+                    'nb_epreuves' => $group->pluck('epreuve_nom')->unique()->count(),
+                    'epreuve_columns' => $columns->all(),
+                ];
+            })
+            ->sortBy(fn ($c) => $c['nom'] . ' ' . $c['prenom'])
+            ->values();
 
         $discLabel = implode('_', $selectedDisciplines);
         $filename = 'multi_epreuves_' . str_replace(' ', '_', $discLabel) . '_' . str_replace(' ', '_', $concours->nom) . '.csv';
@@ -160,14 +210,16 @@ class StatistiqueController extends Controller
             'Content-Disposition' => "attachment; filename=\"$filename\"",
         ];
 
-        $callback = function () use ($cavaliers) {
+        $callback = function () use ($cavaliers, $epreuveNoms) {
             $handle = fopen('php://output', 'w');
             fwrite($handle, "\xEF\xBB\xBF");
 
-            fputcsv($handle, ['Nom', 'Prenom', 'Club', 'Nb epreuves', 'Epreuves'], ';');
+            $header = array_merge(['Nom', 'Prenom', 'Club', 'Nb epreuves'], $epreuveNoms->all());
+            fputcsv($handle, $header, ';');
 
             foreach ($cavaliers as $c) {
-                fputcsv($handle, [$c->nom, $c->prenom, $c->club ?? '', $c->nb_epreuves, $c->epreuves_liste], ';');
+                $row = array_merge([$c['nom'], $c['prenom'], $c['club'], $c['nb_epreuves']], $c['epreuve_columns']);
+                fputcsv($handle, $row, ';');
             }
 
             fclose($handle);

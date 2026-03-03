@@ -90,7 +90,9 @@
                                         <th class="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase cursor-pointer hover:text-gray-700 select-none" data-sort="nb" data-type="number">
                                             <span class="inline-flex items-center gap-1">Nb epreuves <span class="sort-arrow text-gray-400">&#x2195;</span></span>
                                         </th>
-                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Epreuves</th>
+                                        @foreach ($multiEpreuveNoms as $epNom)
+                                            <th class="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase">{{ $epNom }}</th>
+                                        @endforeach
                                     </tr>
                                 </thead>
                                 <tbody class="bg-white divide-y divide-gray-200">
@@ -103,7 +105,14 @@
                                                     {{ $cav->nb_epreuves }}
                                                 </span>
                                             </td>
-                                            <td class="px-4 py-2 text-sm text-gray-500">{{ $cav->epreuves_liste }}</td>
+                                            @foreach ($multiEpreuveNoms as $epNom)
+                                                @php
+                                                    $match = collect($cav->epreuves)->firstWhere('nom', $epNom);
+                                                @endphp
+                                                <td class="px-4 py-2 text-sm text-center {{ $match ? 'text-gray-900 font-medium' : 'text-gray-300' }}">
+                                                    {{ $match ? 'N°' . ($match['numero_depart'] ?? '-') : '-' }}
+                                                </td>
+                                            @endforeach
                                         </tr>
                                     @endforeach
                                 </tbody>
