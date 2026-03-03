@@ -12,7 +12,7 @@
         <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
                 <!-- Infos client -->
-                <div class="grid grid-cols-2 gap-6 mb-6">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
                     <div>
                         <h3 class="text-sm font-medium text-gray-500 uppercase mb-2">Client</h3>
                         <p class="text-gray-900 font-medium">{{ $vente->nom_client }}</p>
@@ -50,6 +50,7 @@
                 @endif
 
                 <!-- Lignes -->
+                <div class="overflow-x-auto">
                 <table class="min-w-full divide-y divide-gray-200 mb-6">
                     <thead class="bg-gray-50">
                         <tr>
@@ -76,6 +77,7 @@
                         </tr>
                     </tfoot>
                 </table>
+                </div>
 
                 @if ($vente->commentaire)
                     <div class="mb-6 p-4 bg-yellow-50 rounded-lg">

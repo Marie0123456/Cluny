@@ -147,7 +147,7 @@
                             </ul>
                         </div>
 
-                        <div class="grid grid-cols-2 gap-4">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
                                 <x-input-label for="telephone" value="Téléphone" />
                                 <x-text-input id="telephone" name="telephone" type="tel" class="mt-1 block w-full" x-model="telephone" />

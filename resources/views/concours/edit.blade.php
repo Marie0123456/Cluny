@@ -19,7 +19,7 @@
                         @error('nom') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
                     </div>
 
-                    <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                         <div>
                             <label for="date_debut" class="block text-sm font-medium text-gray-700">Date de debut</label>
                             <input type="date" name="date_debut" id="date_debut" value="{{ old('date_debut', $concours->date_debut->format('Y-m-d')) }}" required

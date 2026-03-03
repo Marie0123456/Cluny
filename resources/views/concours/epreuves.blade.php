@@ -95,6 +95,7 @@
                         Prix enregistres avec succes.
                     </div>
 
+                    <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-gray-200 mt-3">
                         <thead class="bg-gray-50">
                             <tr>
@@ -163,6 +164,7 @@
                             @endforeach
                         </tbody>
                     </table>
+                    </div>
                 </div>
             @endif
 
