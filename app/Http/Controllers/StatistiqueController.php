@@ -80,7 +80,61 @@ class StatistiqueController extends Controller
                 ->values();
         }
 
-        return view('concours.statistiques', compact('concours', 'stats', 'disciplines', 'selectedDisciplines', 'multiEpreuveCavaliers', 'multiEpreuveNoms'));
+        // Multi-epreuve chevaux filtered by discipline(s)
+        $selectedDisciplinesChevaux = array_filter((array) $request->query('disciplines_chevaux', []));
+        $multiEpreuveChevaux = collect();
+        $multiEpreuveNomsChevaux = collect();
+
+        if (! empty($selectedDisciplinesChevaux)) {
+            $rowsChevaux = DB::table('engagements')
+                ->join('epreuves', 'engagements.epreuve_id', '=', 'epreuves.id')
+                ->join('chevaux', 'engagements.cheval_id', '=', 'chevaux.id')
+                ->join('cavaliers', 'engagements.cavalier_id', '=', 'cavaliers.id')
+                ->where('epreuves.concours_id', $concours->id)
+                ->where(function ($q) use ($selectedDisciplinesChevaux) {
+                    foreach ($selectedDisciplinesChevaux as $disc) {
+                        $q->orWhereRaw('LOWER(epreuves.nom) LIKE ?', [mb_strtolower($disc) . '%']);
+                    }
+                })
+                ->select(
+                    'chevaux.id as cheval_id',
+                    'chevaux.nom as cheval_nom',
+                    'chevaux.num_sire',
+                    'cavaliers.nom as cavalier_nom',
+                    'cavaliers.prenom as cavalier_prenom',
+                    'epreuves.nom as epreuve_nom',
+                    'engagements.numero_depart'
+                )
+                ->orderBy('epreuves.nom')
+                ->get();
+
+            $multiEpreuveNomsChevaux = $rowsChevaux->pluck('epreuve_nom')->unique()->sort()->values();
+
+            $multiEpreuveChevaux = $rowsChevaux->groupBy('cheval_id')
+                ->filter(fn ($group) => $group->pluck('epreuve_nom')->unique()->count() > 1)
+                ->map(function ($group) {
+                    $first = $group->first();
+                    $epreuves = $group->map(fn ($r) => [
+                        'nom' => $r->epreuve_nom,
+                        'numero_depart' => $r->numero_depart,
+                        'cavalier' => $r->cavalier_nom . ' ' . $r->cavalier_prenom,
+                    ])->sortBy('nom')->values();
+
+                    return (object) [
+                        'cheval_nom' => $first->cheval_nom,
+                        'num_sire' => $first->num_sire,
+                        'nb_epreuves' => $epreuves->pluck('nom')->unique()->count(),
+                        'epreuves' => $epreuves,
+                    ];
+                })
+                ->sortBy(fn ($c) => $c->cheval_nom)
+                ->values();
+        }
+
+        return view('concours.statistiques', compact(
+            'concours', 'stats', 'disciplines', 'selectedDisciplines', 'multiEpreuveCavaliers', 'multiEpreuveNoms',
+            'selectedDisciplinesChevaux', 'multiEpreuveChevaux', 'multiEpreuveNomsChevaux'
+        ));
     }
 
     public function exportCavaliers(Concours $concours)
@@ -219,6 +273,81 @@ class StatistiqueController extends Controller
 
             foreach ($cavaliers as $c) {
                 $row = array_merge([$c['nom'], $c['prenom'], $c['club'], $c['nb_epreuves']], $c['epreuve_columns']);
+                fputcsv($handle, $row, ';');
+            }
+
+            fclose($handle);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
+    public function exportMultiEpreuvesChevaux(Request $request, Concours $concours)
+    {
+        $selectedDisciplines = array_filter((array) $request->query('disciplines_chevaux', []));
+        if (empty($selectedDisciplines)) {
+            return redirect()->route('concours.statistiques.index', $concours);
+        }
+
+        $rows = DB::table('engagements')
+            ->join('epreuves', 'engagements.epreuve_id', '=', 'epreuves.id')
+            ->join('chevaux', 'engagements.cheval_id', '=', 'chevaux.id')
+            ->join('cavaliers', 'engagements.cavalier_id', '=', 'cavaliers.id')
+            ->where('epreuves.concours_id', $concours->id)
+            ->where(function ($q) use ($selectedDisciplines) {
+                foreach ($selectedDisciplines as $disc) {
+                    $q->orWhereRaw('LOWER(epreuves.nom) LIKE ?', [mb_strtolower($disc) . '%']);
+                }
+            })
+            ->select(
+                'chevaux.id as cheval_id',
+                'chevaux.nom as cheval_nom',
+                'chevaux.num_sire',
+                'cavaliers.nom as cavalier_nom',
+                'cavaliers.prenom as cavalier_prenom',
+                'epreuves.nom as epreuve_nom',
+                'engagements.numero_depart'
+            )
+            ->orderBy('epreuves.nom')
+            ->get();
+
+        $epreuveNoms = $rows->pluck('epreuve_nom')->unique()->sort()->values();
+
+        $chevaux = $rows->groupBy('cheval_id')
+            ->filter(fn ($group) => $group->pluck('epreuve_nom')->unique()->count() > 1)
+            ->map(function ($group) use ($epreuveNoms) {
+                $first = $group->first();
+                $epreuveMap = $group->keyBy('epreuve_nom');
+
+                $columns = $epreuveNoms->map(fn ($epNom) => isset($epreuveMap[$epNom]) ? ('N°' . ($epreuveMap[$epNom]->numero_depart ?? '-')) : '');
+
+                return [
+                    'cheval_nom' => $first->cheval_nom,
+                    'num_sire' => $first->num_sire ?? '',
+                    'nb_epreuves' => $group->pluck('epreuve_nom')->unique()->count(),
+                    'epreuve_columns' => $columns->all(),
+                ];
+            })
+            ->sortBy(fn ($c) => $c['cheval_nom'])
+            ->values();
+
+        $discLabel = implode('_', $selectedDisciplines);
+        $filename = 'multi_epreuves_chevaux_' . str_replace(' ', '_', $discLabel) . '_' . str_replace(' ', '_', $concours->nom) . '.csv';
+
+        $headers = [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => "attachment; filename=\"$filename\"",
+        ];
+
+        $callback = function () use ($chevaux, $epreuveNoms) {
+            $handle = fopen('php://output', 'w');
+            fwrite($handle, "\xEF\xBB\xBF");
+
+            $header = array_merge(['Cheval', 'SIRE', 'Nb epreuves'], $epreuveNoms->all());
+            fputcsv($handle, $header, ';');
+
+            foreach ($chevaux as $c) {
+                $row = array_merge([$c['cheval_nom'], $c['num_sire'], $c['nb_epreuves']], $c['epreuve_columns']);
                 fputcsv($handle, $row, ';');
             }
 
