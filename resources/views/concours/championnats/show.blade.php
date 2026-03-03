@@ -192,7 +192,35 @@
                                             $rang++;
                                         }
                                     @endphp
-                                    <tr class="{{ $entry['is_excluded'] ? 'bg-orange-50 opacity-50' : '' }}">
+                                    <tr class="{{ $entry['is_excluded'] ? 'bg-orange-50 opacity-50' : '' }}"
+                                        @if ($championnat->discipline === \App\Enums\DisciplineChampionnat::DRESSAGE)
+                                            x-data="{
+                                                libre: {{ ($entry['libre'] ?? false) ? 'true' : 'false' }},
+                                                total: {{ $entry['total_points'] }},
+                                                base: {{ $entry['points_e1'] }},
+                                                saving: false,
+                                                toggle() {
+                                                    this.saving = true;
+                                                    fetch('{{ route('concours.championnats.toggle-libre', [$concours, $championnat]) }}', {
+                                                        method: 'POST',
+                                                        headers: {
+                                                            'Content-Type': 'application/json',
+                                                            'Accept': 'application/json',
+                                                            'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content
+                                                        },
+                                                        body: JSON.stringify({ cavalier_id: {{ $entry['cavalier_id'] }}, cheval_id: {{ $entry['cheval_id'] }} })
+                                                    })
+                                                    .then(r => r.json())
+                                                    .then(data => {
+                                                        this.libre = data.libre;
+                                                        this.total = this.base + (data.libre ? 1 : 0);
+                                                        this.saving = false;
+                                                    })
+                                                    .catch(() => { this.saving = false; });
+                                                }
+                                            }"
+                                        @endif
+                                    >
                                         <td class="px-4 py-3 whitespace-nowrap text-sm {{ $entry['is_excluded'] ? 'text-orange-400' : 'text-gray-900 font-bold' }}">
                                             {{ $entry['is_excluded'] ? '-' : $rang }}
                                         </td>
@@ -219,20 +247,13 @@
                                         @endif
                                         @if ($championnat->discipline === \App\Enums\DisciplineChampionnat::DRESSAGE)
                                             <td class="px-4 py-3 whitespace-nowrap text-sm text-center">
-                                                <form action="{{ route('concours.championnats.toggle-libre', [$concours, $championnat]) }}" method="POST" class="inline">
-                                                    @csrf
-                                                    <input type="hidden" name="cavalier_id" value="{{ $entry['cavalier_id'] }}">
-                                                    <input type="hidden" name="cheval_id" value="{{ $entry['cheval_id'] }}">
-                                                    <button type="submit" class="p-1 rounded hover:bg-gray-100" title="Basculer Libre">
-                                                        @if ($entry['libre'] ?? false)
-                                                            <span class="text-green-600 font-bold">&#10003;</span>
-                                                        @else
-                                                            <span class="text-gray-300">&#9744;</span>
-                                                        @endif
-                                                    </button>
-                                                </form>
+                                                <button @click="toggle()" class="p-1 rounded hover:bg-gray-100" :disabled="saving" title="Basculer Libre">
+                                                    <span x-show="libre" class="text-green-600 font-bold">&#10003;</span>
+                                                    <span x-show="!libre" class="text-gray-300">&#9744;</span>
+                                                </button>
                                             </td>
-                                            <td class="px-4 py-3 whitespace-nowrap text-sm text-center font-bold {{ $entry['is_excluded'] ? 'text-orange-400' : 'text-gray-900' }}">
+                                            <td class="px-4 py-3 whitespace-nowrap text-sm text-center font-bold {{ $entry['is_excluded'] ? 'text-orange-400' : 'text-gray-900' }}"
+                                                x-text="total.toFixed(2).replace('.', ',')">
                                                 {{ number_format($entry['total_points'], 2, ',', '') }}
                                             </td>
                                         @endif

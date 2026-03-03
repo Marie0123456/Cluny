@@ -812,6 +812,10 @@ class ChampionnatController extends Controller
             $resultat->update(['libre' => !$resultat->libre]);
         }
 
+        if ($request->wantsJson()) {
+            return response()->json(['libre' => $resultat ? (bool) $resultat->libre : false]);
+        }
+
         return redirect()->route('concours.championnats.show', [$concours, $championnat]);
     }
 
