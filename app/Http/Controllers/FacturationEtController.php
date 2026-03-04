@@ -66,7 +66,8 @@ class FacturationEtController extends Controller
                 if ($mod->paiement_cheque) $moyens[] = 'Cheque';
 
                 $prix = (float) $mod->prix;
-                $puHt = $prix > 0 ? round($prix / 1.055, 2) : 0;
+                $pf = (float) $mod->pf;
+                $puHt = $prix > 0 ? round(($prix - $pf) / 1.055, 2) + $pf : 0;
 
                 fputcsv($handle, [
                     $mod->engagement->epreuve->numero ?? '-',

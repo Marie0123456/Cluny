@@ -132,7 +132,12 @@
                                             {{ $mod->pf ? number_format($mod->pf, 2, ',', ' ') . ' €' : '-' }}
                                         </td>
                                         <td class="px-4 py-3 text-sm text-gray-500">
-                                            {{ $mod->prix ? number_format(round((float) $mod->prix / 1.055, 2), 2, ',', ' ') . ' €' : '-' }}
+                                            @if ($mod->prix)
+                                                @php $puHt = round(((float) $mod->prix - (float) $mod->pf) / 1.055, 2) + (float) $mod->pf; @endphp
+                                                {{ number_format($puHt, 2, ',', ' ') }} &euro;
+                                            @else
+                                                -
+                                            @endif
                                         </td>
                                         <td class="px-4 py-3 text-sm text-gray-900 font-medium">
                                             {{ $mod->prix ? number_format($mod->prix, 2, ',', ' ') . ' €' : '-' }}
@@ -269,7 +274,7 @@
                                 <tr>
                                     <td colspan="4" class="px-4 py-3 text-sm font-bold text-gray-900">Totaux</td>
                                     <td class="px-4 py-3 text-sm font-bold text-gray-900">{{ number_format($totalPf, 2, ',', ' ') }} &euro;</td>
-                                    <td class="px-4 py-3 text-sm font-bold text-gray-900">{{ number_format(round($totalPrix / 1.055, 2), 2, ',', ' ') }} &euro;</td>
+                                    <td class="px-4 py-3 text-sm font-bold text-gray-900">{{ number_format(round(($totalPrix - $totalPf) / 1.055, 2) + $totalPf, 2, ',', ' ') }} &euro;</td>
                                     <td class="px-4 py-3 text-sm font-bold text-gray-900">{{ number_format($totalPrix, 2, ',', ' ') }} &euro;</td>
                                     <td colspan="4"></td>
                                 </tr>
