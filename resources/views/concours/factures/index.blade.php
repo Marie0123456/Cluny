@@ -40,13 +40,18 @@
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
                                     <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Ventes</th>
                                     <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Modifications</th>
-                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
+                                    <th class="px-4 py-3"></th>
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200">
                                 @foreach ($clients as $client)
                                     <tr>
-                                        <td class="px-4 py-3 text-sm font-medium text-gray-900">{{ $client->nom }}</td>
+                                        <td class="px-4 py-3 text-sm font-medium">
+                                            <a href="{{ route('concours.factures.show', [$concours, $client]) }}"
+                                                class="text-indigo-600 hover:text-indigo-900 hover:underline">
+                                                {{ $client->nom }}
+                                            </a>
+                                        </td>
                                         <td class="px-4 py-3 text-sm text-gray-500">{{ $client->telephone ?? '-' }}</td>
                                         <td class="px-4 py-3 text-sm text-gray-500">{{ $client->email ?? '-' }}</td>
                                         <td class="px-4 py-3 text-sm text-center">
@@ -69,8 +74,10 @@
                                         </td>
                                         <td class="px-4 py-3 text-sm text-right">
                                             <a href="{{ route('concours.factures.show', [$concours, $client]) }}"
-                                                class="text-indigo-600 hover:text-indigo-900 text-xs font-medium">
-                                                Voir detail
+                                                class="text-gray-400 hover:text-indigo-600" title="Voir détail">
+                                                <svg class="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                                                </svg>
                                             </a>
                                         </td>
                                     </tr>
