@@ -1083,9 +1083,6 @@
                                             <td class="px-4 py-2 text-sm text-gray-900">
                                                 @if ($mod->type->isPaid())
                                                     {{ number_format((float) $mod->prix, 2, ',', ' ') }} &euro;
-                                                    @if ($mod->pf > 0)
-                                                        <div class="text-xs text-gray-500">PF: {{ number_format((float) $mod->pf, 2, ',', ' ') }} &euro;</div>
-                                                    @endif
                                                 @else
                                                     -
                                                 @endif
