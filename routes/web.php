@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\ChevalSearchController;
 use App\Http\Controllers\Api\ClientFacturationController;
 use App\Http\Controllers\Api\EpreuveController as ApiEpreuveController;
 use App\Http\Controllers\ChampionnatController;
+use App\Http\Controllers\CommandeRetraitController;
 use App\Http\Controllers\ConcoursController;
 use App\Http\Controllers\EngageController;
 use App\Http\Controllers\EpreuveController;
@@ -80,6 +81,11 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/statistiques/export-clubs', [StatistiqueController::class, 'exportClubs'])->name('statistiques.export-clubs');
         Route::get('/statistiques/export-multi-epreuves', [StatistiqueController::class, 'exportMultiEpreuves'])->name('statistiques.export-multi-epreuves');
         Route::get('/statistiques/export-multi-epreuves-chevaux', [StatistiqueController::class, 'exportMultiEpreuvesChevaux'])->name('statistiques.export-multi-epreuves-chevaux');
+
+        // Retrait Commandes
+        Route::get('/commande-retraits', [CommandeRetraitController::class, 'index'])->name('commande-retraits.index');
+        Route::post('/commande-retraits/import', [CommandeRetraitController::class, 'import'])->name('commande-retraits.import');
+        Route::patch('/commande-retraits/{commandeRetrait}/toggle-retire', [CommandeRetraitController::class, 'toggleRetire'])->name('commande-retraits.toggle-retire');
 
         // Championnats (FFE SIF Open)
         Route::get('/championnats', [ChampionnatController::class, 'index'])->name('championnats.index');
