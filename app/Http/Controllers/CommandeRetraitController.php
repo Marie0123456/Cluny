@@ -25,7 +25,18 @@ class CommandeRetraitController extends Controller
         ]);
 
         $file = $request->file('csv_file');
-        $handle = fopen($file->getRealPath(), 'r');
+
+        // Read file content, strip BOM, and ensure UTF-8
+        $content = file_get_contents($file->getRealPath());
+        $content = preg_replace('/^\xEF\xBB\xBF/', '', $content);
+        if (!mb_check_encoding($content, 'UTF-8')) {
+            $content = mb_convert_encoding($content, 'UTF-8', 'ISO-8859-1');
+        }
+
+        $tempFile = tmpfile();
+        fwrite($tempFile, $content);
+        rewind($tempFile);
+        $handle = $tempFile;
 
         // Read header line
         $header = fgetcsv($handle, 0, ';');
@@ -35,11 +46,8 @@ class CommandeRetraitController extends Controller
             return back()->with('error', 'Le fichier CSV est vide.');
         }
 
-        // Map header columns (strip BOM and trim)
-        $header = array_map(fn ($col) => trim($col, " \t\n\r\0\x0B\xEF\xBB\xBF"), $header);
-        if (isset($header[0])) {
-            $header[0] = preg_replace('/^\x{FEFF}/u', '', $header[0]);
-        }
+        // Map header columns
+        $header = array_map('trim', $header);
         $columnMap = [
             'numero_commande' => 'Numéro de commande',
             'date_commande' => 'Date de commande',
