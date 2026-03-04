@@ -120,7 +120,7 @@ class CommandeRetraitController extends Controller
         return back()->with('success', $message);
     }
 
-    public function toggleRetire(CommandeRetrait $commandeRetrait)
+    public function toggleRetire(Concours $concours, CommandeRetrait $commandeRetrait)
     {
         $commandeRetrait->update(['retire' => !$commandeRetrait->retire]);
 
