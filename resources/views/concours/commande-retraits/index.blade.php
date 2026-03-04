@@ -111,7 +111,7 @@
                                         <td class="px-4 py-3 text-sm text-gray-500">{{ $commande->quantite }}</td>
                                         <td class="px-4 py-3 text-sm text-gray-500">{{ $commande->emplacement_boxes ?? '-' }}</td>
                                         <td class="px-4 py-3 text-sm">
-                                            <form action="{{ route('concours.commande-retraits.toggle-retire', $commande) }}" method="POST">
+                                            <form action="{{ route('concours.commande-retraits.toggle-retire', [$concours, $commande]) }}" method="POST">
                                                 @csrf
                                                 @method('PATCH')
                                                 <button type="submit"
