@@ -117,7 +117,7 @@
                                                         {{ $commande->retire
                                                             ? 'bg-green-100 text-green-800 hover:bg-green-200'
                                                             : 'bg-gray-100 text-gray-800 hover:bg-gray-200' }}">
-                                                    {{ $commande->retire ? 'Retiré' : 'Marquer retiré' }}
+                                                    {{ $commande->retire ? 'Retiré' : 'A retirer' }}
                                                 </button>
                                             </form>
                                         </td>
