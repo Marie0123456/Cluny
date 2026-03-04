@@ -327,13 +327,7 @@
 
     <script>
         function caisseET() {
-            const data = @json($modifications->map(fn($m) => [
-                'jour' => $m->jour_paiement?->format('Y-m-d'),
-                'total' => (float) $m->prix,
-                'cb' => (bool) $m->paiement_cb,
-                'especes' => (bool) $m->paiement_especes,
-                'cheque' => (bool) $m->paiement_cheque,
-            ]));
+            const data = @json($caisseData);
 
             return {
                 caisseJour: '',

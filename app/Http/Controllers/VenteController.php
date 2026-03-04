@@ -21,7 +21,15 @@ class VenteController extends Controller
 
         $totalGeneral = $ventes->sum('total_ttc');
 
-        return view('concours.ventes.index', compact('concours', 'ventes', 'totalGeneral'));
+        $caisseData = $ventes->map(fn ($v) => [
+            'jour' => $v->jour_paiement?->format('Y-m-d'),
+            'total' => (float) $v->total_ttc,
+            'cb' => (bool) $v->paiement_cb,
+            'especes' => (bool) $v->paiement_especes,
+            'cheque' => (bool) $v->paiement_cheque,
+        ]);
+
+        return view('concours.ventes.index', compact('concours', 'ventes', 'totalGeneral', 'caisseData'));
     }
 
     public function create(Concours $concours)

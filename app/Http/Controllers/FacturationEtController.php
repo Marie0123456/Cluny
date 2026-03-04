@@ -32,8 +32,16 @@ class FacturationEtController extends Controller
         $totalPrix = $modifications->sum('prix');
         $totalPf = $modifications->sum('pf');
 
+        $caisseData = $modifications->map(fn ($m) => [
+            'jour' => $m->jour_paiement?->format('Y-m-d'),
+            'total' => (float) $m->prix,
+            'cb' => (bool) $m->paiement_cb,
+            'especes' => (bool) $m->paiement_especes,
+            'cheque' => (bool) $m->paiement_cheque,
+        ]);
+
         return view('concours.facturation-et.index', compact(
-            'concours', 'modifications', 'totalPrix', 'totalPf'
+            'concours', 'modifications', 'totalPrix', 'totalPf', 'caisseData'
         ));
     }
 

@@ -202,13 +202,7 @@
 
     <script>
         function caisseVentes() {
-            const data = @json($ventes->map(fn($v) => [
-                'jour' => $v->jour_paiement?->format('Y-m-d'),
-                'total' => (float) $v->total_ttc,
-                'cb' => (bool) $v->paiement_cb,
-                'especes' => (bool) $v->paiement_especes,
-                'cheque' => (bool) $v->paiement_cheque,
-            ]));
+            const data = @json($caisseData);
 
             return {
                 caisseJour: '',
