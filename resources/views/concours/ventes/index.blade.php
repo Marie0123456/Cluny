@@ -159,7 +159,95 @@
                 @endif
             </div>
 
+            @if ($ventes->isNotEmpty())
+            <!-- Caisse -->
+            <div class="bg-white shadow-sm sm:rounded-lg p-6 mt-6" x-data="caisseVentes()" x-cloak>
+                <h3 class="text-lg font-medium text-gray-900 mb-4">Caisse</h3>
+                <div class="flex flex-wrap gap-4 items-end">
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500 mb-1">Jour de paiement</label>
+                        <input type="date" x-model="caisseJour"
+                            class="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500 mb-1">Moyen de paiement</label>
+                        <select x-model="caissePaiement"
+                            class="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                            <option value="">Tous</option>
+                            <option value="cb">CB</option>
+                            <option value="especes">Especes</option>
+                            <option value="cheque">Cheque</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="mt-4" x-show="caisseJour">
+                    <div class="p-4 rounded-lg" :class="caisseTotal > 0 ? 'bg-green-50 border border-green-200' : 'bg-gray-50 border border-gray-200'">
+                        <p class="text-sm text-gray-600" x-show="caissePaiement === ''">
+                            Total du <span class="font-medium" x-text="formatDate(caisseJour)"></span> :
+                            <span class="text-xl font-bold text-gray-900 ml-1" x-text="formatPrix(caisseTotal)"></span>
+                        </p>
+                        <p class="text-sm text-gray-600" x-show="caissePaiement !== ''">
+                            Total du <span class="font-medium" x-text="formatDate(caisseJour)"></span>
+                            par <span class="font-medium" x-text="caissePaiementLabel"></span> :
+                            <span class="text-xl font-bold text-gray-900 ml-1" x-text="formatPrix(caisseTotal)"></span>
+                        </p>
+                        <p class="text-xs text-gray-500 mt-1" x-text="caisseCount + ' vente(s)'"></p>
+                    </div>
+                </div>
+                <div class="mt-3" x-show="!caisseJour">
+                    <p class="text-sm text-gray-400">Choisissez un jour pour voir le total.</p>
+                </div>
+            </div>
+            @endif
+
     <script>
+        function caisseVentes() {
+            const data = @json($ventes->map(fn($v) => [
+                'jour' => $v->jour_paiement?->format('Y-m-d'),
+                'total' => (float) $v->total_ttc,
+                'cb' => (bool) $v->paiement_cb,
+                'especes' => (bool) $v->paiement_especes,
+                'cheque' => (bool) $v->paiement_cheque,
+            ]));
+
+            return {
+                caisseJour: '',
+                caissePaiement: '',
+
+                get caisseFiltered() {
+                    return data.filter(v => {
+                        if (!v.jour || v.jour !== this.caisseJour) return false;
+                        if (this.caissePaiement === 'cb' && !v.cb) return false;
+                        if (this.caissePaiement === 'especes' && !v.especes) return false;
+                        if (this.caissePaiement === 'cheque' && !v.cheque) return false;
+                        return true;
+                    });
+                },
+
+                get caisseTotal() {
+                    return this.caisseFiltered.reduce((sum, v) => sum + v.total, 0);
+                },
+
+                get caisseCount() {
+                    return this.caisseFiltered.length;
+                },
+
+                get caissePaiementLabel() {
+                    return { cb: 'CB', especes: 'Especes', cheque: 'Cheque' }[this.caissePaiement] || '';
+                },
+
+                formatPrix(val) {
+                    return (val || 0).toFixed(2).replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' \u20AC';
+                },
+
+                formatDate(d) {
+                    if (!d) return '';
+                    const [y, m, day] = d.split('-');
+                    return `${day}/${m}/${y}`;
+                }
+            };
+        }
+
         function ventesFilter() {
             return {
                 filterClient: '',
