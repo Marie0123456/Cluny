@@ -85,7 +85,6 @@
                                 <tr>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">N* Commande</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Prénom</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nom</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Produit</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Quantité</th>
@@ -105,8 +104,7 @@
                                         class="{{ $commande->retire ? 'bg-green-50' : '' }}">
                                         <td class="px-4 py-3 text-sm text-gray-900">{{ $commande->numero_commande }}</td>
                                         <td class="px-4 py-3 text-sm text-gray-500">{{ $commande->date_commande->format('d/m/Y') }}</td>
-                                        <td class="px-4 py-3 text-sm text-gray-900">{{ $commande->prenom }}</td>
-                                        <td class="px-4 py-3 text-sm text-gray-900">{{ $commande->nom }}</td>
+                                        <td class="px-4 py-3 text-sm text-gray-900">{{ trim($commande->prenom . ' ' . $commande->nom) }}</td>
                                         <td class="px-4 py-3 text-sm text-gray-900">{{ $commande->produit }}</td>
                                         <td class="px-4 py-3 text-sm text-gray-500">{{ $commande->quantite }}</td>
                                         <td class="px-4 py-3 text-sm text-gray-500">{{ $commande->emplacement_boxes ?? '-' }}</td>
