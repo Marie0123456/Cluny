@@ -18,6 +18,16 @@
 
             @include('concours.partials.tabs', ['active' => 'facturation-et'])
 
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-medium text-gray-900">Facturation ET</h3>
+                @if ($modifications->isNotEmpty())
+                    <a href="{{ route('concours.facturation-et.export-csv', $concours) }}"
+                        class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 transition">
+                        Extraire CSV
+                    </a>
+                @endif
+            </div>
+
             <!-- Totaux -->
             <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-4">
@@ -88,7 +98,8 @@
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cheval</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type de modif</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">PF</th>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Prix</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">PU HT</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Prix TTC</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Paiement</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Jour paiement</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Facture</th>
@@ -119,6 +130,9 @@
                                         </td>
                                         <td class="px-4 py-3 text-sm text-gray-900">
                                             {{ $mod->pf ? number_format($mod->pf, 2, ',', ' ') . ' €' : '-' }}
+                                        </td>
+                                        <td class="px-4 py-3 text-sm text-gray-500">
+                                            {{ $mod->prix ? number_format(round((float) $mod->prix / 1.055, 2), 2, ',', ' ') . ' €' : '-' }}
                                         </td>
                                         <td class="px-4 py-3 text-sm text-gray-900 font-medium">
                                             {{ $mod->prix ? number_format($mod->prix, 2, ',', ' ') . ' €' : '-' }}
@@ -155,7 +169,7 @@
                                     </tr>
                                     {{-- Inline edit row --}}
                                     <tr id="edit-row-et-{{ $mod->id }}" class="hidden bg-gray-50">
-                                        <td colspan="10" class="px-4 py-4">
+                                        <td colspan="11" class="px-4 py-4">
                                             <form method="POST" action="{{ route('modifications.update-paiement', $mod) }}" class="space-y-4">
                                                 @csrf
                                                 @method('PATCH')
@@ -255,6 +269,7 @@
                                 <tr>
                                     <td colspan="4" class="px-4 py-3 text-sm font-bold text-gray-900">Totaux</td>
                                     <td class="px-4 py-3 text-sm font-bold text-gray-900">{{ number_format($totalPf, 2, ',', ' ') }} &euro;</td>
+                                    <td class="px-4 py-3 text-sm font-bold text-gray-900">{{ number_format(round($totalPrix / 1.055, 2), 2, ',', ' ') }} &euro;</td>
                                     <td class="px-4 py-3 text-sm font-bold text-gray-900">{{ number_format($totalPrix, 2, ',', ' ') }} &euro;</td>
                                     <td colspan="4"></td>
                                 </tr>

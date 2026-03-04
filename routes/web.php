@@ -62,6 +62,7 @@ Route::middleware(['auth'])->group(function () {
 
         // Facturation ET
         Route::get('/facturation-et', [FacturationEtController::class, 'index'])->name('facturation-et.index');
+        Route::get('/facturation-et/export-csv', [FacturationEtController::class, 'exportCsv'])->name('facturation-et.export-csv');
 
         // Ventes
         Route::get('/ventes', [VenteController::class, 'index'])->name('ventes.index');
