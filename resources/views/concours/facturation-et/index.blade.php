@@ -133,7 +133,7 @@
                                         </td>
                                         <td class="px-4 py-3 text-sm text-gray-500">
                                             @if ($mod->prix)
-                                                @php $puHt = round(((float) $mod->prix - (float) $mod->pf) / 1.055, 2) + (float) $mod->pf; @endphp
+                                                @php $puHt = round(((float) $mod->prix - (float) $mod->pf) / 1.055, 2); @endphp
                                                 {{ number_format($puHt, 2, ',', ' ') }} &euro;
                                             @else
                                                 -
@@ -274,7 +274,7 @@
                                 <tr>
                                     <td colspan="4" class="px-4 py-3 text-sm font-bold text-gray-900">Totaux</td>
                                     <td class="px-4 py-3 text-sm font-bold text-gray-900">{{ number_format($totalPf, 2, ',', ' ') }} &euro;</td>
-                                    <td class="px-4 py-3 text-sm font-bold text-gray-900">{{ number_format(round(($totalPrix - $totalPf) / 1.055, 2) + $totalPf, 2, ',', ' ') }} &euro;</td>
+                                    <td class="px-4 py-3 text-sm font-bold text-gray-900">{{ number_format(round(($totalPrix - $totalPf) / 1.055, 2), 2, ',', ' ') }} &euro;</td>
                                     <td class="px-4 py-3 text-sm font-bold text-gray-900">{{ number_format($totalPrix, 2, ',', ' ') }} &euro;</td>
                                     <td colspan="4"></td>
                                 </tr>
