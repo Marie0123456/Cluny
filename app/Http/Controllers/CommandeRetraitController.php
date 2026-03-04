@@ -35,8 +35,11 @@ class CommandeRetraitController extends Controller
             return back()->with('error', 'Le fichier CSV est vide.');
         }
 
-        // Map header columns
-        $header = array_map('trim', $header);
+        // Map header columns (strip BOM and trim)
+        $header = array_map(fn ($col) => trim($col, " \t\n\r\0\x0B\xEF\xBB\xBF"), $header);
+        if (isset($header[0])) {
+            $header[0] = preg_replace('/^\x{FEFF}/u', '', $header[0]);
+        }
         $columnMap = [
             'numero_commande' => 'Numéro de commande',
             'date_commande' => 'Date de commande',
