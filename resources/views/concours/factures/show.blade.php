@@ -10,20 +10,10 @@
 
     <div class="py-6">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <!-- Retour + Export -->
-            <div class="flex items-center justify-between mb-4">
+            <!-- Retour -->
+            <div class="mb-4">
                 <a href="{{ route('concours.factures.index', $concours) }}"
                     class="text-sm text-indigo-600 hover:text-indigo-800 font-medium">&larr; Retour aux factures</a>
-                <div class="flex items-center space-x-3">
-                    <a href="{{ route('concours.factures.export-csv', [$concours, $client]) }}"
-                        class="inline-flex items-center px-3 py-1.5 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700">
-                        Export CSV
-                    </a>
-                    <a href="{{ route('concours.factures.print', [$concours, $client]) }}" target="_blank"
-                        class="inline-flex items-center px-3 py-1.5 bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700">
-                        Imprimer / PDF
-                    </a>
-                </div>
             </div>
 
             <!-- Infos client -->

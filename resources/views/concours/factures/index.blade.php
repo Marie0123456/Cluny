@@ -12,6 +12,19 @@
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             @include('concours.partials.tabs', ['active' => 'factures'])
 
+            @if ($clients->isNotEmpty())
+                <div class="flex justify-end mb-4 space-x-3">
+                    <a href="{{ route('concours.factures.export-csv', $concours) }}"
+                        class="inline-flex items-center px-3 py-1.5 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700">
+                        Export CSV
+                    </a>
+                    <a href="{{ route('concours.factures.print', $concours) }}" target="_blank"
+                        class="inline-flex items-center px-3 py-1.5 bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700">
+                        Imprimer / PDF
+                    </a>
+                </div>
+            @endif
+
             <div class="bg-white shadow-sm sm:rounded-lg">
                 @if ($clients->isEmpty())
                     <div class="p-6 text-center text-gray-500">

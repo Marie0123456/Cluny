@@ -34,95 +34,122 @@ class FactureController extends Controller
         return view('concours.factures.show', compact('concours', 'client', 'ventes', 'modifications', 'totalVentes', 'totalModifications'));
     }
 
-    public function exportCsv(Concours $concours, ClientFacturation $client): StreamedResponse
+    public function exportCsv(Concours $concours): StreamedResponse
     {
-        [$ventes, $modifications, $totalVentes, $totalModifications] = $this->getClientData($concours, $client);
+        $clientsData = $this->getAllClientsData($concours);
+        $filename = 'factures_' . str_replace(' ', '_', $concours->nom) . '_' . $concours->date_debut->format('Y-m-d') . '.csv';
 
-        $filename = 'facture_' . str_replace(' ', '_', $client->nom) . '_' . $concours->date_debut->format('Y-m-d') . '.csv';
-
-        return response()->streamDownload(function () use ($client, $concours, $ventes, $modifications, $totalVentes, $totalModifications) {
-            // UTF-8 BOM for Excel
-            echo "\xEF\xBB\xBF";
-
+        return response()->streamDownload(function () use ($concours, $clientsData) {
+            echo "\xEF\xBB\xBF"; // UTF-8 BOM
             $sep = ';';
 
-            // Client info
-            echo 'Facture - ' . $concours->nom . "\n";
-            echo 'Client;' . $client->nom . "\n";
-            echo 'Telephone;' . ($client->telephone ?? '') . "\n";
-            echo 'Email;' . ($client->email ?? '') . "\n";
-            echo 'Adresse;' . ($client->adresse ?? '') . "\n";
-            echo "\n";
+            echo 'Factures - ' . $concours->nom . "\n";
+            echo 'Du ' . $concours->date_debut->format('d/m/Y') . ' au ' . $concours->date_fin->format('d/m/Y') . "\n\n";
 
-            // Ventes
-            if ($ventes->isNotEmpty()) {
-                echo "VENTES\n";
-                echo implode($sep, ['Client', 'Produit', 'Qte', 'P.U. TTC', 'TVA %', 'Total HT', 'Total TTC', 'Paiement']) . "\n";
-                foreach ($ventes as $vente) {
-                    $paiements = [];
-                    if ($vente->paiement_cb) $paiements[] = 'CB';
-                    if ($vente->paiement_especes) $paiements[] = 'Especes';
-                    if ($vente->paiement_cheque) $paiements[] = 'Cheque';
-                    $paiementStr = implode(', ', $paiements);
+            $grandTotalVentes = 0;
+            $grandTotalModifications = 0;
 
-                    foreach ($vente->lignes as $index => $ligne) {
-                        $totalHt = round($ligne->total_ttc / (1 + $ligne->produit->tva / 100), 2);
+            foreach ($clientsData as $data) {
+                $client = $data['client'];
+                $ventes = $data['ventes'];
+                $modifications = $data['modifications'];
+                $totalVentes = $data['totalVentes'];
+                $totalModifications = $data['totalModifications'];
+
+                $grandTotalVentes += $totalVentes;
+                $grandTotalModifications += $totalModifications;
+
+                // Client header
+                echo '=== ' . $client->nom . " ===\n";
+                if ($client->telephone) echo 'Tel: ' . $client->telephone . "\n";
+                if ($client->email) echo 'Email: ' . $client->email . "\n";
+
+                // Ventes
+                if ($ventes->isNotEmpty()) {
+                    echo implode($sep, ['Nom facturation', 'Client', 'Produit', 'Qte', 'P.U. TTC', 'TVA %', 'Total HT', 'Total TTC', 'Paiement']) . "\n";
+                    foreach ($ventes as $vente) {
+                        $paiements = [];
+                        if ($vente->paiement_cb) $paiements[] = 'CB';
+                        if ($vente->paiement_especes) $paiements[] = 'Especes';
+                        if ($vente->paiement_cheque) $paiements[] = 'Cheque';
+                        $paiementStr = implode(', ', $paiements);
+
+                        foreach ($vente->lignes as $index => $ligne) {
+                            $totalHt = round($ligne->total_ttc / (1 + $ligne->produit->tva / 100), 2);
+                            echo implode($sep, [
+                                $index === 0 ? $client->nom : '',
+                                $index === 0 ? $vente->nom_client : '',
+                                $ligne->produit->nom,
+                                $ligne->quantite,
+                                number_format($ligne->prix_unitaire_ttc, 2, ',', ''),
+                                number_format($ligne->produit->tva, 1, ',', ''),
+                                number_format($totalHt, 2, ',', ''),
+                                number_format($ligne->total_ttc, 2, ',', ''),
+                                $index === 0 ? $paiementStr : '',
+                            ]) . "\n";
+                        }
+                    }
+                }
+
+                // Modifications
+                if ($modifications->isNotEmpty()) {
+                    echo implode($sep, ['Nom facturation', 'N. Epreuve', 'Cavalier', 'Cheval', 'Type', 'PF', 'P.U. HT', 'Prix TTC', 'Paiement']) . "\n";
+                    foreach ($modifications as $index => $mod) {
+                        $paiements = [];
+                        if ($mod->paiement_cb) $paiements[] = 'CB';
+                        if ($mod->paiement_especes) $paiements[] = 'Especes';
+                        if ($mod->paiement_cheque) $paiements[] = 'Cheque';
+
+                        $puHt = ($mod->prix && $mod->pf !== null) ? round(($mod->prix - $mod->pf) / 1.055, 2) : '';
+
                         echo implode($sep, [
-                            $index === 0 ? $vente->nom_client : '',
-                            $ligne->produit->nom,
-                            $ligne->quantite,
-                            number_format($ligne->prix_unitaire_ttc, 2, ',', ''),
-                            number_format($ligne->produit->tva, 1, ',', ''),
-                            number_format($totalHt, 2, ',', ''),
-                            number_format($ligne->total_ttc, 2, ',', ''),
-                            $index === 0 ? $paiementStr : '',
+                            $index === 0 ? $client->nom : '',
+                            $mod->engagement->epreuve->numero ?? '-',
+                            trim(($mod->engagement->cavalier->prenom ?? '') . ' ' . ($mod->engagement->cavalier->nom ?? '')),
+                            $mod->engagement->cheval->nom ?? '-',
+                            $mod->type->label(),
+                            $mod->pf !== null ? number_format($mod->pf, 2, ',', '') : '',
+                            $puHt !== '' ? number_format($puHt, 2, ',', '') : '',
+                            $mod->prix ? number_format($mod->prix, 2, ',', '') : '',
+                            implode(', ', $paiements),
                         ]) . "\n";
                     }
                 }
-                echo implode($sep, ['', '', '', '', '', 'Sous-total ventes', number_format($totalVentes, 2, ',', ''), '']) . "\n";
+
+                echo 'Total ' . $client->nom . $sep . $sep . $sep . $sep . $sep . $sep . $sep . number_format($totalVentes + $totalModifications, 2, ',', '') . "\n";
                 echo "\n";
             }
 
-            // Modifications
-            if ($modifications->isNotEmpty()) {
-                echo "MODIFICATIONS\n";
-                echo implode($sep, ['N. Epreuve', 'Cavalier', 'Cheval', 'Type', 'PF', 'P.U. HT', 'Prix TTC', 'Paiement']) . "\n";
-                foreach ($modifications as $mod) {
-                    $paiements = [];
-                    if ($mod->paiement_cb) $paiements[] = 'CB';
-                    if ($mod->paiement_especes) $paiements[] = 'Especes';
-                    if ($mod->paiement_cheque) $paiements[] = 'Cheque';
-
-                    $puHt = ($mod->prix && $mod->pf !== null) ? round(($mod->prix - $mod->pf) / 1.055, 2) : '';
-
-                    echo implode($sep, [
-                        $mod->engagement->epreuve->numero ?? '-',
-                        trim(($mod->engagement->cavalier->prenom ?? '') . ' ' . ($mod->engagement->cavalier->nom ?? '')),
-                        $mod->engagement->cheval->nom ?? '-',
-                        $mod->type->label(),
-                        $mod->pf !== null ? number_format($mod->pf, 2, ',', '') : '',
-                        $puHt !== '' ? number_format($puHt, 2, ',', '') : '',
-                        $mod->prix ? number_format($mod->prix, 2, ',', '') : '',
-                        implode(', ', $paiements),
-                    ]) . "\n";
-                }
-                echo implode($sep, ['', '', '', '', '', 'Sous-total modifications', number_format($totalModifications, 2, ',', ''), '']) . "\n";
-                echo "\n";
-            }
-
-            // Total general
-            echo implode($sep, ['', '', '', '', '', 'TOTAL GENERAL', number_format($totalVentes + $totalModifications, 2, ',', ''), '']) . "\n";
+            echo 'TOTAL GENERAL VENTES' . $sep . $sep . $sep . $sep . $sep . $sep . $sep . number_format($grandTotalVentes, 2, ',', '') . "\n";
+            echo 'TOTAL GENERAL MODIFICATIONS' . $sep . $sep . $sep . $sep . $sep . $sep . $sep . number_format($grandTotalModifications, 2, ',', '') . "\n";
+            echo 'TOTAL GENERAL' . $sep . $sep . $sep . $sep . $sep . $sep . $sep . number_format($grandTotalVentes + $grandTotalModifications, 2, ',', '') . "\n";
 
         }, $filename, [
             'Content-Type' => 'text/csv; charset=UTF-8',
         ]);
     }
 
-    public function print(Concours $concours, ClientFacturation $client)
+    public function print(Concours $concours)
     {
-        [$ventes, $modifications, $totalVentes, $totalModifications] = $this->getClientData($concours, $client);
+        $clientsData = $this->getAllClientsData($concours);
 
-        return view('concours.factures.print', compact('concours', 'client', 'ventes', 'modifications', 'totalVentes', 'totalModifications'));
+        return view('concours.factures.print', compact('concours', 'clientsData'));
+    }
+
+    private function getAllClientsData(Concours $concours): array
+    {
+        $clients = ClientFacturation::whereHas('ventes', fn($q) => $q->where('concours_id', $concours->id))
+            ->orWhereHas('modifications', fn($q) => $q->where('concours_id', $concours->id)->where('statut', '!=', 'supprime'))
+            ->orderBy('nom')
+            ->get();
+
+        $result = [];
+        foreach ($clients as $client) {
+            [$ventes, $modifications, $totalVentes, $totalModifications] = $this->getClientData($concours, $client);
+            $result[] = compact('client', 'ventes', 'modifications', 'totalVentes', 'totalModifications');
+        }
+
+        return $result;
     }
 
     private function getClientData(Concours $concours, ClientFacturation $client): array
