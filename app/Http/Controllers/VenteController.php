@@ -107,14 +107,11 @@ class VenteController extends Controller
 
             if ($aRetirer) {
                 $today = now()->format('Y-m-d');
-                $lastNumber = CommandeRetrait::where('numero_commande', 'like', $today . '-%')
-                    ->orderByRaw("CAST(SUBSTRING_INDEX(numero_commande, '-', -1) AS UNSIGNED) DESC")
-                    ->value('numero_commande');
+                $maxSeq = CommandeRetrait::where('numero_commande', 'like', $today . '-%')
+                    ->selectRaw("MAX(CAST(SPLIT_PART(numero_commande, '-', 4) AS INTEGER)) as max_seq")
+                    ->value('max_seq');
 
-                $nextSeq = 1;
-                if ($lastNumber) {
-                    $nextSeq = (int) substr($lastNumber, strrpos($lastNumber, '-') + 1) + 1;
-                }
+                $nextSeq = ($maxSeq ?? 0) + 1;
 
                 foreach ($validated['lignes'] as $ligne) {
                     $produit = Produit::find($ligne['produit_id']);
