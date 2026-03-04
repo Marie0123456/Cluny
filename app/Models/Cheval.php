@@ -19,6 +19,7 @@ class Cheval extends Model
         'sexe',
         'robe',
         'race',
+        'etat',
     ];
 
     public function engagements(): HasMany

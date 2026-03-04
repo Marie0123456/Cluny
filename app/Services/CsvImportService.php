@@ -24,13 +24,15 @@ class CsvImportService
 
         $lines = explode("\n", $content);
         $lines = array_filter($lines, fn ($line) => trim($line) !== '');
+        $lines = array_values($lines);
 
         if (count($lines) < 2) {
             throw new \Exception('Le fichier est vide ou ne contient pas de données.');
         }
 
-        // Skip header line
-        array_shift($lines);
+        // Auto-detect header row (may not be line 1 if file has junk lines at top)
+        $headerIndex = $this->detectHeaderRow($lines);
+        $lines = array_slice($lines, $headerIndex + 1);
 
         $separator = $this->detectSeparator(reset($lines));
 
@@ -122,6 +124,7 @@ class CsvImportService
                         'sexe' => $cols[17] ?? null,
                         'robe' => $cols[18] ?? null,
                         'race' => $cols[19] ?? null,
+                        'etat' => $cols[20] ?? null,
                         'created_at' => $now,
                         'updated_at' => $now,
                     ];
@@ -173,6 +176,28 @@ class CsvImportService
         });
 
         return $counters;
+    }
+
+    private function detectHeaderRow(array $lines): int
+    {
+        $knownHeaders = ['epreuve', 'cavalier', 'cheval', 'licence', 'sire', 'race'];
+
+        foreach ($lines as $index => $line) {
+            $lower = mb_strtolower($line);
+            $matches = 0;
+            foreach ($knownHeaders as $header) {
+                if (str_contains($lower, $header)) {
+                    $matches++;
+                }
+            }
+            // If at least 3 known headers found, this is the header row
+            if ($matches >= 3) {
+                return $index;
+            }
+        }
+
+        // Fallback: assume first line is header
+        return 0;
     }
 
     private function detectSeparator(string $line): string
