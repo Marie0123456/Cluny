@@ -45,6 +45,13 @@
                 <h3 class="text-lg font-medium text-gray-900 mb-4">Cavaliers faisant plusieurs epreuves</h3>
 
                 <form method="GET" action="{{ route('concours.statistiques.index', $concours) }}" class="mb-4">
+                    @foreach ($selectedDisciplinesCombinaisons as $disc)
+                        <input type="hidden" name="disciplines_combinaisons[]" value="{{ $disc }}">
+                    @endforeach
+                    @foreach ($selectedDisciplinesChevaux as $disc)
+                        <input type="hidden" name="disciplines_chevaux[]" value="{{ $disc }}">
+                    @endforeach
+
                     <div class="flex items-end space-x-4">
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">Disciplines</label>
@@ -178,14 +185,95 @@
                     <p class="text-sm text-gray-500">Cochez une ou plusieurs disciplines puis cliquez sur Afficher.</p>
                 @endif
             </div>
+        {{-- Combinaisons d'epreuves --}}
+            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 mt-6">
+                <h3 class="text-lg font-medium text-gray-900 mb-4">Combinaisons d'epreuves les plus frequentes</h3>
+                <p class="text-sm text-gray-500 mb-4">Pour savoir quelles epreuves ne doivent pas se derouler en meme temps.</p>
+
+                <form method="GET" action="{{ route('concours.statistiques.index', $concours) }}" class="mb-4">
+                    {{-- Preserve other selections --}}
+                    @foreach ($selectedDisciplines as $disc)
+                        <input type="hidden" name="disciplines[]" value="{{ $disc }}">
+                    @endforeach
+                    @foreach ($selectedDisciplinesChevaux as $disc)
+                        <input type="hidden" name="disciplines_chevaux[]" value="{{ $disc }}">
+                    @endforeach
+
+                    <div class="flex items-end space-x-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Disciplines</label>
+                            <div class="flex flex-wrap gap-4">
+                                @foreach ($disciplines as $disc)
+                                    <label class="inline-flex items-center">
+                                        <input type="checkbox" name="disciplines_combinaisons[]" value="{{ $disc }}"
+                                            {{ in_array($disc, $selectedDisciplinesCombinaisons) ? 'checked' : '' }}
+                                            class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
+                                        <span class="ml-2 text-sm text-gray-700">{{ $disc }}</span>
+                                    </label>
+                                @endforeach
+                            </div>
+                        </div>
+                        <button type="submit"
+                            class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 transition">
+                            Afficher
+                        </button>
+                    </div>
+                </form>
+
+                @if (! empty($selectedDisciplinesCombinaisons))
+                    @if ($combinaisons->isEmpty())
+                        <p class="text-sm text-gray-500">Aucune combinaison trouvee en {{ implode(' / ', $selectedDisciplinesCombinaisons) }}.</p>
+                    @else
+                        <p class="text-sm text-gray-500 mb-3">{{ $combinaisons->count() }} combinaison(s) trouvee(s) en {{ implode(' / ', $selectedDisciplinesCombinaisons) }}</p>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Combinaison d'epreuves</th>
+                                        <th class="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase">Nb cavaliers</th>
+                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Cavaliers</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200">
+                                    @foreach ($combinaisons as $combi)
+                                        <tr>
+                                            <td class="px-4 py-2 text-sm text-gray-900">
+                                                <div class="flex flex-wrap gap-1">
+                                                    @foreach ($combi->epreuves as $ep)
+                                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-indigo-100 text-indigo-800">{{ $ep }}</span>
+                                                    @endforeach
+                                                </div>
+                                            </td>
+                                            <td class="px-4 py-2 text-sm text-center">
+                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $combi->count >= 5 ? 'bg-red-100 text-red-800' : ($combi->count >= 3 ? 'bg-orange-100 text-orange-800' : 'bg-gray-100 text-gray-800') }}">
+                                                    {{ $combi->count }}
+                                                </span>
+                                            </td>
+                                            <td class="px-4 py-2 text-sm text-gray-500">
+                                                {{ implode(', ', $combi->cavaliers) }}
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    @endif
+                @else
+                    <p class="text-sm text-gray-500">Cochez une ou plusieurs disciplines puis cliquez sur Afficher.</p>
+                @endif
+            </div>
+
         {{-- Chevaux multi-epreuves --}}
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 mt-6">
                 <h3 class="text-lg font-medium text-gray-900 mb-4">Chevaux faisant plusieurs epreuves</h3>
 
                 <form method="GET" action="{{ route('concours.statistiques.index', $concours) }}" class="mb-4">
-                    {{-- Preserve cavalier disciplines selection --}}
+                    {{-- Preserve other selections --}}
                     @foreach ($selectedDisciplines as $disc)
                         <input type="hidden" name="disciplines[]" value="{{ $disc }}">
+                    @endforeach
+                    @foreach ($selectedDisciplinesCombinaisons as $disc)
+                        <input type="hidden" name="disciplines_combinaisons[]" value="{{ $disc }}">
                     @endforeach
 
                     <div class="flex items-end space-x-4">

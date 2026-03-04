@@ -80,6 +80,49 @@ class StatistiqueController extends Controller
                 ->values();
         }
 
+        // Combinaisons d'epreuves les plus frequentes
+        $selectedDisciplinesCombinaisons = array_filter((array) $request->query('disciplines_combinaisons', []));
+        $combinaisons = collect();
+
+        if (! empty($selectedDisciplinesCombinaisons)) {
+            $rowsCombi = DB::table('engagements')
+                ->join('epreuves', 'engagements.epreuve_id', '=', 'epreuves.id')
+                ->join('cavaliers', 'engagements.cavalier_id', '=', 'cavaliers.id')
+                ->where('epreuves.concours_id', $concours->id)
+                ->where(function ($q) use ($selectedDisciplinesCombinaisons) {
+                    foreach ($selectedDisciplinesCombinaisons as $disc) {
+                        $q->orWhereRaw('LOWER(epreuves.nom) LIKE ?', [mb_strtolower($disc) . '%']);
+                    }
+                })
+                ->select('cavaliers.id as cavalier_id', 'cavaliers.nom', 'cavaliers.prenom', 'epreuves.nom as epreuve_nom')
+                ->orderBy('epreuves.nom')
+                ->get();
+
+            $combinaisons = $rowsCombi->groupBy('cavalier_id')
+                ->filter(fn ($group) => $group->pluck('epreuve_nom')->unique()->count() > 1)
+                ->map(fn ($group) => $group->pluck('epreuve_nom')->unique()->sort()->values()->all())
+                ->groupBy(fn ($epreuves) => implode(' + ', $epreuves))
+                ->map(function ($cavalierGroups, $combiKey) use ($rowsCombi) {
+                    // Get cavalier names for this combination
+                    $cavalierIds = $cavalierGroups->keys();
+                    $cavalierNames = $rowsCombi->whereIn('cavalier_id', $cavalierIds)
+                        ->unique('cavalier_id')
+                        ->map(fn ($r) => $r->prenom . ' ' . $r->nom)
+                        ->sort()
+                        ->values()
+                        ->all();
+
+                    return (object) [
+                        'epreuves' => explode(' + ', $combiKey),
+                        'label' => $combiKey,
+                        'count' => $cavalierGroups->count(),
+                        'cavaliers' => $cavalierNames,
+                    ];
+                })
+                ->sortByDesc('count')
+                ->values();
+        }
+
         // Multi-epreuve chevaux filtered by discipline(s)
         $selectedDisciplinesChevaux = array_filter((array) $request->query('disciplines_chevaux', []));
         $multiEpreuveChevaux = collect();
@@ -133,6 +176,7 @@ class StatistiqueController extends Controller
 
         return view('concours.statistiques', compact(
             'concours', 'stats', 'disciplines', 'selectedDisciplines', 'multiEpreuveCavaliers', 'multiEpreuveNoms',
+            'selectedDisciplinesCombinaisons', 'combinaisons',
             'selectedDisciplinesChevaux', 'multiEpreuveChevaux', 'multiEpreuveNomsChevaux'
         ));
     }
