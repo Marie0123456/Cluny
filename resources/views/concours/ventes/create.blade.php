@@ -162,6 +162,16 @@
                         </div>
                     </div>
 
+                    <!-- A retirer -->
+                    <div class="mb-6">
+                        <label class="flex items-center gap-2">
+                            <input type="checkbox" name="a_retirer" value="1" x-model="aRetirer"
+                                class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
+                            <span class="text-sm font-medium text-gray-700">A retirer</span>
+                        </label>
+                        <p class="mt-1 text-xs text-gray-500">Si coché, une ligne sera ajoutée sur la page Retrait Commandes.</p>
+                    </div>
+
                     <!-- Commentaire -->
                     <div class="mb-6">
                         <x-input-label for="commentaire" value="Commentaire (optionnel)" />
@@ -203,6 +213,7 @@
                 adresseFacturation: '',
                 clientsResultats: [],
                 showClientsResults: false,
+                aRetirer: false,
 
                 get totalGeneral() {
                     return this.lignes.reduce((sum, l) => sum + (l.total || 0), 0);
