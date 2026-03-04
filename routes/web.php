@@ -65,6 +65,7 @@ Route::middleware(['auth'])->group(function () {
 
         // Ventes
         Route::get('/ventes', [VenteController::class, 'index'])->name('ventes.index');
+        Route::get('/ventes/export-csv', [VenteController::class, 'exportCsv'])->name('ventes.export-csv');
         Route::get('/ventes/create', [VenteController::class, 'create'])->name('ventes.create');
         Route::post('/ventes', [VenteController::class, 'store'])->name('ventes.store');
 

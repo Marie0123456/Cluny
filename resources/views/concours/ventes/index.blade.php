@@ -20,10 +20,18 @@
 
             <div class="flex justify-between items-center mb-4">
                 <h3 class="text-lg font-medium text-gray-900">Ventes</h3>
-                <a href="{{ route('concours.ventes.create', $concours) }}"
-                    class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 transition">
-                    + Nouvelle vente
-                </a>
+                <div class="flex gap-3">
+                    @if ($ventes->isNotEmpty())
+                        <a href="{{ route('concours.ventes.export-csv', $concours) }}"
+                            class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 transition">
+                            Extraire CSV
+                        </a>
+                    @endif
+                    <a href="{{ route('concours.ventes.create', $concours) }}"
+                        class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 transition">
+                        + Nouvelle vente
+                    </a>
+                </div>
             </div>
 
             <div class="bg-white shadow-sm sm:rounded-lg" x-data="ventesFilter()" x-cloak>

@@ -196,4 +196,72 @@ class VenteController extends Controller
         return redirect()->route('concours.ventes.index', $concours)
             ->with('success', 'Vente supprimée.');
     }
+
+    public function exportCsv(Concours $concours)
+    {
+        $ventes = $concours->ventes()
+            ->with(['lignes.produit', 'clientFacturation'])
+            ->latest()
+            ->get();
+
+        $filename = 'ventes_' . str_replace(' ', '_', $concours->nom) . '.csv';
+
+        $headers = [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => "attachment; filename=\"$filename\"",
+        ];
+
+        $callback = function () use ($ventes) {
+            $handle = fopen('php://output', 'w');
+            fwrite($handle, "\xEF\xBB\xBF");
+
+            fputcsv($handle, [
+                'Client', 'Date paiement', 'Produit', 'Qte',
+                'P.U. HT', 'P.U. TTC', 'TVA %',
+                'Total HT', 'Total TTC',
+                'Paiement', 'N° Cheque',
+                'Facture', 'Nom facturation', 'Telephone', 'Email', 'Adresse',
+            ], ';');
+
+            foreach ($ventes as $vente) {
+                $moyens = [];
+                if ($vente->paiement_cb) $moyens[] = 'CB';
+                if ($vente->paiement_especes) $moyens[] = 'Especes';
+                if ($vente->paiement_cheque) $moyens[] = 'Cheque';
+                $paiementStr = implode(', ', $moyens);
+
+                foreach ($vente->lignes as $index => $ligne) {
+                    $tva = (float) $ligne->produit->tva;
+                    $puHt = round($ligne->prix_unitaire_ttc / (1 + $tva / 100), 2);
+                    $totalLigneTtc = (float) $ligne->total_ttc;
+                    $totalLigneHt = round($totalLigneTtc / (1 + $tva / 100), 2);
+
+                    $row = [
+                        $index === 0 ? $vente->nom_client : '',
+                        $index === 0 ? ($vente->jour_paiement ? $vente->jour_paiement->format('d/m/Y') : '') : '',
+                        $ligne->produit->nom,
+                        $ligne->quantite,
+                        number_format($puHt, 2, ',', ''),
+                        number_format((float) $ligne->prix_unitaire_ttc, 2, ',', ''),
+                        number_format($tva, 1, ',', ''),
+                        number_format($totalLigneHt, 2, ',', ''),
+                        number_format($totalLigneTtc, 2, ',', ''),
+                        $index === 0 ? $paiementStr : '',
+                        $index === 0 ? ($vente->numero_cheque ?? '') : '',
+                        $index === 0 ? ($vente->facture ? 'Oui' : 'Non') : '',
+                        $index === 0 ? ($vente->clientFacturation->nom ?? '') : '',
+                        $index === 0 ? ($vente->clientFacturation->telephone ?? '') : '',
+                        $index === 0 ? ($vente->clientFacturation->email ?? '') : '',
+                        $index === 0 ? ($vente->clientFacturation->adresse ?? '') : '',
+                    ];
+
+                    fputcsv($handle, $row, ';');
+                }
+            }
+
+            fclose($handle);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
 }
