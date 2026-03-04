@@ -916,7 +916,7 @@
                     </div>
                 @else
                     <!-- Filtres -->
-                    <div class="px-4 pt-4 pb-2 grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <div class="px-4 pt-4 pb-2 grid grid-cols-2 md:grid-cols-5 gap-3">
                         <div>
                             <label class="block text-xs font-medium text-gray-500 mb-1">Epreuve</label>
                             <select x-model="filterEpreuve"
@@ -950,8 +950,19 @@
                                 <option value="modifie">Modifie</option>
                             </select>
                         </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-500 mb-1">Paiement</label>
+                            <select x-model="filterPaiement"
+                                class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                                <option value="">Tous</option>
+                                <option value="cb">CB</option>
+                                <option value="especes">Especes</option>
+                                <option value="cheque">Cheque</option>
+                                <option value="sans">Sans paiement</option>
+                            </select>
+                        </div>
                     </div>
-                    <div x-show="filterEpreuve || filterNom || filterJour || filterStatut" class="px-4 pb-2">
+                    <div x-show="filterEpreuve || filterNom || filterJour || filterStatut || filterPaiement" class="px-4 pb-2">
                         <button @click="resetFilters()" type="button" class="text-xs text-indigo-600 hover:text-indigo-800 font-medium">Reinitialiser les filtres</button>
                     </div>
 
@@ -964,7 +975,12 @@
                                     <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Depart</th>
                                     <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Nom</th>
                                     <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Cheval</th>
-                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Compte</th>
+                                    @if ($concours->grand_national)
+                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Compte</th>
+                                    @else
+                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Prix</th>
+                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Paiement</th>
+                                    @endif
                                     <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Statut</th>
                                     <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
                                 </tr>
@@ -972,13 +988,20 @@
                             <tbody class="bg-white divide-y divide-gray-200">
                                 @foreach ($visibleMods as $mod)
                                     <tr class="{{ $mod->statut->value === 'fait' ? 'opacity-50' : '' }}"
-                                        x-show="showRow({{ json_encode([
+                                        @php
+                                        $paiementValues = [];
+                                        if ($mod->paiement_cb) $paiementValues[] = 'cb';
+                                        if ($mod->paiement_especes) $paiementValues[] = 'especes';
+                                        if ($mod->paiement_cheque) $paiementValues[] = 'cheque';
+                                    @endphp
+                                    x-show="showRow({{ json_encode([
                                             'epreuve' => (string) ($mod->engagement->epreuve->numero ?? ''),
                                             'nom' => $mod->type === \App\Enums\ModificationType::CHANGEMENT_CAVALIER
                                                 ? trim(($mod->ancienCavalier->nom ?? '') . ' ' . ($mod->ancienCavalier->prenom ?? '') . ' ' . ($mod->nouveauCavalier->nom ?? '') . ' ' . ($mod->nouveauCavalier->prenom ?? ''))
                                                 : trim(($mod->engagement->cavalier->nom ?? '') . ' ' . ($mod->engagement->cavalier->prenom ?? '')),
                                             'jour' => $mod->created_at->format('Y-m-d'),
                                             'statut' => $mod->statut->value,
+                                            'paiement' => $paiementValues,
                                         ]) }})">
                                         {{-- Type --}}
                                         <td class="px-4 py-2 text-sm">
@@ -1043,17 +1066,48 @@
                                                 @endif
                                             @endif
                                         </td>
-                                        {{-- Compte (numero de compte) --}}
-                                        <td class="px-4 py-2 text-sm text-gray-900">
-                                            @if ($mod->type_compte)
-                                                {{ $mod->type_compte }}
-                                                @if ($mod->numero_compte)
-                                                    <div class="text-xs text-gray-500">({{ $mod->numero_compte }})</div>
+                                        @if ($concours->grand_national)
+                                            {{-- Compte (numero de compte) --}}
+                                            <td class="px-4 py-2 text-sm text-gray-900">
+                                                @if ($mod->type_compte)
+                                                    {{ $mod->type_compte }}
+                                                    @if ($mod->numero_compte)
+                                                        <div class="text-xs text-gray-500">({{ $mod->numero_compte }})</div>
+                                                    @endif
+                                                @else
+                                                    -
                                                 @endif
-                                            @else
-                                                -
-                                            @endif
-                                        </td>
+                                            </td>
+                                        @else
+                                            {{-- Prix --}}
+                                            <td class="px-4 py-2 text-sm text-gray-900">
+                                                @if ($mod->type->isPaid())
+                                                    {{ number_format((float) $mod->prix, 2, ',', ' ') }} &euro;
+                                                    @if ($mod->pf > 0)
+                                                        <div class="text-xs text-gray-500">PF: {{ number_format((float) $mod->pf, 2, ',', ' ') }} &euro;</div>
+                                                    @endif
+                                                @else
+                                                    -
+                                                @endif
+                                            </td>
+                                            {{-- Moyen de paiement --}}
+                                            <td class="px-4 py-2 text-sm text-gray-900">
+                                                @php
+                                                    $moyens = [];
+                                                    if ($mod->paiement_cb) $moyens[] = 'CB';
+                                                    if ($mod->paiement_especes) $moyens[] = 'Especes';
+                                                    if ($mod->paiement_cheque) $moyens[] = 'Cheque';
+                                                @endphp
+                                                @if (count($moyens) > 0)
+                                                    {{ implode(', ', $moyens) }}
+                                                    @if ($mod->paiement_cheque && $mod->numero_cheque)
+                                                        <div class="text-xs text-gray-500">(N°{{ $mod->numero_cheque }})</div>
+                                                    @endif
+                                                @else
+                                                    <span class="text-gray-400">-</span>
+                                                @endif
+                                            </td>
+                                        @endif
                                         <td class="px-4 py-2 text-sm">
                                             @if ($mod->statut->value === 'cree')
                                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">Cree</span>
@@ -1087,7 +1141,7 @@
                                     {{-- Inline edit row --}}
                                     @if (in_array($mod->statut->value, ['cree', 'fait']) && $mod->type->isPaid())
                                         <tr id="edit-row-{{ $mod->id }}" class="hidden bg-gray-50">
-                                            <td colspan="8" class="px-4 py-4">
+                                            <td colspan="{{ $concours->grand_national ? 8 : 9 }}" class="px-4 py-4">
                                                 <form method="POST" action="{{ route('modifications.update-paiement', $mod) }}" class="space-y-4"
                                                     x-data="{ paiementCheque: {{ $mod->paiement_cheque ? 'true' : 'false' }}, facture: '{{ $mod->facture ? '1' : '0' }}' }">
                                                     @csrf
@@ -1214,12 +1268,20 @@
                 filterNom: '',
                 filterJour: '',
                 filterStatut: '',
+                filterPaiement: '',
 
                 showRow(row) {
                     if (this.filterEpreuve && row.epreuve !== this.filterEpreuve) return false;
                     if (this.filterNom && !row.nom.toLowerCase().includes(this.filterNom.toLowerCase())) return false;
                     if (this.filterJour && row.jour !== this.filterJour) return false;
                     if (this.filterStatut && row.statut !== this.filterStatut) return false;
+                    if (this.filterPaiement) {
+                        if (this.filterPaiement === 'sans') {
+                            if (row.paiement && row.paiement.length > 0) return false;
+                        } else {
+                            if (!row.paiement || !row.paiement.includes(this.filterPaiement)) return false;
+                        }
+                    }
                     return true;
                 },
 
@@ -1228,6 +1290,7 @@
                     this.filterNom = '';
                     this.filterJour = '';
                     this.filterStatut = '';
+                    this.filterPaiement = '';
                 }
             };
         }
