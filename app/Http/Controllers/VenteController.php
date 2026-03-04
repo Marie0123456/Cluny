@@ -62,8 +62,8 @@ class VenteController extends Controller
         DB::transaction(function () use ($validated, $concours, $request) {
             $clientFacturationId = null;
             if ($request->boolean('facture') && !empty($validated['nom_facturation'])) {
-                $client = ClientFacturation::updateOrCreate(
-                    ['nom' => $validated['nom_facturation']],
+                $client = ClientFacturation::updateOrCreateByNom(
+                    $validated['nom_facturation'],
                     [
                         'telephone' => $validated['telephone'] ?? null,
                         'email' => $validated['email'] ?? null,
@@ -151,8 +151,8 @@ class VenteController extends Controller
         DB::transaction(function () use ($validated, $vente, $request) {
             $clientFacturationId = null;
             if ($request->boolean('facture') && !empty($validated['nom_facturation'])) {
-                $client = ClientFacturation::updateOrCreate(
-                    ['nom' => $validated['nom_facturation']],
+                $client = ClientFacturation::updateOrCreateByNom(
+                    $validated['nom_facturation'],
                     [
                         'telephone' => $validated['telephone'] ?? null,
                         'email' => $validated['email'] ?? null,

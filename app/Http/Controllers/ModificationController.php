@@ -244,8 +244,8 @@ class ModificationController extends Controller
         // Handle facturation
         $clientFacturationId = null;
         if ($request->boolean('facture') && !empty($validated['nom_facturation'])) {
-            $client = ClientFacturation::updateOrCreate(
-                ['nom' => $validated['nom_facturation']],
+            $client = ClientFacturation::updateOrCreateByNom(
+                $validated['nom_facturation'],
                 [
                     'telephone' => $validated['telephone'] ?? null,
                     'email' => $validated['email'] ?? null,
@@ -331,8 +331,8 @@ class ModificationController extends Controller
         // Handle facturation
         $clientFacturationId = null;
         if ($request->boolean('facture') && !empty($validated['nom_facturation'])) {
-            $client = ClientFacturation::updateOrCreate(
-                ['nom' => $validated['nom_facturation']],
+            $client = ClientFacturation::updateOrCreateByNom(
+                $validated['nom_facturation'],
                 [
                     'telephone' => $validated['telephone'] ?? null,
                     'email' => $validated['email'] ?? null,
@@ -411,8 +411,8 @@ class ModificationController extends Controller
 
         $clientFacturationId = $modification->client_facturation_id;
         if ($request->boolean('facture') && !empty($validated['nom_facturation'])) {
-            $client = ClientFacturation::updateOrCreate(
-                ['nom' => $validated['nom_facturation']],
+            $client = ClientFacturation::updateOrCreateByNom(
+                $validated['nom_facturation'],
                 [
                     'telephone' => $validated['telephone'] ?? null,
                     'email' => $validated['email'] ?? null,
