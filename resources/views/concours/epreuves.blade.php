@@ -175,7 +175,9 @@
                     <p class="text-sm text-gray-500 mb-3">
                         Colonnes attendues :
                         @if ($concours->type_ffe_sif)
-                            <code class="text-xs bg-gray-100 px-1.5 py-0.5 rounded">Discipline;Epreuve;Numero Depart;Licence;Nom;Prenom;Club;Sire;Cheval</code>
+                            <code class="text-xs bg-gray-100 px-1.5 py-0.5 rounded">Numero Concours;Numero Epreuve;Numero Depart;Epreuve;Discipline;Licence;Nom;Prenom;Club;Sire;Cheval</code>
+                            <br>
+                            <span class="text-xs text-gray-400">Le fichier peut etre avec ou sans en-tete.</span>
                         @else
                             <code class="text-xs bg-gray-100 px-1.5 py-0.5 rounded">Epreuve_numero;Epreuve_nom;Epreuve_date;Num_depart;Nom;Prenom;Role_cavalier;Licence;Club;CRE;Departement;Num_dept;Dept_groom;Cheval;Role_cheval;SIRE;Age;Sexe;Robe;Race</code>
                         @endif
@@ -192,6 +194,13 @@
                             Importer
                         </button>
                     </form>
+                    @if ($concours->type_ffe_sif)
+                        <div class="mt-3">
+                            <a href="{{ route('import.template-sif') }}" class="text-sm text-indigo-600 hover:text-indigo-800 underline">
+                                Telecharger le template CSV vide
+                            </a>
+                        </div>
+                    @endif
 
                     @if ($concours->engagements_count > 0)
                         <div class="mt-4 pt-4 border-t border-gray-200">

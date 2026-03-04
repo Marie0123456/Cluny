@@ -56,6 +56,9 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/modifications/non-partant', [ModificationController::class, 'nonPartant'])->name('modifications.non-partant');
     });
 
+    // Template CSV download
+    Route::get('/import/template-sif', [ImportController::class, 'templateSif'])->name('import.template-sif');
+
     // Concours sub-pages (admin seulement)
     Route::prefix('concours/{concours}')->name('concours.')->middleware(['concours.access', 'role:admin'])->group(function () {
         Route::post('/import', [ImportController::class, 'store'])->name('import.store');

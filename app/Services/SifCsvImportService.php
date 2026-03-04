@@ -13,9 +13,27 @@ use Illuminate\Support\Facades\DB;
 class SifCsvImportService
 {
     /**
+     * Column names for the CSV template.
+     */
+    public const TEMPLATE_COLUMNS = [
+        'Numero Concours',
+        'Numero Epreuve',
+        'Numero Depart',
+        'Epreuve',
+        'Discipline',
+        'Licence',
+        'Nom',
+        'Prenom',
+        'Club',
+        'Sire',
+        'Cheval',
+    ];
+
+    /**
      * Import engagés from an FFE SIF CSV file.
      *
-     * Expected header: Discipline;Epreuve;Numero Depart;Licence;Nom;Prenom;Club;Sire;Cheval
+     * Accepts files with or without header row.
+     * Columns (by position): Numero Concours;Numero Epreuve;Numero Depart;Epreuve;Discipline;Licence;Nom;Prenom;Club;Sire;Cheval;...
      */
     public function import(Concours $concours, UploadedFile $file): array
     {
@@ -28,34 +46,41 @@ class SifCsvImportService
 
         $lines = explode("\n", $content);
         $lines = array_filter($lines, fn ($line) => trim($line) !== '');
+        $lines = array_values($lines);
 
-        if (count($lines) < 2) {
+        if (count($lines) < 1) {
             throw new \Exception('Le fichier est vide ou ne contient pas de données.');
         }
 
-        // Validate header
-        $header = array_shift($lines);
-        $this->validateHeader($header);
+        $separator = $this->detectSeparator($lines[0]);
 
-        $separator = $this->detectSeparator($header);
+        // Detect if first line is a header row
+        if ($this->isHeaderRow($lines[0], $separator)) {
+            array_shift($lines);
+        }
+
+        if (count($lines) < 1) {
+            throw new \Exception('Le fichier ne contient pas de données.');
+        }
 
         // Parse all lines upfront
+        // Columns: 0=NumConcours(ignored), 1=NumEpreuve(ignored), 2=NumDepart, 3=Epreuve, 4=Discipline, 5=Licence, 6=Nom, 7=Prenom, 8=Club, 9=Sire, 10=Cheval
         $parsedRows = [];
         foreach ($lines as $line) {
             $cols = array_map('trim', explode($separator, $line));
-            if (count($cols) < 9) {
+            if (count($cols) < 11) {
                 continue;
             }
 
-            $nom = $cols[4];
-            $chevalNom = $cols[8];
+            $nom = $cols[6];
+            $chevalNom = $cols[10];
             if (empty($nom) && empty($chevalNom)) {
                 continue;
             }
 
             // Build epreuve display name
-            $discipline = $cols[0];
-            $epreuveNom = $cols[1];
+            $discipline = $cols[4];
+            $epreuveNom = $cols[3];
             $epreuveLabel = $epreuveNom;
             if (! empty($discipline) && ! str_contains(mb_strtolower($epreuveNom), mb_strtolower($discipline))) {
                 $epreuveLabel = $discipline . ' - ' . $epreuveNom;
@@ -64,11 +89,11 @@ class SifCsvImportService
             $parsedRows[] = [
                 'epreuveLabel' => $epreuveLabel,
                 'numeroDepart' => $cols[2],
-                'licence' => $cols[3],
+                'licence' => $cols[5],
                 'nom' => $nom,
-                'prenom' => $cols[5],
-                'club' => $cols[6],
-                'sire' => $cols[7],
+                'prenom' => $cols[7],
+                'club' => $cols[8],
+                'sire' => $cols[9],
                 'chevalNom' => $chevalNom,
             ];
         }
@@ -284,30 +309,23 @@ class SifCsvImportService
         return $counters;
     }
 
-    private function validateHeader(string $header): void
+    private function isHeaderRow(string $line, string $separator): bool
     {
-        $separator = $this->detectSeparator($header);
-        $cols = array_map(fn ($c) => mb_strtolower(trim($c)), explode($separator, $header));
+        $cols = array_map(fn ($c) => mb_strtolower(trim($c)), explode($separator, $line));
+        $headerKeywords = ['discipline', 'epreuve', 'licence', 'nom', 'prenom', 'cheval'];
 
-        $required = ['discipline', 'epreuve', 'licence', 'nom', 'prenom', 'cheval'];
-        $missing = [];
-
-        foreach ($required as $col) {
-            $found = false;
-            foreach ($cols as $headerCol) {
-                if (str_contains($headerCol, $col) || str_contains($col, $headerCol)) {
-                    $found = true;
+        $matches = 0;
+        foreach ($headerKeywords as $keyword) {
+            foreach ($cols as $col) {
+                if (str_contains($col, $keyword)) {
+                    $matches++;
                     break;
                 }
             }
-            if (! $found) {
-                $missing[] = $col;
-            }
         }
 
-        if (! empty($missing)) {
-            throw new \Exception('En-tête FFE SIF invalide. Colonnes manquantes : ' . implode(', ', $missing));
-        }
+        // If at least 3 header keywords found, it's likely a header row
+        return $matches >= 3;
     }
 
     private function detectSeparator(string $line): string

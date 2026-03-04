@@ -7,9 +7,20 @@ use App\Models\ImportLog;
 use App\Services\CsvImportService;
 use App\Services\SifCsvImportService;
 use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ImportController extends Controller
 {
+    public function templateSif(): StreamedResponse
+    {
+        $columns = SifCsvImportService::TEMPLATE_COLUMNS;
+
+        return response()->streamDownload(function () use ($columns) {
+            echo implode(';', $columns) . "\n";
+        }, 'template_import_sif.csv', [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+        ]);
+    }
     public function store(Request $request, Concours $concours)
     {
         if (! auth()->user()->isAdmin()) {
