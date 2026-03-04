@@ -18,15 +18,15 @@ class ModificationController extends Controller
     {
         $modifications = $concours->modifications()
             ->with([
-                'engagement.epreuve',
-                'engagement.cavalier',
-                'engagement.cheval',
-                'ancienCheval',
-                'nouveauCheval',
-                'ancienCavalier',
-                'nouveauCavalier',
-                'linkedModification.engagement.epreuve',
-                'clientFacturation',
+                'engagement.epreuve:id,numero,nom',
+                'engagement.cavalier:id,nom,prenom,num_licence',
+                'engagement.cheval:id,nom,num_sire',
+                'ancienCheval:id,nom,num_sire',
+                'nouveauCheval:id,nom,num_sire',
+                'ancienCavalier:id,nom,prenom,num_licence',
+                'nouveauCavalier:id,nom,prenom,num_licence',
+                'linkedModification.engagement.epreuve:id,numero',
+                'clientFacturation:id,nom,telephone,email,adresse',
             ])
             ->join('engagements', 'modifications.engagement_id', '=', 'engagements.id')
             ->join('epreuves', 'engagements.epreuve_id', '=', 'epreuves.id')
@@ -36,7 +36,11 @@ class ModificationController extends Controller
             ->get();
 
         $epreuves = $concours->epreuves()
-            ->with(['engagements.cavalier', 'engagements.cheval'])
+            ->with([
+                'engagements:id,epreuve_id,cavalier_id,cheval_id,numero_depart,is_non_partant',
+                'engagements.cavalier:id,nom,prenom,num_licence',
+                'engagements.cheval:id,nom,num_sire',
+            ])
             ->orderByRaw('CAST(numero AS INTEGER), numero')
             ->get();
 

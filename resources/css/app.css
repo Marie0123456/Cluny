@@ -2,6 +2,11 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Alpine.js: hide elements with x-cloak before Alpine initializes */
+[x-cloak] {
+    display: none !important;
+}
+
 /* PWA standalone mode - safe area padding for notched devices */
 @supports (padding-top: env(safe-area-inset-top)) {
     body {

@@ -1259,6 +1259,10 @@
     </div>
 
     <script>
+        const __epreuves = @json($epreuvesJson);
+        const __isGrandNational = @json($concours->grand_national);
+        const __allCavaliersConcours = @json($allCavaliersJson);
+
         function modificationsFilter() {
             return {
                 filterEpreuve: '',
@@ -1300,7 +1304,7 @@
         }
 
         function changementCheval() {
-            const epreuves = @json($epreuvesJson);
+            const epreuves = __epreuves;
 
             return {
                 open: false,
@@ -1404,8 +1408,8 @@
         }
 
         function changementCavalier() {
-            const epreuves = @json($epreuvesJson);
-            const isGrandNational = @json($concours->grand_national);
+            const epreuves = __epreuves;
+            const isGrandNational = __isGrandNational;
 
             return {
                 open: false,
@@ -1495,8 +1499,8 @@
         }
 
         function changementEpreuveForm() {
-            const epreuves = @json($epreuvesJson);
-            const isGrandNational = @json($concours->grand_national);
+            const epreuves = __epreuves;
+            const isGrandNational = __isGrandNational;
 
             return {
                 open: false,
@@ -1621,9 +1625,9 @@
         }
 
         function invitationForm() {
-            const epreuves = @json($epreuvesJson);
-            const isGrandNational = @json($concours->grand_national);
-            const allCavaliersConcours = @json($allCavaliersJson);
+            const epreuves = __epreuves;
+            const isGrandNational = __isGrandNational;
+            const allCavaliersConcours = __allCavaliersConcours;
 
             return {
                 open: false,
@@ -1784,7 +1788,7 @@
         }
 
         function nonPartantForm() {
-            const epreuves = @json($epreuvesJson);
+            const epreuves = __epreuves;
 
             return {
                 open: false,
