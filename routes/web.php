@@ -82,11 +82,6 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/statistiques/export-multi-epreuves', [StatistiqueController::class, 'exportMultiEpreuves'])->name('statistiques.export-multi-epreuves');
         Route::get('/statistiques/export-multi-epreuves-chevaux', [StatistiqueController::class, 'exportMultiEpreuvesChevaux'])->name('statistiques.export-multi-epreuves-chevaux');
 
-        // Retrait Commandes
-        Route::get('/commande-retraits', [CommandeRetraitController::class, 'index'])->name('commande-retraits.index');
-        Route::post('/commande-retraits/import', [CommandeRetraitController::class, 'import'])->name('commande-retraits.import');
-        Route::patch('/commande-retraits/{commandeRetrait}/toggle-retire', [CommandeRetraitController::class, 'toggleRetire'])->name('commande-retraits.toggle-retire');
-
         // Championnats (FFE SIF Open)
         Route::get('/championnats', [ChampionnatController::class, 'index'])->name('championnats.index');
         Route::post('/championnats', [ChampionnatController::class, 'store'])->name('championnats.store');
@@ -99,6 +94,13 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/championnats/{championnat}/export-ldp', [ChampionnatController::class, 'exportLDP'])->name('championnats.export-ldp');
         Route::post('/championnats/{championnat}/toggle-libre', [ChampionnatController::class, 'toggleLibre'])->name('championnats.toggle-libre');
         Route::delete('/championnats/{championnat}', [ChampionnatController::class, 'destroy'])->name('championnats.destroy');
+    });
+
+    // Retrait Commandes (admin + vendeur)
+    Route::prefix('concours/{concours}')->name('concours.')->middleware(['concours.access', 'role:admin,vendeur'])->group(function () {
+        Route::get('/commande-retraits', [CommandeRetraitController::class, 'index'])->name('commande-retraits.index');
+        Route::post('/commande-retraits/import', [CommandeRetraitController::class, 'import'])->name('commande-retraits.import');
+        Route::patch('/commande-retraits/{commandeRetrait}/toggle-retire', [CommandeRetraitController::class, 'toggleRetire'])->name('commande-retraits.toggle-retire');
     });
 
     // Modification actions
@@ -126,6 +128,7 @@ Route::middleware(['auth'])->group(function () {
     Route::middleware('role:admin')->prefix('admin')->name('admin.')->group(function () {
         Route::resource('users', UserController::class)->except(['show']);
         Route::post('users/{user}/assign-concours', [UserController::class, 'assignConcours'])->name('users.assign-concours');
+        Route::post('users/{user}/reset-password', [UserController::class, 'resetPassword'])->name('users.reset-password');
         Route::resource('produits', ProduitController::class)->except(['show', 'destroy']);
         Route::patch('produits/{produit}/toggle', [ProduitController::class, 'toggleActif'])->name('produits.toggle');
     });

@@ -37,7 +37,7 @@
                         <select name="role" id="role" required
                             class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                             @foreach ($roles as $role)
-                                <option value="{{ $role->value }}" {{ old('role') === $role->value ? 'selected' : '' }}>{{ ucfirst($role->value) }}</option>
+                                <option value="{{ $role->value }}" {{ old('role') === $role->value ? 'selected' : '' }}>{{ $role->label() }}</option>
                             @endforeach
                         </select>
                     </div>

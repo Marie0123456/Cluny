@@ -46,7 +46,7 @@
                         <select name="role" id="role" required
                             class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                             @foreach ($roles as $role)
-                                <option value="{{ $role->value }}" {{ old('role', $user->role->value) === $role->value ? 'selected' : '' }}>{{ ucfirst($role->value) }}</option>
+                                <option value="{{ $role->value }}" {{ old('role', $user->role->value) === $role->value ? 'selected' : '' }}>{{ $role->label() }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -63,7 +63,7 @@
             </div>
 
             <!-- Assign concours -->
-            @if ($user->role->value === 'user')
+            @if ($user->role->value !== 'admin')
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
                     <h3 class="text-lg font-medium text-gray-900 mb-4">Concours assignes</h3>
                     <form method="POST" action="{{ route('admin.users.assign-concours', $user) }}">
@@ -95,8 +95,20 @@
                 </div>
             @endif
 
-            <!-- Delete -->
             @if ($user->id !== auth()->id())
+                <!-- Reset password -->
+                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 mt-6">
+                    <h3 class="text-lg font-medium text-gray-900 mb-4">Réinitialiser le mot de passe</h3>
+                    <p class="text-sm text-gray-500 mb-4">Un nouveau mot de passe aléatoire sera généré et affiché. Communiquez-le à l'utilisateur.</p>
+                    <form method="POST" action="{{ route('admin.users.reset-password', $user) }}" onsubmit="return confirm('Réinitialiser le mot de passe de cet utilisateur ?')">
+                        @csrf
+                        <button type="submit" class="inline-flex items-center px-4 py-2 bg-yellow-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-yellow-700">
+                            Réinitialiser le mot de passe
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Delete -->
                 <div class="mt-6">
                     <form method="POST" action="{{ route('admin.users.destroy', $user) }}" onsubmit="return confirm('Supprimer cet utilisateur ?')">
                         @csrf

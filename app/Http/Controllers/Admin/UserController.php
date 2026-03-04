@@ -30,7 +30,7 @@ class UserController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
             'password' => ['required', Rules\Password::defaults()],
-            'role' => 'required|in:admin,user',
+            'role' => 'required|in:admin,chronometreur,vendeur',
         ]);
 
         User::create([
@@ -58,7 +58,7 @@ class UserController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email,' . $user->id,
-            'role' => 'required|in:admin,user',
+            'role' => 'required|in:admin,chronometreur,vendeur',
             'password' => ['nullable', Rules\Password::defaults()],
         ]);
 
@@ -100,5 +100,19 @@ class UserController extends Controller
 
         return redirect()->route('admin.users.edit', $user)
             ->with('success', 'Concours assignés avec succès.');
+    }
+
+    public function resetPassword(User $user)
+    {
+        if ($user->id === auth()->id()) {
+            return redirect()->route('admin.users.edit', $user)
+                ->with('error', 'Vous ne pouvez pas réinitialiser votre propre mot de passe ici.');
+        }
+
+        $newPassword = substr(str_shuffle('abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789'), 0, 10);
+        $user->update(['password' => Hash::make($newPassword)]);
+
+        return redirect()->route('admin.users.edit', $user)
+            ->with('success', 'Mot de passe réinitialisé : ' . $newPassword);
     }
 }
