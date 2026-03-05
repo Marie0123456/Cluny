@@ -82,32 +82,66 @@ class StatistiqueController extends Controller
 
         // Combinaisons d'epreuves les plus frequentes
         $selectedDisciplinesCombinaisons = array_filter((array) $request->query('disciplines_combinaisons', []));
+        $combinaisonsGroupBy = $request->query('combinaisons_group_by', 'cavalier');
+        if (! in_array($combinaisonsGroupBy, ['cavalier', 'cheval'])) {
+            $combinaisonsGroupBy = 'cavalier';
+        }
         $combinaisons = collect();
 
         if (! empty($selectedDisciplinesCombinaisons)) {
-            $rowsCombi = DB::table('engagements')
+            $combiQuery = DB::table('engagements')
                 ->join('epreuves', 'engagements.epreuve_id', '=', 'epreuves.id')
-                ->join('cavaliers', 'engagements.cavalier_id', '=', 'cavaliers.id')
                 ->where('epreuves.concours_id', $concours->id)
                 ->where(function ($q) use ($selectedDisciplinesCombinaisons) {
                     foreach ($selectedDisciplinesCombinaisons as $disc) {
                         $q->orWhereRaw('LOWER(epreuves.nom) LIKE ?', [mb_strtolower($disc) . '%']);
                     }
-                })
-                ->select('cavaliers.id as cavalier_id', 'cavaliers.nom', 'cavaliers.prenom', 'epreuves.nom as epreuve_nom')
-                ->orderBy('epreuves.nom')
-                ->get();
+                });
 
-            $combinaisons = $rowsCombi->groupBy('cavalier_id')
+            if ($combinaisonsGroupBy === 'cheval') {
+                $combiQuery->join('chevaux', 'engagements.cheval_id', '=', 'chevaux.id');
+                $rowsCombi = $combiQuery
+                    ->select('chevaux.id as group_id', 'chevaux.nom as group_nom', DB::raw("'' as group_prenom"), 'epreuves.nom as epreuve_nom')
+                    ->orderBy('epreuves.nom')
+                    ->get();
+            } else {
+                $combiQuery->join('cavaliers', 'engagements.cavalier_id', '=', 'cavaliers.id');
+                $rowsCombi = $combiQuery
+                    ->select('cavaliers.id as group_id', 'cavaliers.nom as group_nom', 'cavaliers.prenom as group_prenom', 'epreuves.nom as epreuve_nom')
+                    ->orderBy('epreuves.nom')
+                    ->get();
+            }
+
+            $combinaisons = $rowsCombi->groupBy('group_id')
                 ->filter(fn ($group) => $group->pluck('epreuve_nom')->unique()->count() > 1)
                 ->map(fn ($group) => $group->pluck('epreuve_nom')->unique()->sort()->values()->all())
+                // When multiple disciplines selected, keep only combinations covering all disciplines
+                ->when(count($selectedDisciplinesCombinaisons) > 1, function ($collection) use ($selectedDisciplinesCombinaisons) {
+                    return $collection->filter(function ($epreuves) use ($selectedDisciplinesCombinaisons) {
+                        foreach ($selectedDisciplinesCombinaisons as $disc) {
+                            $discLower = mb_strtolower($disc);
+                            $found = false;
+                            foreach ($epreuves as $ep) {
+                                if (str_starts_with(mb_strtolower($ep), $discLower)) {
+                                    $found = true;
+                                    break;
+                                }
+                            }
+                            if (! $found) {
+                                return false;
+                            }
+                        }
+                        return true;
+                    });
+                })
                 ->groupBy(fn ($epreuves) => implode(' + ', $epreuves))
-                ->map(function ($cavalierGroups, $combiKey) use ($rowsCombi) {
-                    // Get cavalier names for this combination
-                    $cavalierIds = $cavalierGroups->keys();
-                    $cavalierNames = $rowsCombi->whereIn('cavalier_id', $cavalierIds)
-                        ->unique('cavalier_id')
-                        ->map(fn ($r) => $r->prenom . ' ' . $r->nom)
+                ->map(function ($groups, $combiKey) use ($rowsCombi, $combinaisonsGroupBy) {
+                    $groupIds = $groups->keys();
+                    $names = $rowsCombi->whereIn('group_id', $groupIds)
+                        ->unique('group_id')
+                        ->map(fn ($r) => $combinaisonsGroupBy === 'cheval'
+                            ? $r->group_nom
+                            : trim($r->group_prenom . ' ' . $r->group_nom))
                         ->sort()
                         ->values()
                         ->all();
@@ -115,8 +149,8 @@ class StatistiqueController extends Controller
                     return (object) [
                         'epreuves' => explode(' + ', $combiKey),
                         'label' => $combiKey,
-                        'count' => $cavalierGroups->count(),
-                        'cavaliers' => $cavalierNames,
+                        'count' => $groups->count(),
+                        'entities' => $names,
                     ];
                 })
                 ->sortByDesc('count')
@@ -176,7 +210,7 @@ class StatistiqueController extends Controller
 
         return view('concours.statistiques', compact(
             'concours', 'stats', 'disciplines', 'selectedDisciplines', 'multiEpreuveCavaliers', 'multiEpreuveNoms',
-            'selectedDisciplinesCombinaisons', 'combinaisons',
+            'selectedDisciplinesCombinaisons', 'combinaisons', 'combinaisonsGroupBy',
             'selectedDisciplinesChevaux', 'multiEpreuveChevaux', 'multiEpreuveNomsChevaux'
         ));
     }
