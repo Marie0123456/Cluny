@@ -66,13 +66,14 @@ class FactureController extends Controller
 
                 // Ventes
                 if ($ventes->isNotEmpty()) {
-                    echo implode($sep, ['Nom facturation', 'Client', 'Produit', 'Qte', 'P.U. TTC', 'TVA %', 'Total HT', 'Total TTC', 'Paiement']) . "\n";
+                    echo implode($sep, ['Nom facturation', 'Client', 'Produit', 'Qte', 'P.U. TTC', 'TVA %', 'Total HT', 'Total TTC', 'Paiement', 'Date']) . "\n";
                     foreach ($ventes as $vente) {
                         $paiements = [];
                         if ($vente->paiement_cb) $paiements[] = 'CB';
                         if ($vente->paiement_especes) $paiements[] = 'Especes';
                         if ($vente->paiement_cheque) $paiements[] = 'Cheque';
                         $paiementStr = implode(', ', $paiements);
+                        $dateStr = $vente->jour_paiement ? $vente->jour_paiement->format('d/m/Y') : '';
 
                         foreach ($vente->lignes as $index => $ligne) {
                             $totalHt = round($ligne->total_ttc / (1 + $ligne->produit->tva / 100), 2);
@@ -86,6 +87,7 @@ class FactureController extends Controller
                                 number_format($totalHt, 2, ',', ''),
                                 number_format($ligne->total_ttc, 2, ',', ''),
                                 $index === 0 ? $paiementStr : '',
+                                $index === 0 ? $dateStr : '',
                             ]) . "\n";
                         }
                     }
@@ -93,7 +95,7 @@ class FactureController extends Controller
 
                 // Modifications
                 if ($modifications->isNotEmpty()) {
-                    echo implode($sep, ['Nom facturation', 'N. Epreuve', 'Cavalier', 'Cheval', 'Type', 'PF', 'P.U. HT', 'Prix TTC', 'Paiement']) . "\n";
+                    echo implode($sep, ['Nom facturation', 'N. Epreuve', 'Cavalier', 'Cheval', 'Type', 'PF', 'P.U. HT', 'Prix TTC', 'Paiement', 'Date']) . "\n";
                     foreach ($modifications as $index => $mod) {
                         $paiements = [];
                         if ($mod->paiement_cb) $paiements[] = 'CB';
@@ -112,6 +114,7 @@ class FactureController extends Controller
                             $puHt !== '' ? number_format($puHt, 2, ',', '') : '',
                             $mod->prix ? number_format($mod->prix, 2, ',', '') : '',
                             implode(', ', $paiements),
+                            $mod->jour_paiement ? $mod->jour_paiement->format('d/m/Y') : '',
                         ]) . "\n";
                     }
                 }

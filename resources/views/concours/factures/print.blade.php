@@ -76,6 +76,7 @@
                         <th class="text-right">Total HT</th>
                         <th class="text-right">Total TTC</th>
                         <th>Paiement</th>
+                        <th>Date</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -98,6 +99,9 @@
                                         @if ($vente->paiement_especes) Especes @endif
                                         @if ($vente->paiement_cheque) Cheque @endif
                                     </td>
+                                    <td rowspan="{{ $vente->lignes->count() }}">
+                                        {{ $vente->jour_paiement ? $vente->jour_paiement->format('d/m/Y') : '-' }}
+                                    </td>
                                 @endif
                             </tr>
                         @endforeach
@@ -119,6 +123,7 @@
                         <th class="text-right">P.U. HT</th>
                         <th class="text-right">Prix</th>
                         <th>Paiement</th>
+                        <th>Date</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -142,6 +147,7 @@
                                 @if ($mod->paiement_especes) Especes @endif
                                 @if ($mod->paiement_cheque) Cheque @endif
                             </td>
+                            <td>{{ $mod->jour_paiement ? $mod->jour_paiement->format('d/m/Y') : '-' }}</td>
                         </tr>
                     @endforeach
                 </tbody>
