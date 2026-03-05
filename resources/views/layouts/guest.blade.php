@@ -13,7 +13,7 @@
         <link rel="manifest" href="/manifest.json">
         <link rel="apple-touch-icon" href="/icons/icon-192.png">
 
-        <title>{{ config('app.name', 'Laravel') }}</title>
+        <title>EHNC Concours</title>
 
         <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.bunny.net">
