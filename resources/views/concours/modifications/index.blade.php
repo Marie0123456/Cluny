@@ -29,31 +29,31 @@
 
             <!-- Barre de boutons modifications -->
             <div x-data="{ activeForm: '' }">
-                <div class="bg-white shadow-sm sm:rounded-lg p-4 mb-6">
-                    <div class="flex flex-wrap gap-3">
+                <div class="bg-white shadow-sm sm:rounded-lg p-3 sm:p-4 mb-6">
+                    <div class="grid grid-cols-2 sm:flex sm:flex-wrap gap-2 sm:gap-3">
                         <button @click="activeForm = activeForm === 'cheval' ? '' : 'cheval'"
                             :class="activeForm === 'cheval' ? 'bg-indigo-700 ring-2 ring-indigo-300' : 'bg-indigo-600'"
-                            class="inline-flex items-center px-4 py-2 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 transition">
+                            class="inline-flex items-center justify-center px-3 sm:px-4 py-2.5 sm:py-2 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 transition">
                             Chgt Cheval
                         </button>
                         <button @click="activeForm = activeForm === 'cavalier' ? '' : 'cavalier'"
                             :class="activeForm === 'cavalier' ? 'bg-purple-700 ring-2 ring-purple-300' : 'bg-purple-600'"
-                            class="inline-flex items-center px-4 py-2 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-purple-700 transition">
+                            class="inline-flex items-center justify-center px-3 sm:px-4 py-2.5 sm:py-2 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-purple-700 transition">
                             Chgt Cavalier
                         </button>
                         <button @click="activeForm = activeForm === 'invitation' ? '' : 'invitation'"
                             :class="activeForm === 'invitation' ? 'bg-blue-700 ring-2 ring-blue-300' : 'bg-blue-600'"
-                            class="inline-flex items-center px-4 py-2 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 transition">
+                            class="inline-flex items-center justify-center px-3 sm:px-4 py-2.5 sm:py-2 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 transition">
                             Invitation
                         </button>
                         <button @click="activeForm = activeForm === 'epreuve' ? '' : 'epreuve'"
                             :class="activeForm === 'epreuve' ? 'bg-yellow-700 ring-2 ring-yellow-300' : 'bg-yellow-600'"
-                            class="inline-flex items-center px-4 py-2 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-yellow-700 transition">
+                            class="inline-flex items-center justify-center px-3 sm:px-4 py-2.5 sm:py-2 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-yellow-700 transition">
                             Chgt Épreuve
                         </button>
                         <button @click="activeForm = activeForm === 'np' ? '' : 'np'"
                             :class="activeForm === 'np' ? 'bg-gray-700 ring-2 ring-gray-300' : 'bg-gray-600'"
-                            class="inline-flex items-center px-4 py-2 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 transition">
+                            class="inline-flex items-center justify-center col-span-2 sm:col-span-1 px-3 sm:px-4 py-2.5 sm:py-2 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 transition">
                             Déclarer NP
                         </button>
                     </div>
@@ -61,7 +61,7 @@
 
                 <!-- Changement de cheval form -->
                 <div x-show="activeForm === 'cheval'" x-transition x-cloak>
-                    <div x-data="changementCheval()" class="bg-white shadow-sm sm:rounded-lg p-6 mb-6 space-y-4">
+                    <div x-data="changementCheval()" class="bg-white shadow-sm sm:rounded-lg p-4 sm:p-6 mb-6 space-y-4">
                     <!-- Step 1: Epreuve -->
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Épreuve</label>
@@ -192,7 +192,7 @@
 
                 <!-- Changement de cavalier form -->
                 <div x-show="activeForm === 'cavalier'" x-transition x-cloak>
-                    <div x-data="changementCavalier()" class="bg-white shadow-sm sm:rounded-lg p-6 mb-6 space-y-4">
+                    <div x-data="changementCavalier()" class="bg-white shadow-sm sm:rounded-lg p-4 sm:p-6 mb-6 space-y-4">
                     @if ($concours->grand_national)
                         <div class="p-3 bg-yellow-50 border border-yellow-200 rounded-md text-sm text-yellow-800">
                             Concours Grand National : le changement de cavalier n'est pas autorisé sur les épreuves Pro.
@@ -330,7 +330,7 @@
 
                 <!-- Invitation form -->
                 <div x-show="activeForm === 'invitation'" x-transition x-cloak>
-                    <div x-data="invitationForm()" class="bg-white shadow-sm sm:rounded-lg p-6 mb-6">
+                    <div x-data="invitationForm()" class="bg-white shadow-sm sm:rounded-lg p-4 sm:p-6 mb-6">
                     <form method="POST" action="{{ route('concours.modifications.invitation', $concours) }}" class="space-y-4">
                         @csrf
 
@@ -354,7 +354,7 @@
                         <div x-show="epreuveId">
                             <label class="block text-sm font-medium text-gray-700 mb-1">Cavalier</label>
 
-                            <div class="flex gap-4 mb-3">
+                            <div class="flex flex-col sm:flex-row gap-2 sm:gap-4 mb-3">
                                 <label class="flex items-center gap-2">
                                     <input type="radio" x-model="cavalierMode" value="existing"
                                         class="border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
@@ -395,8 +395,8 @@
                             </div>
 
                             <!-- New cavalier -->
-                            <div x-show="cavalierMode === 'new'" class="space-y-3 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                                <div class="grid grid-cols-2 gap-4">
+                            <div x-show="cavalierMode === 'new'" class="space-y-3 p-3 sm:p-4 bg-gray-50 rounded-lg border border-gray-200">
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-1">Nom</label>
                                         <input type="text" name="nouveau_cavalier_nom" x-model="nouveauCavalierNom"
@@ -489,7 +489,7 @@
                         </div>
 
                         <!-- Step 4: Type de compte + numero -->
-                        <div x-show="chevalId || (isNouveauCheval && nouveauChevalNom)" class="grid grid-cols-2 gap-4">
+                        <div x-show="chevalId || (isNouveauCheval && nouveauChevalNom)" class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">Type de compte</label>
                                 <select name="type_compte" x-model="typeCompte"
@@ -533,7 +533,7 @@
                         <!-- Step 7: Moyen de paiement -->
                         <div x-show="chevalId || (isNouveauCheval && nouveauChevalNom)">
                             <span class="block text-sm font-medium text-gray-700 mb-2">Moyen de paiement (optionnel)</span>
-                            <div class="flex gap-6">
+                            <div class="flex flex-wrap gap-4 sm:gap-6">
                                 <label class="flex items-center gap-2">
                                     <input type="checkbox" name="paiement_cb" value="1"
                                         class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
@@ -600,7 +600,7 @@
                                 </ul>
                             </div>
 
-                            <div class="grid grid-cols-2 gap-4">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-1">Téléphone</label>
                                     <input type="tel" name="telephone" x-model="telephone"
@@ -633,7 +633,7 @@
 
                 <!-- Changement d'epreuve form -->
                 <div x-show="activeForm === 'epreuve'" x-transition x-cloak>
-                    <div x-data="changementEpreuveForm()" class="bg-white shadow-sm sm:rounded-lg p-6 mb-6 space-y-4">
+                    <div x-data="changementEpreuveForm()" class="bg-white shadow-sm sm:rounded-lg p-4 sm:p-6 mb-6 space-y-4">
                     <form method="POST" action="{{ route('concours.modifications.changement-epreuve', $concours) }}" class="space-y-4">
                         @csrf
 
@@ -704,8 +704,8 @@
                         </div>
 
                         <!-- Step 4: Prix display (editable) -->
-                        <div x-show="nouvelleEpreuveId && nouvelleEpreuveId != epreuveId" class="p-4 bg-indigo-50 rounded-lg">
-                            <div class="grid grid-cols-3 gap-4 items-end">
+                        <div x-show="nouvelleEpreuveId && nouvelleEpreuveId != epreuveId" class="p-3 sm:p-4 bg-indigo-50 rounded-lg">
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 items-end">
                                 <div>
                                     <label class="block text-xs font-medium text-gray-500 mb-1">Prix</label>
                                     <input type="number" step="0.01" min="0" x-model.number="editablePrix" name="prix"
@@ -725,7 +725,7 @@
                         </div>
 
                         <!-- Step 5: Type de compte + numero -->
-                        <div x-show="nouvelleEpreuveId && nouvelleEpreuveId != epreuveId" class="grid grid-cols-2 gap-4">
+                        <div x-show="nouvelleEpreuveId && nouvelleEpreuveId != epreuveId" class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">Type de compte</label>
                                 <select name="type_compte"
@@ -843,7 +843,7 @@
 
                 <!-- Non-partant form -->
                 <div x-show="activeForm === 'np'" x-transition x-cloak>
-                    <div x-data="nonPartantForm()" class="bg-white shadow-sm sm:rounded-lg p-6 mb-6 space-y-4">
+                    <div x-data="nonPartantForm()" class="bg-white shadow-sm sm:rounded-lg p-4 sm:p-6 mb-6 space-y-4">
                     <form method="POST" action="{{ route('concours.modifications.non-partant', $concours) }}" class="space-y-4">
                         @csrf
 
@@ -966,7 +966,228 @@
                         <button @click="resetFilters()" type="button" class="text-xs text-indigo-600 hover:text-indigo-800 font-medium">Réinitialiser les filtres</button>
                     </div>
 
-                    <div class="overflow-x-auto">
+                    {{-- Mobile card layout --}}
+                    <div class="sm:hidden divide-y divide-gray-200">
+                        @foreach ($visibleMods as $mod)
+                            @php
+                                $paiementValues = [];
+                                if ($mod->paiement_cb) $paiementValues[] = 'cb';
+                                if ($mod->paiement_especes) $paiementValues[] = 'especes';
+                                if ($mod->paiement_cheque) $paiementValues[] = 'cheque';
+                            @endphp
+                            <div class="p-4 {{ $mod->statut->value === 'fait' ? 'opacity-50' : '' }}"
+                                x-show="showRow({{ json_encode([
+                                    'epreuve' => (string) ($mod->engagement->epreuve->numero ?? ''),
+                                    'nom' => $mod->type === \App\Enums\ModificationType::CHANGEMENT_CAVALIER
+                                        ? trim(($mod->ancienCavalier->nom ?? '') . ' ' . ($mod->ancienCavalier->prenom ?? '') . ' ' . ($mod->nouveauCavalier->nom ?? '') . ' ' . ($mod->nouveauCavalier->prenom ?? ''))
+                                        : trim(($mod->engagement->cavalier->nom ?? '') . ' ' . ($mod->engagement->cavalier->prenom ?? '')),
+                                    'jour' => $mod->created_at->format('Y-m-d'),
+                                    'statut' => $mod->statut->value,
+                                    'paiement' => $paiementValues,
+                                ]) }})">
+                                {{-- Header: Type badge + Statut + Épreuve --}}
+                                <div class="flex items-center justify-between mb-2">
+                                    <div class="flex items-center gap-2">
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {{ $mod->type->badgeClass() }}">
+                                            {{ $mod->type->label() }}
+                                        </span>
+                                        <span class="text-sm text-gray-500">
+                                            Ep.
+                                            @if ($mod->type === \App\Enums\ModificationType::CHANGEMENT_EPREUVE && $mod->linkedModification)
+                                                <span class="text-gray-400">{{ $mod->linkedModification->engagement->epreuve->numero ?? '?' }}</span>
+                                                &rarr;
+                                                <span class="font-medium text-gray-900">{{ $mod->engagement->epreuve->numero ?? '-' }}</span>
+                                            @else
+                                                {{ $mod->engagement->epreuve->numero ?? '-' }}
+                                            @endif
+                                        </span>
+                                        @if ($mod->engagement->numero_depart)
+                                            <span class="text-xs text-gray-400">
+                                                @if ($mod->type === \App\Enums\ModificationType::NON_PARTANT)
+                                                    N°{{ $mod->engagement->numero_depart }} <span class="font-bold text-red-600">NP</span>
+                                                @else
+                                                    N°{{ $mod->engagement->numero_depart }}
+                                                @endif
+                                            </span>
+                                        @endif
+                                    </div>
+                                    @if ($mod->statut->value === 'cree')
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">Créé</span>
+                                    @elseif ($mod->statut->value === 'fait')
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Fait</span>
+                                    @elseif ($mod->statut->value === 'modifie')
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">Modifié</span>
+                                    @endif
+                                </div>
+
+                                {{-- Cavalier --}}
+                                <div class="text-sm mb-1">
+                                    @if ($mod->type === \App\Enums\ModificationType::CHANGEMENT_CAVALIER)
+                                        <span class="text-gray-400 line-through">{{ $mod->ancienCavalier->nom ?? '-' }} {{ $mod->ancienCavalier->prenom ?? '' }}</span>
+                                        &rarr;
+                                        <span class="text-green-700 font-medium">{{ $mod->nouveauCavalier->nom ?? '-' }} {{ $mod->nouveauCavalier->prenom ?? '' }}</span>
+                                    @else
+                                        <span class="font-medium text-gray-900">{{ $mod->engagement->cavalier->nom ?? '' }} {{ $mod->engagement->cavalier->prenom ?? '' }}</span>
+                                        @if ($mod->is_gn)
+                                            <span class="ml-1 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800">GN</span>
+                                        @endif
+                                    @endif
+                                </div>
+
+                                {{-- Cheval --}}
+                                <div class="text-sm text-gray-600 mb-2">
+                                    @if ($mod->type === \App\Enums\ModificationType::CHANGEMENT_CHEVAL)
+                                        <span class="text-gray-400 line-through">{{ $mod->ancienCheval->nom ?? '-' }}</span>
+                                        &rarr;
+                                        <span class="text-green-700 font-medium">{{ $mod->nouveauCheval->nom ?? '-' }}</span>
+                                    @else
+                                        {{ $mod->engagement->cheval->nom ?? '-' }}
+                                    @endif
+                                </div>
+
+                                {{-- Prix / Paiement --}}
+                                @if (!$concours->grand_national && $mod->type->isPaid())
+                                    <div class="flex items-center gap-3 text-sm text-gray-600 mb-2">
+                                        <span class="font-medium">{{ number_format((float) $mod->prix, 2, ',', ' ') }} &euro;</span>
+                                        @php
+                                            $moyens = [];
+                                            if ($mod->paiement_cb) $moyens[] = 'CB';
+                                            if ($mod->paiement_especes) $moyens[] = 'Espèces';
+                                            if ($mod->paiement_cheque) $moyens[] = 'Chèque';
+                                        @endphp
+                                        @if (count($moyens) > 0)
+                                            <span class="text-gray-400">{{ implode(', ', $moyens) }}</span>
+                                        @endif
+                                    </div>
+                                @endif
+
+                                {{-- Actions --}}
+                                <div class="flex items-center gap-4 pt-2 border-t border-gray-100">
+                                    @if (in_array($mod->statut->value, ['cree', 'fait']) && $mod->type->isPaid())
+                                        <button type="button" onclick="toggleEditCard({{ $mod->id }})" class="text-indigo-600 hover:text-indigo-800 text-sm font-medium py-1">Editer</button>
+                                    @endif
+                                    @if (in_array($mod->statut->value, ['cree', 'modifie']))
+                                        <form method="POST" action="{{ route('modifications.fait', $mod) }}">
+                                            @csrf
+                                            @method('PATCH')
+                                            <button type="submit" class="text-green-600 hover:text-green-800 text-sm font-medium py-1">Fait</button>
+                                        </form>
+                                    @endif
+                                    <form method="POST" action="{{ route('modifications.destroy', $mod) }}"
+                                        onsubmit="return confirm('Supprimer cette modification ?')">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="text-red-600 hover:text-red-800 text-sm font-medium py-1">Supprimer</button>
+                                    </form>
+                                </div>
+
+                                {{-- Inline edit (mobile) --}}
+                                @if (in_array($mod->statut->value, ['cree', 'fait']) && $mod->type->isPaid())
+                                    <div id="edit-card-{{ $mod->id }}" class="hidden mt-3 pt-3 border-t border-gray-200">
+                                        <form method="POST" action="{{ route('modifications.update-paiement', $mod) }}" class="space-y-3"
+                                            x-data="{ paiementCheque: {{ $mod->paiement_cheque ? 'true' : 'false' }}, facture: '{{ $mod->facture ? '1' : '0' }}' }">
+                                            @csrf
+                                            @method('PATCH')
+                                            <div class="grid grid-cols-1 gap-3">
+                                                <div>
+                                                    <label class="block text-xs font-medium text-gray-500 mb-1">Type de compte</label>
+                                                    <select name="type_compte" class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                                                        <option value="">--</option>
+                                                        <option value="Licence" {{ $mod->type_compte === 'Licence' ? 'selected' : '' }}>Licence</option>
+                                                        <option value="Compte" {{ $mod->type_compte === 'Compte' ? 'selected' : '' }}>Compte</option>
+                                                        <option value="Club" {{ $mod->type_compte === 'Club' ? 'selected' : '' }}>Club</option>
+                                                    </select>
+                                                </div>
+                                                <div>
+                                                    <label class="block text-xs font-medium text-gray-500 mb-1">N° de compte</label>
+                                                    <input type="text" name="numero_compte" value="{{ $mod->numero_compte }}"
+                                                        class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                                                </div>
+                                                <div>
+                                                    <label class="block text-xs font-medium text-gray-500 mb-1">Jour de paiement</label>
+                                                    <input type="date" name="jour_paiement" value="{{ $mod->jour_paiement?->format('Y-m-d') }}"
+                                                        class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                                                </div>
+                                                <div>
+                                                    <label class="block text-xs font-medium text-gray-500 mb-1">Paiement</label>
+                                                    <div class="flex flex-wrap gap-3 mt-1">
+                                                        <label class="inline-flex items-center text-sm">
+                                                            <input type="checkbox" name="paiement_cb" value="1" {{ $mod->paiement_cb ? 'checked' : '' }}
+                                                                class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
+                                                            <span class="ml-1">CB</span>
+                                                        </label>
+                                                        <label class="inline-flex items-center text-sm">
+                                                            <input type="checkbox" name="paiement_especes" value="1" {{ $mod->paiement_especes ? 'checked' : '' }}
+                                                                class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
+                                                            <span class="ml-1">Espèces</span>
+                                                        </label>
+                                                        <label class="inline-flex items-center text-sm">
+                                                            <input type="checkbox" name="paiement_cheque" value="1" x-model="paiementCheque"
+                                                                class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
+                                                            <span class="ml-1">Chèque</span>
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                                <div x-show="paiementCheque" x-transition>
+                                                    <label class="block text-xs font-medium text-gray-500 mb-1">N° de chèque</label>
+                                                    <input type="text" name="numero_cheque" value="{{ $mod->numero_cheque }}"
+                                                        class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <label class="block text-xs font-medium text-gray-500 mb-1">Facture</label>
+                                                <div class="flex gap-4">
+                                                    <label class="inline-flex items-center text-sm">
+                                                        <input type="radio" name="facture" value="1" x-model="facture" class="border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
+                                                        <span class="ml-1">Oui</span>
+                                                    </label>
+                                                    <label class="inline-flex items-center text-sm">
+                                                        <input type="radio" name="facture" value="0" x-model="facture" class="border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
+                                                        <span class="ml-1">Non</span>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            <div x-show="facture == 1" x-transition class="grid grid-cols-1 gap-3 p-3 bg-white rounded-lg border border-gray-200">
+                                                <div>
+                                                    <label class="block text-xs font-medium text-gray-500 mb-1">Nom facturation</label>
+                                                    <input type="text" name="nom_facturation" value="{{ $mod->clientFacturation?->nom }}"
+                                                        class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                                                </div>
+                                                <div>
+                                                    <label class="block text-xs font-medium text-gray-500 mb-1">Téléphone</label>
+                                                    <input type="text" name="telephone" value="{{ $mod->clientFacturation?->telephone }}"
+                                                        class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                                                </div>
+                                                <div>
+                                                    <label class="block text-xs font-medium text-gray-500 mb-1">Email</label>
+                                                    <input type="email" name="email" value="{{ $mod->clientFacturation?->email }}"
+                                                        class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                                                </div>
+                                                <div>
+                                                    <label class="block text-xs font-medium text-gray-500 mb-1">Adresse</label>
+                                                    <input type="text" name="adresse" value="{{ $mod->clientFacturation?->adresse }}"
+                                                        class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                                                </div>
+                                            </div>
+                                            <div class="flex gap-3">
+                                                <button type="submit"
+                                                    class="flex-1 inline-flex items-center justify-center px-3 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700">
+                                                    Enregistrer
+                                                </button>
+                                                <button type="button" onclick="toggleEditCard({{ $mod->id }})"
+                                                    class="px-3 py-2 text-sm text-gray-600 hover:text-gray-800 border border-gray-300 rounded-md">
+                                                    Fermer
+                                                </button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                @endif
+                            </div>
+                        @endforeach
+                    </div>
+
+                    {{-- Desktop table layout --}}
+                    <div class="hidden sm:block overflow-x-auto">
                         <table class="min-w-full divide-y divide-gray-200">
                             <thead class="bg-gray-50">
                                 <tr>
@@ -1149,7 +1370,7 @@
                                                         <div>
                                                             <label class="block text-xs font-medium text-gray-500 mb-1">Type de compte</label>
                                                             <select name="type_compte" class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
-                                                                <option value="">—</option>
+                                                                <option value="">--</option>
                                                                 <option value="Licence" {{ $mod->type_compte === 'Licence' ? 'selected' : '' }}>Licence</option>
                                                                 <option value="Compte" {{ $mod->type_compte === 'Compte' ? 'selected' : '' }}>Compte</option>
                                                                 <option value="Club" {{ $mod->type_compte === 'Club' ? 'selected' : '' }}>Club</option>
@@ -1214,7 +1435,7 @@
                                                                 </label>
                                                             </div>
                                                         </div>
-                                                        <div x-show="facture == 1" x-transition class="grid grid-cols-2 md:grid-cols-4 gap-4 p-3 bg-white rounded-lg border border-gray-200">
+                                                        <div x-show="facture == 1" x-transition class="grid grid-cols-1 md:grid-cols-4 gap-3 p-3 bg-white rounded-lg border border-gray-200">
                                                             <div>
                                                                 <label class="block text-xs font-medium text-gray-500 mb-1">Nom de facturation</label>
                                                                 <input type="text" name="nom_facturation" value="{{ $mod->clientFacturation?->nom }}"
@@ -1300,6 +1521,13 @@
             const row = document.getElementById('edit-row-' + modId);
             if (row) {
                 row.classList.toggle('hidden');
+            }
+        }
+
+        function toggleEditCard(modId) {
+            const card = document.getElementById('edit-card-' + modId);
+            if (card) {
+                card.classList.toggle('hidden');
             }
         }
 
