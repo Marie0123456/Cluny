@@ -88,7 +88,6 @@
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nom</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Produit</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Quantité</th>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Emplacement / Boxes</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Action</th>
                                 </tr>
                             </thead>
@@ -107,7 +106,6 @@
                                         <td class="px-4 py-3 text-sm text-gray-900">{{ trim($commande->prenom . ' ' . $commande->nom) }}</td>
                                         <td class="px-4 py-3 text-sm text-gray-900">{{ $commande->produit }}</td>
                                         <td class="px-4 py-3 text-sm text-gray-500">{{ $commande->quantite }}</td>
-                                        <td class="px-4 py-3 text-sm text-gray-500">{{ $commande->emplacement_boxes ?? '-' }}</td>
                                         <td class="px-4 py-3 text-sm">
                                             <form action="{{ route('concours.commande-retraits.toggle-retire', [$concours, $commande]) }}" method="POST">
                                                 @csrf
