@@ -28,7 +28,7 @@
                     <div>
                         <select x-model="epreuveFilter"
                             class="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-                            <option value="">Toutes les epreuves</option>
+                            <option value="">Toutes les épreuves</option>
                             @foreach ($epreuves as $epreuve)
                                 <option value="{{ $epreuve->id }}">{{ $epreuve->numero }} - {{ $epreuve->nom }}</option>
                             @endforeach
@@ -38,7 +38,7 @@
 
                 @forelse ($epreuvesByDate as $dateKey => $epreuvesJour)
                     @php
-                        $dateLabel = $dateKey === 'sans_date' ? 'Date non definie' : \Carbon\Carbon::parse($dateKey)->translatedFormat('l d/m/Y');
+                        $dateLabel = $dateKey === 'sans_date' ? 'Date non définie' : \Carbon\Carbon::parse($dateKey)->translatedFormat('l d/m/Y');
                         $totalEngages = $epreuvesJour->sum(fn($e) => $e->engagements->count());
                     @endphp
                     <div class="mb-6" x-data="{ openDay: true }">
@@ -52,14 +52,14 @@
                                 </svg>
                                 <h2 class="text-base font-bold text-indigo-900 capitalize">{{ $dateLabel }}</h2>
                             </div>
-                            <span class="text-sm text-indigo-600 font-medium">{{ $epreuvesJour->count() }} epreuves — {{ $totalEngages }} engages</span>
+                            <span class="text-sm text-indigo-600 font-medium">{{ $epreuvesJour->count() }} épreuves — {{ $totalEngages }} engagés</span>
                         </button>
 
                         <div x-show="openDay" x-transition x-cloak class="space-y-3 pl-2">
                             @foreach ($epreuvesJour as $epreuve)
                                 <div x-data="{ open: false }" x-show="epreuveFilter === '' || epreuveFilter === '{{ $epreuve->id }}'">
                                     <div class="bg-white shadow-sm sm:rounded-lg">
-                                        <!-- Epreuve accordion header -->
+                                        <!-- Épreuve accordion header -->
                                         <button @click="open = !open" type="button"
                                             class="w-full flex items-center justify-between px-6 py-4 text-left hover:bg-gray-50 transition rounded-lg">
                                             <div class="flex items-center gap-3">
@@ -68,7 +68,7 @@
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
                                                 </svg>
                                                 <h3 class="text-base font-semibold text-gray-900">
-                                                    Epreuve {{ $epreuve->numero }} — {{ $epreuve->nom }}
+                                                    Épreuve {{ $epreuve->numero }} — {{ $epreuve->nom }}
                                                 </h3>
                                             </div>
                                             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
@@ -76,7 +76,7 @@
                                             </span>
                                         </button>
 
-                                        <!-- Epreuve accordion body -->
+                                        <!-- Épreuve accordion body -->
                                         <div x-show="open" x-transition x-cloak>
                                             <div class="border-t border-gray-200 overflow-x-auto">
                                                 <table class="min-w-full divide-y divide-gray-200">
@@ -103,7 +103,7 @@
                                                                 <td class="px-4 py-2 text-sm text-gray-900">
                                                                     {{ $engagement->cheval?->nom }}
                                                                     @if (($engagement->modifications_count ?? $engagement->modifications->count()) > 0)
-                                                                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-orange-100 text-orange-800 ml-1">modifie</span>
+                                                                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-orange-100 text-orange-800 ml-1">modifié</span>
                                                                     @endif
                                                                 </td>
                                                             </tr>
@@ -119,7 +119,7 @@
                     </div>
                 @empty
                     <div class="mt-6 bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 text-center text-gray-500">
-                        Aucun engage. Importez un fichier CSV depuis la page du concours.
+                        Aucun engagé. Importez un fichier CSV depuis la page du concours.
                     </div>
                 @endforelse
             </div>

@@ -43,11 +43,11 @@
             <!-- Stats cards -->
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-4">
-                    <p class="text-sm text-gray-500">Epreuves</p>
+                    <p class="text-sm text-gray-500">Épreuves</p>
                     <p class="text-2xl font-bold text-gray-900">{{ $concours->epreuves_count }}</p>
                 </div>
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-4">
-                    <p class="text-sm text-gray-500">Engages</p>
+                    <p class="text-sm text-gray-500">Engagés</p>
                     <p class="text-2xl font-bold text-gray-900">{{ $concours->engagements_count }}</p>
                 </div>
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-4">
@@ -63,13 +63,13 @@
             <!-- Epreuves table -->
             @if ($epreuves->isEmpty())
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 text-center text-gray-500 mb-6">
-                    Aucune epreuve. Importez un fichier CSV ci-dessous.
+                    Aucune épreuve. Importez un fichier CSV ci-dessous.
                 </div>
             @else
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6"
                     x-data="prixEditor()" x-cloak>
                     <div class="flex justify-between items-center px-6 pt-4">
-                        <h3 class="text-lg font-medium text-gray-900">Epreuves</h3>
+                        <h3 class="text-lg font-medium text-gray-900">Épreuves</h3>
                         @can('admin')
                             <div>
                                 <button x-show="!editing" @click="startEditing()" type="button"
@@ -92,7 +92,7 @@
                     </div>
 
                     <div x-show="saved" x-transition class="mx-6 mt-3 bg-green-100 border border-green-400 text-green-700 px-4 py-2 rounded text-sm">
-                        Prix enregistres avec succes.
+                        Prix enregistrés avec succès.
                     </div>
 
                     <div class="overflow-x-auto">
@@ -103,7 +103,7 @@
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nom</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Prix</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Engages</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Engagés</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Invitations</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">NP</th>
                             </tr>
@@ -171,13 +171,13 @@
             <!-- Import CSV -->
             @can('admin')
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                    <h3 class="text-lg font-medium text-gray-900 mb-4">Importer les engages ({{ $concours->type_ffe_sif ? 'FFE SIF' : 'FFE Compet' }})</h3>
+                    <h3 class="text-lg font-medium text-gray-900 mb-4">Importer les engagés ({{ $concours->type_ffe_sif ? 'FFE SIF' : 'FFE Compet' }})</h3>
                     <p class="text-sm text-gray-500 mb-3">
                         Colonnes attendues :
                         @if ($concours->type_ffe_sif)
                             <code class="text-xs bg-gray-100 px-1.5 py-0.5 rounded">Numero Concours;Numero Epreuve;Numero Depart;Epreuve;Discipline;Licence;Nom;Prenom;Club;Sire;Cheval</code>
                             <br>
-                            <span class="text-xs text-gray-400">Le fichier peut etre avec ou sans en-tete.</span>
+                            <span class="text-xs text-gray-400">Le fichier peut être avec ou sans en-tête.</span>
                         @else
                             <code class="text-xs bg-gray-100 px-1.5 py-0.5 rounded">Epreuve_numero;Epreuve_nom;Epreuve_date;Num_depart;Nom;Prenom;Role_cavalier;Licence;Club;CRE;Departement;Num_dept;Dept_groom;Cheval;Role_cheval;SIRE;Age;Sexe;Robe;Race</code>
                         @endif
@@ -197,7 +197,7 @@
                     @if ($concours->type_ffe_sif)
                         <div class="mt-3">
                             <a href="{{ route('import.template-sif') }}" class="text-sm text-indigo-600 hover:text-indigo-800 underline">
-                                Telecharger le template CSV vide
+                                Télécharger le template CSV vide
                             </a>
                         </div>
                     @endif
@@ -205,13 +205,13 @@
                     @if ($concours->engagements_count > 0)
                         <div class="mt-4 pt-4 border-t border-gray-200">
                             <form method="POST" action="{{ route('concours.purge', $concours) }}"
-                                onsubmit="return confirm('Attention : cela supprimera TOUTES les epreuves, engagements et modifications de ce concours.\n\nCette action est irreversible.\n\nConfirmer la suppression ?')">
+                                onsubmit="return confirm('Attention : cela supprimera TOUTES les épreuves, engagements et modifications de ce concours.\n\nCette action est irréversible.\n\nConfirmer la suppression ?')">
                                 @csrf
                                 @method('DELETE')
                                 <button type="submit" class="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700">
-                                    Supprimer toutes les donnees importees
+                                    Supprimer toutes les données importées
                                 </button>
-                                <span class="ml-3 text-sm text-gray-500">Supprime epreuves, engagements et modifications de ce concours.</span>
+                                <span class="ml-3 text-sm text-gray-500">Supprime épreuves, engagements et modifications de ce concours.</span>
                             </form>
                         </div>
                     @endif

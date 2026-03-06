@@ -96,8 +96,8 @@
                                 @if ($index === 0)
                                     <td rowspan="{{ $vente->lignes->count() }}">
                                         @if ($vente->paiement_cb) CB @endif
-                                        @if ($vente->paiement_especes) Especes @endif
-                                        @if ($vente->paiement_cheque) Cheque @endif
+                                        @if ($vente->paiement_especes) Espèces @endif
+                                        @if ($vente->paiement_cheque) Chèque @endif
                                     </td>
                                     <td rowspan="{{ $vente->lignes->count() }}">
                                         {{ $vente->jour_paiement ? $vente->jour_paiement->format('d/m/Y') : '-' }}
@@ -144,8 +144,8 @@
                             <td class="text-right font-bold">{{ $mod->prix ? number_format($mod->prix, 2, ',', ' ') . ' €' : '-' }}</td>
                             <td>
                                 @if ($mod->paiement_cb) CB @endif
-                                @if ($mod->paiement_especes) Especes @endif
-                                @if ($mod->paiement_cheque) Cheque @endif
+                                @if ($mod->paiement_especes) Espèces @endif
+                                @if ($mod->paiement_cheque) Chèque @endif
                             </td>
                             <td>{{ $mod->jour_paiement ? $mod->jour_paiement->format('d/m/Y') : '-' }}</td>
                         </tr>
@@ -166,7 +166,7 @@
     <div class="grand-total">
         <div class="line"><span>Total Ventes</span> <span>{{ number_format($grandTotalVentes, 2, ',', ' ') }} &euro;</span></div>
         <div class="line"><span>Total Modifications</span> <span>{{ number_format($grandTotalModifications, 2, ',', ' ') }} &euro;</span></div>
-        <div class="line main"><span>TOTAL GENERAL</span> <span>{{ number_format($grandTotalVentes + $grandTotalModifications, 2, ',', ' ') }} &euro;</span></div>
+        <div class="line main"><span>TOTAL GÉNÉRAL</span> <span>{{ number_format($grandTotalVentes + $grandTotalModifications, 2, ',', ' ') }} &euro;</span></div>
     </div>
 
     <div class="no-print">

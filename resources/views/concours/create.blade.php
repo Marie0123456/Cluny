@@ -20,7 +20,7 @@
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                         <div>
-                            <label for="date_debut" class="block text-sm font-medium text-gray-700">Date de debut</label>
+                            <label for="date_debut" class="block text-sm font-medium text-gray-700">Date de début</label>
                             <input type="date" name="date_debut" id="date_debut" value="{{ old('date_debut') }}" required
                                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                             @error('date_debut') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
@@ -66,7 +66,7 @@
                             Annuler
                         </a>
                         <button type="submit" class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700">
-                            Creer
+                            Créer
                         </button>
                     </div>
                 </form>

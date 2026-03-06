@@ -76,7 +76,7 @@
                         </div>
                     </div>
                     <div x-show="filterClient || filterProduit || filterFacture || filterNomFacturation" class="px-4 pb-2">
-                        <button @click="resetFilters()" type="button" class="text-xs text-indigo-600 hover:text-indigo-800 font-medium">Reinitialiser les filtres</button>
+                        <button @click="resetFilters()" type="button" class="text-xs text-indigo-600 hover:text-indigo-800 font-medium">Réinitialiser les filtres</button>
                     </div>
 
                     <div class="overflow-x-auto">
@@ -117,8 +117,8 @@
                                                 <td class="px-4 py-3 text-sm text-gray-900 font-medium text-right" rowspan="{{ $ligneCount }}">{{ number_format($vente->total_ttc, 2, ',', ' ') }} &euro;</td>
                                                 <td class="px-4 py-3 text-sm text-gray-500" rowspan="{{ $ligneCount }}">
                                                     @if ($vente->paiement_cb)<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">CB</span>@endif
-                                                    @if ($vente->paiement_especes)<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">Especes</span>@endif
-                                                    @if ($vente->paiement_cheque)<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">Cheque</span>@endif
+                                                    @if ($vente->paiement_especes)<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">Espèces</span>@endif
+                                                    @if ($vente->paiement_cheque)<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">Chèque</span>@endif
                                                 </td>
                                                 <td class="px-4 py-3 text-sm" rowspan="{{ $ligneCount }}">
                                                     @if ($vente->facture && $vente->clientFacturation)
@@ -149,7 +149,7 @@
                             </tbody>
                             <tfoot class="bg-gray-50">
                                 <tr>
-                                    <td colspan="6" class="px-4 py-3 text-sm font-bold text-gray-900 text-right">Total general</td>
+                                    <td colspan="6" class="px-4 py-3 text-sm font-bold text-gray-900 text-right">Total général</td>
                                     <td class="px-4 py-3 text-sm font-bold text-gray-900 text-right">{{ number_format($totalGeneral, 2, ',', ' ') }} &euro;</td>
                                     <td colspan="3"></td>
                                 </tr>
@@ -175,8 +175,8 @@
                             class="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
                             <option value="">Tous</option>
                             <option value="cb">CB</option>
-                            <option value="especes">Especes</option>
-                            <option value="cheque">Cheque</option>
+                            <option value="especes">Espèces</option>
+                            <option value="cheque">Chèque</option>
                         </select>
                     </div>
                 </div>
@@ -227,7 +227,7 @@
                 },
 
                 get caissePaiementLabel() {
-                    return { cb: 'CB', especes: 'Especes', cheque: 'Cheque' }[this.caissePaiement] || '';
+                    return { cb: 'CB', especes: 'Espèces', cheque: 'Chèque' }[this.caissePaiement] || '';
                 },
 
                 formatPrix(val) {

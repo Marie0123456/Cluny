@@ -43,11 +43,11 @@
             <!-- Stats cards -->
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-4">
-                    <p class="text-sm text-gray-500">Epreuves</p>
+                    <p class="text-sm text-gray-500">Épreuves</p>
                     <p class="text-2xl font-bold text-gray-900">{{ $concours->epreuves_count }}</p>
                 </div>
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-4">
-                    <p class="text-sm text-gray-500">Engages</p>
+                    <p class="text-sm text-gray-500">Engagés</p>
                     <p class="text-2xl font-bold text-gray-900">{{ $concours->engagements_count }}</p>
                 </div>
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-4">
@@ -62,11 +62,11 @@
                 @endcan
             </div>
 
-            <!-- Mes Epreuves -->
+            <!-- Mes Épreuves -->
             @if ($epreuves->isNotEmpty())
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
                     <div class="p-6">
-                        <h3 class="text-lg font-medium text-gray-900 mb-4">Mes Epreuves</h3>
+                        <h3 class="text-lg font-medium text-gray-900 mb-4">Mes Épreuves</h3>
                         <div class="overflow-x-auto">
                         <table class="min-w-full divide-y divide-gray-200">
                             <thead class="bg-gray-50">
@@ -74,7 +74,7 @@
                                     <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">N.</th>
                                     <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Nom</th>
                                     <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Engages</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Engagés</th>
                                     <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Prix</th>
                                 </tr>
                             </thead>
@@ -134,7 +134,7 @@
             <!-- Import CSV -->
             @can('admin')
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                    <h3 class="text-lg font-medium text-gray-900 mb-4">Importer les engages ({{ $concours->type_ffe_sif ? 'FFE SIF' : 'FFE Compet' }})</h3>
+                    <h3 class="text-lg font-medium text-gray-900 mb-4">Importer les engagés ({{ $concours->type_ffe_sif ? 'FFE SIF' : 'FFE Compet' }})</h3>
                     <p class="text-sm text-gray-500 mb-3">
                         Colonnes attendues :
                         @if ($concours->type_ffe_sif)
@@ -159,13 +159,13 @@
                     @if ($concours->engagements_count > 0)
                         <div class="mt-4 pt-4 border-t border-gray-200">
                             <form method="POST" action="{{ route('concours.purge', $concours) }}"
-                                onsubmit="return confirm('Attention : cela supprimera TOUTES les epreuves, engagements, cavaliers, chevaux et modifications de ce concours.\n\nCette action est irreversible.\n\nConfirmer la suppression ?')">
+                                onsubmit="return confirm('Attention : cela supprimera TOUTES les épreuves, engagements, cavaliers, chevaux et modifications de ce concours.\n\nCette action est irréversible.\n\nConfirmer la suppression ?')">
                                 @csrf
                                 @method('DELETE')
                                 <button type="submit" class="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700">
-                                    Supprimer toutes les donnees importees
+                                    Supprimer toutes les données importées
                                 </button>
-                                <span class="ml-3 text-sm text-gray-500">Supprime epreuves, engagements, cavaliers et chevaux de ce concours.</span>
+                                <span class="ml-3 text-sm text-gray-500">Supprime épreuves, engagements, cavaliers et chevaux de ce concours.</span>
                             </form>
                         </div>
                     @endif

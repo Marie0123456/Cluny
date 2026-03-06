@@ -89,12 +89,12 @@
                             <label class="flex items-center gap-2">
                                 <input type="checkbox" name="paiement_especes" value="1" x-model="paiementEspeces"
                                     class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
-                                <span class="text-sm text-gray-700">Especes</span>
+                                <span class="text-sm text-gray-700">Espèces</span>
                             </label>
                             <label class="flex items-center gap-2">
                                 <input type="checkbox" name="paiement_cheque" value="1" x-model="paiementCheque"
                                     class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
-                                <span class="text-sm text-gray-700">Cheque</span>
+                                <span class="text-sm text-gray-700">Chèque</span>
                             </label>
                         </div>
                     </div>

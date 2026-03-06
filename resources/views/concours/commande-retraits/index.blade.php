@@ -64,7 +64,7 @@
                                 class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
                         </div>
                         <div>
-                            <label class="block text-xs font-medium text-gray-500 mb-1">N* Commande</label>
+                            <label class="block text-xs font-medium text-gray-500 mb-1">N° Commande</label>
                             <input type="text" x-model="filterNumero" placeholder="Numero..."
                                 class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
                         </div>
@@ -83,7 +83,7 @@
                         <table class="min-w-full divide-y divide-gray-200">
                             <thead class="bg-gray-50">
                                 <tr>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">N* Commande</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">N° Commande</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nom</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Produit</th>

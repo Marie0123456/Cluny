@@ -49,12 +49,12 @@
                         <button @click="activeForm = activeForm === 'epreuve' ? '' : 'epreuve'"
                             :class="activeForm === 'epreuve' ? 'bg-yellow-700 ring-2 ring-yellow-300' : 'bg-yellow-600'"
                             class="inline-flex items-center px-4 py-2 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-yellow-700 transition">
-                            Chgt Epreuve
+                            Chgt Épreuve
                         </button>
                         <button @click="activeForm = activeForm === 'np' ? '' : 'np'"
                             :class="activeForm === 'np' ? 'bg-gray-700 ring-2 ring-gray-300' : 'bg-gray-600'"
                             class="inline-flex items-center px-4 py-2 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 transition">
-                            Declarer NP
+                            Déclarer NP
                         </button>
                     </div>
                 </div>
@@ -64,10 +64,10 @@
                     <div x-data="changementCheval()" class="bg-white shadow-sm sm:rounded-lg p-6 mb-6 space-y-4">
                     <!-- Step 1: Epreuve -->
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Epreuve</label>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Épreuve</label>
                         <select x-model="epreuveId" @change="onEpreuveChange()"
                             class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-                            <option value="">Choisir l'epreuve</option>
+                            <option value="">Choisir l'épreuve</option>
                             @foreach($epreuves as $epreuve)
                                 <option value="{{ $epreuve->id }}">{{ $epreuve->numero }} - {{ $epreuve->nom }}</option>
                             @endforeach
@@ -80,7 +80,7 @@
                         <input type="text" x-model="searchCavalier"
                             @input="filterCavaliers()"
                             @focus="showCavalierList = true"
-                            placeholder="Nom, cheval ou N° de depart..."
+                            placeholder="Nom, cheval ou N° de départ..."
                             class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
 
                         <div x-show="selectedCavalierLabel" class="mt-1 text-sm text-indigo-700 font-medium">
@@ -125,7 +125,7 @@
                             <div x-show="chevalSearchLoading" class="mt-1 text-sm text-gray-400">Recherche...</div>
                             <div x-show="chevalSearchDone && resultatsChevaux.length === 0 && searchCheval.length >= 2 && !chevalSearchLoading && !selectedChevalNom"
                                 class="mt-1 text-sm text-orange-600">
-                                Aucun cheval du concours ne correspond. Cochez « Nouveau cheval » et renseignez le numero de SIRE.
+                                Aucun cheval du concours ne correspond. Cochez « Nouveau cheval » et renseignez le numéro de SIRE.
                             </div>
 
                             <div x-show="selectedChevalNom" class="mt-2 flex items-center gap-2">
@@ -159,7 +159,7 @@
                                     class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Numero de SIRE</label>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Numéro de SIRE</label>
                                 <input type="text" x-model="nouveauChevalSire"
                                     placeholder="Ex: 12345678A"
                                     class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
@@ -195,21 +195,21 @@
                     <div x-data="changementCavalier()" class="bg-white shadow-sm sm:rounded-lg p-6 mb-6 space-y-4">
                     @if ($concours->grand_national)
                         <div class="p-3 bg-yellow-50 border border-yellow-200 rounded-md text-sm text-yellow-800">
-                            Concours Grand National : le changement de cavalier n'est pas autorise sur les epreuves Pro.
+                            Concours Grand National : le changement de cavalier n'est pas autorisé sur les épreuves Pro.
                         </div>
                     @endif
 
                     <!-- Step 1: Epreuve -->
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Epreuve</label>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Épreuve</label>
                         <select x-model="epreuveId" @change="onEpreuveChange()"
                             class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-                            <option value="">Choisir l'epreuve</option>
+                            <option value="">Choisir l'épreuve</option>
                             @foreach($epreuves as $epreuve)
                                 <option value="{{ $epreuve->id }}">{{ $epreuve->numero }} - {{ $epreuve->nom }}</option>
                             @endforeach
                         </select>
-                        <p x-show="proBlocked" class="mt-1 text-sm text-red-600">Epreuve Pro : changement de cavalier non autorise en GN.</p>
+                        <p x-show="proBlocked" class="mt-1 text-sm text-red-600">Épreuve Pro : changement de cavalier non autorisé en GN.</p>
                     </div>
 
                     <!-- Step 2: Engagement (cavalier actuel) -->
@@ -290,9 +290,9 @@
                                     class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Prenom</label>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Prénom</label>
                                 <input type="text" x-model="nouveauCavalierPrenom"
-                                    placeholder="Prenom"
+                                    placeholder="Prénom"
                                     class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                             </div>
                             <div>
@@ -336,16 +336,16 @@
 
                         <!-- Step 1: Epreuve -->
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Epreuve</label>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Épreuve</label>
                             <select x-model="epreuveId" @change="onEpreuveChange()" name="epreuve_id"
                                 class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-                                <option value="">Choisir l'epreuve</option>
+                                <option value="">Choisir l'épreuve</option>
                                 @foreach($epreuves as $epreuve)
                                     <option value="{{ $epreuve->id }}">{{ $epreuve->numero }} - {{ $epreuve->nom }}</option>
                                 @endforeach
                             </select>
                             <div x-show="epreuveId" class="mt-2 text-sm">
-                                <span class="text-gray-600">Prix epreuve :</span>
+                                <span class="text-gray-600">Prix épreuve :</span>
                                 <span class="font-semibold text-gray-900" x-text="epreuvePrix ? epreuvePrix.toFixed(2).replace('.', ',') + ' €' : '-'"></span>
                             </div>
                         </div>
@@ -363,7 +363,7 @@
                                 <label class="flex items-center gap-2">
                                     <input type="radio" x-model="cavalierMode" value="new"
                                         class="border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
-                                    <span class="text-sm text-gray-700">Nouveau cavalier (pas engage sur le concours)</span>
+                                    <span class="text-sm text-gray-700">Nouveau cavalier (pas engagé sur le concours)</span>
                                 </label>
                             </div>
 
@@ -403,13 +403,13 @@
                                             class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                                     </div>
                                     <div>
-                                        <label class="block text-sm font-medium text-gray-700 mb-1">Prenom</label>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Prénom</label>
                                         <input type="text" name="nouveau_cavalier_prenom" x-model="nouveauCavalierPrenom"
                                             class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                                     </div>
                                 </div>
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Numero de licence</label>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Numéro de licence</label>
                                     <input type="text" name="nouveau_cavalier_num_licence" x-model="nouveauCavalierLicence"
                                         placeholder="Ex: 1234567"
                                         class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
@@ -449,7 +449,7 @@
                                 <div x-show="chevalSearchLoading" class="mt-1 text-sm text-gray-400">Recherche...</div>
                                 <div x-show="chevalSearchDone && chevalResults.length === 0 && searchCheval.length >= 2 && !chevalSearchLoading && !selectedChevalNom"
                                     class="mt-1 text-sm text-orange-600">
-                                    Aucun cheval du concours ne correspond. Cochez « Nouveau cheval » et renseignez le numero de SIRE.
+                                    Aucun cheval du concours ne correspond. Cochez « Nouveau cheval » et renseignez le numéro de SIRE.
                                 </div>
 
                                 <div x-show="selectedChevalNom" class="mt-2 flex items-center gap-2">
@@ -481,7 +481,7 @@
                                         class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                                 </div>
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Numero de SIRE</label>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Numéro de SIRE</label>
                                     <input type="text" name="nouveau_cheval_num_sire" x-model="nouveauChevalSire"
                                         class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                                 </div>
@@ -501,7 +501,7 @@
                                 </select>
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Numero de compte</label>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Numéro de compte</label>
                                 <input type="text" name="numero_compte" x-model="numeroCompte"
                                     class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                             </div>
@@ -515,7 +515,7 @@
                                     <p class="text-xl font-bold text-indigo-900" x-text="calculatedPrix.toFixed(2).replace('.', ',') + ' €'"></p>
                                 </div>
                                 <div class="text-right">
-                                    <p class="text-sm text-gray-600">Part Federale :</p>
+                                    <p class="text-sm text-gray-600">Part Fédérale :</p>
                                     <p class="text-lg font-semibold text-indigo-700" x-text="calculatedPf.toFixed(2).replace('.', ',') + ' €'"></p>
                                 </div>
                             </div>
@@ -542,19 +542,19 @@
                                 <label class="flex items-center gap-2">
                                     <input type="checkbox" name="paiement_especes" value="1"
                                         class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
-                                    <span class="text-sm text-gray-700">Especes</span>
+                                    <span class="text-sm text-gray-700">Espèces</span>
                                 </label>
                                 <label class="flex items-center gap-2">
                                     <input type="checkbox" name="paiement_cheque" value="1" x-model="paiementCheque"
                                         class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
-                                    <span class="text-sm text-gray-700">Cheque</span>
+                                    <span class="text-sm text-gray-700">Chèque</span>
                                 </label>
                             </div>
                         </div>
 
-                        <!-- Numero cheque -->
+                        <!-- Numéro chèque -->
                         <div x-show="paiementCheque" x-transition>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Numero de cheque</label>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Numéro de chèque</label>
                             <input type="text" name="numero_cheque"
                                 class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                         </div>
@@ -602,7 +602,7 @@
 
                             <div class="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Telephone</label>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Téléphone</label>
                                     <input type="tel" name="telephone" x-model="telephone"
                                         class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                                 </div>
@@ -637,12 +637,12 @@
                     <form method="POST" action="{{ route('concours.modifications.changement-epreuve', $concours) }}" class="space-y-4">
                         @csrf
 
-                        <!-- Step 1: Epreuve d'origine -->
+                        <!-- Step 1: Épreuve d'origine -->
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Epreuve d'origine</label>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Épreuve d'origine</label>
                             <select x-model="epreuveId" @change="onEpreuveChange()"
                                 class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-                                <option value="">Choisir l'epreuve</option>
+                                <option value="">Choisir l'épreuve</option>
                                 @foreach($epreuves as $epreuve)
                                     <option value="{{ $epreuve->id }}">{{ $epreuve->numero }} - {{ $epreuve->nom }}</option>
                                 @endforeach
@@ -691,12 +691,12 @@
                             </div>
                         @endif
 
-                        <!-- Step 3: Nouvelle epreuve -->
+                        <!-- Step 3: Nouvelle épreuve -->
                         <div x-show="engagementId">
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Nouvelle epreuve</label>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Nouvelle épreuve</label>
                             <select x-model="nouvelleEpreuveId" name="nouvelle_epreuve_id" @change="onNouvelleEpreuveChange()"
                                 class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-                                <option value="">Choisir la nouvelle epreuve</option>
+                                <option value="">Choisir la nouvelle épreuve</option>
                                 @foreach($epreuves as $epreuve)
                                     <option value="{{ $epreuve->id }}">{{ $epreuve->numero }} - {{ $epreuve->nom }}</option>
                                 @endforeach
@@ -737,7 +737,7 @@
                                 </select>
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Numero de compte</label>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Numéro de compte</label>
                                 <input type="text" name="numero_compte"
                                     class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                             </div>
@@ -762,19 +762,19 @@
                                 <label class="inline-flex items-center">
                                     <input type="checkbox" name="paiement_especes" value="1"
                                         class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
-                                    <span class="ml-2 text-sm text-gray-700">Especes</span>
+                                    <span class="ml-2 text-sm text-gray-700">Espèces</span>
                                 </label>
                                 <label class="inline-flex items-center">
                                     <input type="checkbox" name="paiement_cheque" value="1" x-model="paiementCheque"
                                         class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
-                                    <span class="ml-2 text-sm text-gray-700">Cheque</span>
+                                    <span class="ml-2 text-sm text-gray-700">Chèque</span>
                                 </label>
                             </div>
                         </div>
 
-                        <!-- Numero cheque -->
+                        <!-- Numéro chèque -->
                         <div x-show="paiementCheque && nouvelleEpreuveId && nouvelleEpreuveId != epreuveId">
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Numero de cheque</label>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Numéro de chèque</label>
                             <input type="text" name="numero_cheque"
                                 class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                         </div>
@@ -814,7 +814,7 @@
                                 </ul>
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Telephone</label>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Téléphone</label>
                                 <input type="text" name="telephone" x-model="telephone"
                                     class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                             </div>
@@ -834,7 +834,7 @@
                         <div x-show="nouvelleEpreuveId && nouvelleEpreuveId != epreuveId && engagementId">
                             <button type="submit"
                                 class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700">
-                                Valider le changement d'epreuve
+                                Valider le changement d'épreuve
                             </button>
                         </div>
                     </form>
@@ -849,10 +849,10 @@
 
                         <!-- Epreuve -->
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Epreuve</label>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Épreuve</label>
                             <select x-model="epreuveId" @change="onEpreuveChange()"
                                 class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-                                <option value="">Choisir l'epreuve</option>
+                                <option value="">Choisir l'épreuve</option>
                                 @foreach($epreuves as $epreuve)
                                     <option value="{{ $epreuve->id }}">{{ $epreuve->numero }} - {{ $epreuve->nom }}</option>
                                 @endforeach
@@ -865,7 +865,7 @@
                             <input type="text" x-model="searchCavalier"
                                 @input="filterCavaliers()"
                                 @focus="showCavalierList = true"
-                                placeholder="Nom, cheval ou N° de depart..."
+                                placeholder="Nom, cheval ou N° de départ..."
                                 class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
 
                             <div x-show="selectedCavalierLabel" class="mt-1 text-sm text-indigo-700 font-medium">
@@ -896,7 +896,7 @@
                         <div x-show="engagementId">
                             <button type="submit"
                                 class="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700">
-                                Declarer non-partant
+                                Déclarer non-partant
                             </button>
                         </div>
                     </form>
@@ -918,7 +918,7 @@
                     <!-- Filtres -->
                     <div class="px-4 pt-4 pb-2 grid grid-cols-2 md:grid-cols-5 gap-3">
                         <div>
-                            <label class="block text-xs font-medium text-gray-500 mb-1">Epreuve</label>
+                            <label class="block text-xs font-medium text-gray-500 mb-1">Épreuve</label>
                             <select x-model="filterEpreuve"
                                 class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
                                 <option value="">Toutes</option>
@@ -945,9 +945,9 @@
                             <select x-model="filterStatut"
                                 class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
                                 <option value="">Tous</option>
-                                <option value="cree">Cree</option>
+                                <option value="cree">Créé</option>
                                 <option value="fait">Fait</option>
-                                <option value="modifie">Modifie</option>
+                                <option value="modifie">Modifié</option>
                             </select>
                         </div>
                         <div>
@@ -956,14 +956,14 @@
                                 class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
                                 <option value="">Tous</option>
                                 <option value="cb">CB</option>
-                                <option value="especes">Especes</option>
-                                <option value="cheque">Cheque</option>
+                                <option value="especes">Espèces</option>
+                                <option value="cheque">Chèque</option>
                                 <option value="sans">Sans paiement</option>
                             </select>
                         </div>
                     </div>
                     <div x-show="filterEpreuve || filterNom || filterJour || filterStatut || filterPaiement" class="px-4 pb-2">
-                        <button @click="resetFilters()" type="button" class="text-xs text-indigo-600 hover:text-indigo-800 font-medium">Reinitialiser les filtres</button>
+                        <button @click="resetFilters()" type="button" class="text-xs text-indigo-600 hover:text-indigo-800 font-medium">Réinitialiser les filtres</button>
                     </div>
 
                     <div class="overflow-x-auto">
@@ -971,8 +971,8 @@
                             <thead class="bg-gray-50">
                                 <tr>
                                     <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
-                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Epreuve</th>
-                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Depart</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Épreuve</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Départ</th>
                                     <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Nom</th>
                                     <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Cheval</th>
                                     @if ($concours->grand_national)
@@ -1092,8 +1092,8 @@
                                                 @php
                                                     $moyens = [];
                                                     if ($mod->paiement_cb) $moyens[] = 'CB';
-                                                    if ($mod->paiement_especes) $moyens[] = 'Especes';
-                                                    if ($mod->paiement_cheque) $moyens[] = 'Cheque';
+                                                    if ($mod->paiement_especes) $moyens[] = 'Espèces';
+                                                    if ($mod->paiement_cheque) $moyens[] = 'Chèque';
                                                 @endphp
                                                 @if (count($moyens) > 0)
                                                     {{ implode(', ', $moyens) }}
@@ -1107,11 +1107,11 @@
                                         @endif
                                         <td class="px-4 py-2 text-sm">
                                             @if ($mod->statut->value === 'cree')
-                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">Cree</span>
+                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">Créé</span>
                                             @elseif ($mod->statut->value === 'fait')
                                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Fait</span>
                                             @elseif ($mod->statut->value === 'modifie')
-                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">Modifie</span>
+                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">Modifié</span>
                                             @endif
                                         </td>
                                         <td class="px-4 py-2 text-sm text-right">
@@ -1155,9 +1155,9 @@
                                                                 <option value="Club" {{ $mod->type_compte === 'Club' ? 'selected' : '' }}>Club</option>
                                                             </select>
                                                         </div>
-                                                        {{-- Numero de compte --}}
+                                                        {{-- Numéro de compte --}}
                                                         <div>
-                                                            <label class="block text-xs font-medium text-gray-500 mb-1">Numero de compte</label>
+                                                            <label class="block text-xs font-medium text-gray-500 mb-1">Numéro de compte</label>
                                                             <input type="text" name="numero_compte" value="{{ $mod->numero_compte }}"
                                                                 class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
                                                         </div>
@@ -1179,20 +1179,20 @@
                                                                 <label class="inline-flex items-center text-sm">
                                                                     <input type="checkbox" name="paiement_especes" value="1" {{ $mod->paiement_especes ? 'checked' : '' }}
                                                                         class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
-                                                                    <span class="ml-1">Especes</span>
+                                                                    <span class="ml-1">Espèces</span>
                                                                 </label>
                                                                 <label class="inline-flex items-center text-sm">
                                                                     <input type="checkbox" name="paiement_cheque" value="1" x-model="paiementCheque"
                                                                         class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
-                                                                    <span class="ml-1">Cheque</span>
+                                                                    <span class="ml-1">Chèque</span>
                                                                 </label>
                                                             </div>
                                                         </div>
                                                     </div>
 
-                                                    {{-- Numero de cheque --}}
+                                                    {{-- Numéro de chèque --}}
                                                     <div x-show="paiementCheque" x-transition class="max-w-xs">
-                                                        <label class="block text-xs font-medium text-gray-500 mb-1">Numero de cheque</label>
+                                                        <label class="block text-xs font-medium text-gray-500 mb-1">Numéro de chèque</label>
                                                         <input type="text" name="numero_cheque" value="{{ $mod->numero_cheque }}"
                                                             class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
                                                     </div>
@@ -1221,7 +1221,7 @@
                                                                     class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
                                                             </div>
                                                             <div>
-                                                                <label class="block text-xs font-medium text-gray-500 mb-1">Telephone</label>
+                                                                <label class="block text-xs font-medium text-gray-500 mb-1">Téléphone</label>
                                                                 <input type="text" name="telephone" value="{{ $mod->clientFacturation?->telephone }}"
                                                                     class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
                                                             </div>

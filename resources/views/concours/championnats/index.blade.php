@@ -21,7 +21,7 @@
 
             {{-- Formulaire de creation --}}
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 mb-6">
-                <h3 class="text-lg font-medium text-gray-900 mb-4">Creer un championnat</h3>
+                <h3 class="text-lg font-medium text-gray-900 mb-4">Créer un championnat</h3>
 
                 <form action="{{ route('concours.championnats.store', $concours) }}" method="POST">
                     @csrf
@@ -52,7 +52,7 @@
                         </div>
 
                         <div>
-                            <label for="epreuve1_id" class="block text-sm font-medium text-gray-700">Epreuve 1</label>
+                            <label for="epreuve1_id" class="block text-sm font-medium text-gray-700">Épreuve 1</label>
                             <select name="epreuve1_id" id="epreuve1_id" required
                                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
                                 <option value="">-- Choisir --</option>
@@ -68,7 +68,7 @@
                         </div>
 
                         <div id="epreuve2-wrapper">
-                            <label for="epreuve2_id" class="block text-sm font-medium text-gray-700">Epreuve 2</label>
+                            <label for="epreuve2_id" class="block text-sm font-medium text-gray-700">Épreuve 2</label>
                             <select name="epreuve2_id" id="epreuve2_id"
                                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
                                 <option value="" id="epreuve2-empty">-- Choisir --</option>
@@ -87,7 +87,7 @@
                     <div class="mt-4">
                         <button type="submit"
                             class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 focus:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                            Creer le championnat
+                            Créer le championnat
                         </button>
                     </div>
                 </form>
@@ -106,7 +106,7 @@
             {{-- Liste des championnats --}}
             @if ($championnats->isEmpty())
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                    <p class="text-gray-500 text-sm">Aucun championnat cree pour ce concours.</p>
+                    <p class="text-gray-500 text-sm">Aucun championnat créé pour ce concours.</p>
                 </div>
             @else
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg overflow-x-auto">
@@ -115,8 +115,8 @@
                             <tr>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nom</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Discipline</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Epreuve 1</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Epreuve 2</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Épreuve 1</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Épreuve 2</th>
                                 <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                             </tr>
                         </thead>
@@ -212,7 +212,7 @@
             function toggleEpreuve2() {
                 const disc = disciplineSelect.value;
                 if (disc === 'Dressage') {
-                    // Dressage: pas de seconde epreuve
+                    // Dressage: pas de seconde épreuve
                     epreuve2Wrapper.style.display = 'none';
                     epreuve2Select.value = '';
                     epreuve2Select.removeAttribute('required');

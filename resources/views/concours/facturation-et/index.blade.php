@@ -53,7 +53,7 @@
                     <!-- Filtres -->
                     <div class="px-4 pt-4 pb-2 grid grid-cols-2 md:grid-cols-4 gap-3">
                         <div>
-                            <label class="block text-xs font-medium text-gray-500 mb-1">Epreuve</label>
+                            <label class="block text-xs font-medium text-gray-500 mb-1">Épreuve</label>
                             <select x-model="filterEpreuve"
                                 class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
                                 <option value="">Toutes</option>
@@ -86,14 +86,14 @@
                         </div>
                     </div>
                     <div x-show="filterEpreuve || filterCavalier || filterFacture || filterNomFacturation" class="px-4 pb-2">
-                        <button @click="resetFilters()" type="button" class="text-xs text-indigo-600 hover:text-indigo-800 font-medium">Reinitialiser les filtres</button>
+                        <button @click="resetFilters()" type="button" class="text-xs text-indigo-600 hover:text-indigo-800 font-medium">Réinitialiser les filtres</button>
                     </div>
 
                     <div class="overflow-x-auto">
                         <table class="min-w-full divide-y divide-gray-200">
                             <thead class="bg-gray-50">
                                 <tr>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">N. Epreuve</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">N° Épreuve</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cavalier</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cheval</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type de modif</th>
@@ -146,8 +146,8 @@
                                             @php
                                                 $paiements = [];
                                                 if ($mod->paiement_cb) $paiements[] = 'CB';
-                                                if ($mod->paiement_especes) $paiements[] = 'Especes';
-                                                if ($mod->paiement_cheque) $paiements[] = 'Cheque';
+                                                if ($mod->paiement_especes) $paiements[] = 'Espèces';
+                                                if ($mod->paiement_cheque) $paiements[] = 'Chèque';
                                             @endphp
                                             {{ $paiements ? implode(', ', $paiements) : '-' }}
                                         </td>
@@ -169,7 +169,7 @@
                                             @endif
                                         </td>
                                         <td class="px-4 py-3 text-sm text-right">
-                                            <button type="button" onclick="toggleEditRowET({{ $mod->id }})" class="text-indigo-600 hover:text-indigo-800 text-xs font-medium">Editer</button>
+                                            <button type="button" onclick="toggleEditRowET({{ $mod->id }})" class="text-indigo-600 hover:text-indigo-800 text-xs font-medium">Éditer</button>
                                         </td>
                                     </tr>
                                     {{-- Inline edit row --}}
@@ -198,12 +198,12 @@
                                                             <label class="inline-flex items-center text-sm">
                                                                 <input type="checkbox" name="paiement_especes" value="1" {{ $mod->paiement_especes ? 'checked' : '' }}
                                                                     class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
-                                                                <span class="ml-1">Especes</span>
+                                                                <span class="ml-1">Espèces</span>
                                                             </label>
                                                             <label class="inline-flex items-center text-sm">
                                                                 <input type="checkbox" name="paiement_cheque" value="1" {{ $mod->paiement_cheque ? 'checked' : '' }}
                                                                     class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
-                                                                <span class="ml-1">Cheque</span>
+                                                                <span class="ml-1">Chèque</span>
                                                             </label>
                                                         </div>
                                                     </div>
@@ -241,7 +241,7 @@
                                                             </ul>
                                                         </div>
                                                         <div>
-                                                            <label class="block text-xs font-medium text-gray-500 mb-1">Telephone</label>
+                                                            <label class="block text-xs font-medium text-gray-500 mb-1">Téléphone</label>
                                                             <input type="text" name="telephone" x-model="telephone"
                                                                 class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
                                                         </div>
@@ -300,8 +300,8 @@
                             class="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
                             <option value="">Tous</option>
                             <option value="cb">CB</option>
-                            <option value="especes">Especes</option>
-                            <option value="cheque">Cheque</option>
+                            <option value="especes">Espèces</option>
+                            <option value="cheque">Chèque</option>
                         </select>
                     </div>
                 </div>
@@ -352,7 +352,7 @@
                 },
 
                 get caissePaiementLabel() {
-                    return { cb: 'CB', especes: 'Especes', cheque: 'Cheque' }[this.caissePaiement] || '';
+                    return { cb: 'CB', especes: 'Espèces', cheque: 'Chèque' }[this.caissePaiement] || '';
                 },
 
                 formatPrix(val) {

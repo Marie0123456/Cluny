@@ -22,10 +22,10 @@
                         <h3 class="text-sm font-medium text-gray-500 uppercase mb-2">Paiement</h3>
                         <div class="flex gap-2">
                             @if ($vente->paiement_cb)<span class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">CB</span>@endif
-                            @if ($vente->paiement_especes)<span class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">Especes</span>@endif
+                            @if ($vente->paiement_especes)<span class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">Espèces</span>@endif
                             @if ($vente->paiement_cheque)
                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">
-                                    Cheque{{ $vente->numero_cheque ? ' #'.$vente->numero_cheque : '' }}
+                                    Chèque{{ $vente->numero_cheque ? ' #'.$vente->numero_cheque : '' }}
                                 </span>
                             @endif
                         </div>

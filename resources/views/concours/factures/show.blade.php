@@ -21,7 +21,7 @@
                 <h3 class="text-lg font-medium text-gray-900 mb-3">{{ $client->nom }}</h3>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                     <div>
-                        <span class="text-gray-500">Telephone :</span>
+                        <span class="text-gray-500">Téléphone :</span>
                         <span class="text-gray-900 ml-1">{{ $client->telephone ?? '-' }}</span>
                     </div>
                     <div>
@@ -46,7 +46,7 @@
                     <p class="text-2xl font-bold text-gray-900">{{ number_format($totalModifications, 2, ',', ' ') }} &euro;</p>
                 </div>
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-4">
-                    <p class="text-sm text-gray-500">Total General</p>
+                    <p class="text-sm text-gray-500">Total Général</p>
                     <p class="text-2xl font-bold text-indigo-900">{{ number_format($totalVentes + $totalModifications, 2, ',', ' ') }} &euro;</p>
                 </div>
             </div>
@@ -92,8 +92,8 @@
                                             @if ($index === 0)
                                                 <td class="px-4 py-3 text-sm text-gray-500" rowspan="{{ $ligneCount }}">
                                                     @if ($vente->paiement_cb)<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">CB</span>@endif
-                                                    @if ($vente->paiement_especes)<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">Especes</span>@endif
-                                                    @if ($vente->paiement_cheque)<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">Cheque</span>@endif
+                                                    @if ($vente->paiement_especes)<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">Espèces</span>@endif
+                                                    @if ($vente->paiement_cheque)<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">Chèque</span>@endif
                                                 </td>
                                                 <td class="px-4 py-3 text-sm text-gray-500" rowspan="{{ $ligneCount }}">
                                                     {{ $vente->jour_paiement ? $vente->jour_paiement->format('d/m/Y') : '-' }}
@@ -125,7 +125,7 @@
                         <table class="min-w-full divide-y divide-gray-200">
                             <thead class="bg-gray-50">
                                 <tr>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">N. Epreuve</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">N° Épreuve</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cavalier</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cheval</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
@@ -166,8 +166,8 @@
                                             @php
                                                 $paiements = [];
                                                 if ($mod->paiement_cb) $paiements[] = 'CB';
-                                                if ($mod->paiement_especes) $paiements[] = 'Especes';
-                                                if ($mod->paiement_cheque) $paiements[] = 'Cheque';
+                                                if ($mod->paiement_especes) $paiements[] = 'Espèces';
+                                                if ($mod->paiement_cheque) $paiements[] = 'Chèque';
                                             @endphp
                                             {{ $paiements ? implode(', ', $paiements) : '-' }}
                                         </td>
