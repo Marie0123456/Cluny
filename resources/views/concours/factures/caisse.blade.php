@@ -49,6 +49,9 @@
                                 <tr>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Produit</th>
                                     <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Quantité</th>
+                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">P.U. TTC</th>
+                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">TVA</th>
+                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Total HT</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Paiement</th>
                                     <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Total TTC</th>
                                 </tr>
@@ -58,6 +61,9 @@
                                     <tr>
                                         <td class="px-4 py-3 text-sm font-medium text-gray-900">{{ $group['produit'] }}</td>
                                         <td class="px-4 py-3 text-sm text-gray-900 text-center">{{ $group['quantite'] }}</td>
+                                        <td class="px-4 py-3 text-sm text-gray-900 text-right">{{ number_format($group['prix_unitaire_ttc'], 2, ',', ' ') }} &euro;</td>
+                                        <td class="px-4 py-3 text-sm text-gray-900 text-right">{{ number_format($group['tva'], 1) }}%</td>
+                                        <td class="px-4 py-3 text-sm text-gray-900 text-right">{{ number_format($group['total_ht'], 2, ',', ' ') }} &euro;</td>
                                         <td class="px-4 py-3 text-sm text-gray-500">
                                             @foreach (explode(', ', $group['paiement']) as $p)
                                                 @if ($p === 'CB')
@@ -77,7 +83,7 @@
                             </tbody>
                             <tfoot class="bg-gray-50">
                                 <tr>
-                                    <td colspan="3" class="px-4 py-3 text-sm font-bold text-gray-900 text-right">Sous-total ventes</td>
+                                    <td colspan="6" class="px-4 py-3 text-sm font-bold text-gray-900 text-right">Sous-total ventes</td>
                                     <td class="px-4 py-3 text-sm font-bold text-gray-900 text-right">{{ number_format($totalCaisseVentes, 2, ',', ' ') }} &euro;</td>
                                 </tr>
                             </tfoot>
@@ -99,6 +105,8 @@
                                 <tr>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
                                     <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Quantité</th>
+                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">PF</th>
+                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">P.U. HT</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Paiement</th>
                                     <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Total TTC</th>
                                 </tr>
@@ -108,6 +116,8 @@
                                     <tr>
                                         <td class="px-4 py-3 text-sm font-medium text-gray-900">{{ $group['label'] }}</td>
                                         <td class="px-4 py-3 text-sm text-gray-900 text-center">{{ $group['quantite'] }}</td>
+                                        <td class="px-4 py-3 text-sm text-gray-900 text-right">{{ $group['pf'] !== null ? number_format($group['pf'], 2, ',', ' ') . ' €' : '-' }}</td>
+                                        <td class="px-4 py-3 text-sm text-gray-900 text-right">{{ $group['pu_ht'] !== null ? number_format($group['pu_ht'], 2, ',', ' ') . ' €' : '-' }}</td>
                                         <td class="px-4 py-3 text-sm text-gray-500">
                                             @foreach (explode(', ', $group['paiement']) as $p)
                                                 @if ($p === 'CB')
@@ -127,7 +137,7 @@
                             </tbody>
                             <tfoot class="bg-gray-50">
                                 <tr>
-                                    <td colspan="3" class="px-4 py-3 text-sm font-bold text-gray-900 text-right">Sous-total modifications</td>
+                                    <td colspan="5" class="px-4 py-3 text-sm font-bold text-gray-900 text-right">Sous-total modifications</td>
                                     <td class="px-4 py-3 text-sm font-bold text-gray-900 text-right">{{ number_format($totalCaisseModifications, 2, ',', ' ') }} &euro;</td>
                                 </tr>
                             </tfoot>

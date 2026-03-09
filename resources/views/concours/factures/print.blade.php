@@ -182,6 +182,9 @@
                     <tr>
                         <th>Produit</th>
                         <th class="text-center">Qte</th>
+                        <th class="text-right">P.U. TTC</th>
+                        <th class="text-right">TVA</th>
+                        <th class="text-right">Total HT</th>
                         <th>Paiement</th>
                         <th class="text-right">Total TTC</th>
                     </tr>
@@ -191,6 +194,9 @@
                         <tr>
                             <td class="font-bold">{{ $group['produit'] }}</td>
                             <td class="text-center">{{ $group['quantite'] }}</td>
+                            <td class="text-right">{{ number_format($group['prix_unitaire_ttc'], 2, ',', ' ') }} &euro;</td>
+                            <td class="text-right">{{ number_format($group['tva'], 1) }}%</td>
+                            <td class="text-right">{{ number_format($group['total_ht'], 2, ',', ' ') }} &euro;</td>
                             <td>{{ $group['paiement'] }}</td>
                             <td class="text-right font-bold">{{ number_format($group['total'], 2, ',', ' ') }} &euro;</td>
                         </tr>
@@ -206,6 +212,8 @@
                     <tr>
                         <th>Type</th>
                         <th class="text-center">Qte</th>
+                        <th class="text-right">PF</th>
+                        <th class="text-right">P.U. HT</th>
                         <th>Paiement</th>
                         <th class="text-right">Total TTC</th>
                     </tr>
@@ -215,6 +223,8 @@
                         <tr>
                             <td class="font-bold">{{ $group['label'] }}</td>
                             <td class="text-center">{{ $group['quantite'] }}</td>
+                            <td class="text-right">{{ $group['pf'] !== null ? number_format($group['pf'], 2, ',', ' ') . ' €' : '-' }}</td>
+                            <td class="text-right">{{ $group['pu_ht'] !== null ? number_format($group['pu_ht'], 2, ',', ' ') . ' €' : '-' }}</td>
                             <td>{{ $group['paiement'] }}</td>
                             <td class="text-right font-bold">{{ number_format($group['total'], 2, ',', ' ') }} &euro;</td>
                         </tr>
@@ -225,7 +235,7 @@
 
         <table>
             <tr class="client-total">
-                <td colspan="3" class="text-right">Total Caisse</td>
+                <td colspan="5" class="text-right">Total Caisse</td>
                 <td class="text-right">{{ number_format($caisseTotalVentes + $caisseTotalMods, 2, ',', ' ') }} &euro;</td>
             </tr>
         </table>

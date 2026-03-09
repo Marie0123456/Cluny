@@ -166,12 +166,15 @@ class FactureController extends Controller
                 echo "=== CAISSE ===\n";
 
                 if ($caisseData['ventesGrouped']->isNotEmpty()) {
-                    echo implode($sep, ['', 'Produit', 'Qte', 'Paiement', 'Total TTC']) . "\n";
+                    echo implode($sep, ['', 'Produit', 'Qte', 'P.U. TTC', 'TVA %', 'Total HT', 'Paiement', 'Total TTC']) . "\n";
                     foreach ($caisseData['ventesGrouped'] as $group) {
                         echo implode($sep, [
                             '',
                             $group['produit'],
                             $group['quantite'],
+                            number_format($group['prix_unitaire_ttc'], 2, ',', ''),
+                            number_format($group['tva'], 1, ',', ''),
+                            number_format($group['total_ht'], 2, ',', ''),
                             $group['paiement'],
                             number_format($group['total'], 2, ',', ''),
                         ]) . "\n";
@@ -179,12 +182,14 @@ class FactureController extends Controller
                 }
 
                 if ($caisseData['modificationsGrouped']->isNotEmpty()) {
-                    echo implode($sep, ['', 'Type', 'Qte', 'Paiement', 'Total TTC']) . "\n";
+                    echo implode($sep, ['', 'Type', 'Qte', 'PF', 'P.U. HT', 'Paiement', 'Total TTC']) . "\n";
                     foreach ($caisseData['modificationsGrouped'] as $group) {
                         echo implode($sep, [
                             '',
                             $group['label'],
                             $group['quantite'],
+                            $group['pf'] !== null ? number_format($group['pf'], 2, ',', '') : '',
+                            $group['pu_ht'] !== null ? number_format($group['pu_ht'], 2, ',', '') : '',
                             $group['paiement'],
                             number_format($group['total'], 2, ',', ''),
                         ]) . "\n";
@@ -274,6 +279,8 @@ class FactureController extends Controller
                     'paiement' => $paiement,
                     'quantite' => $ligne->quantite,
                     'total' => (float) $ligne->total_ttc,
+                    'prix_unitaire_ttc' => (float) $ligne->prix_unitaire_ttc,
+                    'tva' => (float) $ligne->produit->tva,
                 ]);
             }
         }
@@ -281,33 +288,45 @@ class FactureController extends Controller
         $ventesGrouped = $ventesFlat->groupBy(fn($item) => $item['produit'] . '|' . $item['paiement'])
             ->map(function ($items, $key) {
                 $first = $items->first();
+                $totalTtc = $items->sum('total');
+                $tva = $first['tva'];
+                $totalHt = round($totalTtc / (1 + $tva / 100), 2);
                 return [
                     'produit' => $first['produit'],
                     'paiement' => $first['paiement'],
                     'quantite' => $items->sum('quantite'),
-                    'total' => $items->sum('total'),
+                    'total' => $totalTtc,
+                    'prix_unitaire_ttc' => $first['prix_unitaire_ttc'],
+                    'tva' => $tva,
+                    'total_ht' => $totalHt,
                 ];
             })
             ->sortBy('produit')
             ->values();
 
-        // Grouper les modifications par type + épreuve + mode de paiement
+        // Grouper les modifications par type + épreuve + mode de paiement + PF
         $modificationsGrouped = $caisseModifications->groupBy(function ($mod) {
             $paiement = $this->getPaiementLabel($mod);
             $epreuveNum = $mod->engagement->epreuve->numero ?? '?';
-            return $mod->type->value . '|' . $epreuveNum . '|' . $paiement;
+            $pf = $mod->pf !== null ? number_format($mod->pf, 2) : 'null';
+            return $mod->type->value . '|' . $epreuveNum . '|' . $paiement . '|' . $pf;
         })->map(function ($items, $key) {
             $first = $items->first();
             $epreuveNum = $first->engagement->epreuve->numero ?? '?';
             $label = $first->type->label() . ' Ep.' . $epreuveNum;
             $paiement = $this->getPaiementLabel($first);
+            $pf = $first->pf;
+            $totalTtc = $items->sum('prix');
+            $puHt = ($first->prix && $pf !== null) ? round(($first->prix - $pf) / 1.055, 2) : null;
             return [
                 'label' => $label,
                 'type' => $first->type->value,
                 'epreuve_numero' => $epreuveNum,
                 'paiement' => $paiement,
                 'quantite' => $items->count(),
-                'total' => $items->sum('prix'),
+                'total' => $totalTtc,
+                'pf' => $pf,
+                'pu_ht' => $puHt,
             ];
         })->sortBy(['type', 'epreuve_numero'])
             ->values();
