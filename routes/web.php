@@ -78,6 +78,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/factures', [FactureController::class, 'index'])->name('factures.index');
         Route::get('/factures/export-csv', [FactureController::class, 'exportCsv'])->name('factures.export-csv');
         Route::get('/factures/print', [FactureController::class, 'print'])->name('factures.print');
+        Route::get('/factures/caisse', [FactureController::class, 'caisse'])->name('factures.caisse');
         Route::get('/factures/{client}', [FactureController::class, 'show'])->name('factures.show');
 
         // Statistiques (FFE SIF Open)

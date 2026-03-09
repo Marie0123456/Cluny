@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\ClientFacturation;
 use App\Models\Concours;
+use App\Models\Modification;
+use App\Models\Vente;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class FactureController extends Controller
@@ -24,7 +26,30 @@ class FactureController extends Controller
             ->orderBy('nom')
             ->get();
 
-        return view('concours.factures.index', compact('concours', 'clients'));
+        // Caisse: ventes et modifications sans client_facturation_id
+        $caisseVentesCount = Vente::where('concours_id', $concours->id)
+            ->whereNull('client_facturation_id')
+            ->count();
+
+        $caisseModificationsCount = Modification::where('concours_id', $concours->id)
+            ->where('statut', '!=', 'supprime')
+            ->whereIn('type', ['ajout_engagement', 'changement_epreuve'])
+            ->whereNull('client_facturation_id')
+            ->count();
+
+        $caisseTotal = Vente::where('concours_id', $concours->id)
+                ->whereNull('client_facturation_id')
+                ->sum('total_ttc')
+            + Modification::where('concours_id', $concours->id)
+                ->where('statut', '!=', 'supprime')
+                ->whereIn('type', ['ajout_engagement', 'changement_epreuve'])
+                ->whereNull('client_facturation_id')
+                ->sum('prix');
+
+        return view('concours.factures.index', compact(
+            'concours', 'clients',
+            'caisseVentesCount', 'caisseModificationsCount', 'caisseTotal'
+        ));
     }
 
     public function show(Concours $concours, ClientFacturation $client)
@@ -34,12 +59,20 @@ class FactureController extends Controller
         return view('concours.factures.show', compact('concours', 'client', 'ventes', 'modifications', 'totalVentes', 'totalModifications'));
     }
 
+    public function caisse(Concours $concours)
+    {
+        $caisseData = $this->getCaisseData($concours);
+
+        return view('concours.factures.caisse', compact('concours') + $caisseData);
+    }
+
     public function exportCsv(Concours $concours): StreamedResponse
     {
         $clientsData = $this->getAllClientsData($concours);
+        $caisseData = $this->getCaisseData($concours);
         $filename = 'factures_' . str_replace(' ', '_', $concours->nom) . '_' . $concours->date_debut->format('Y-m-d') . '.csv';
 
-        return response()->streamDownload(function () use ($concours, $clientsData) {
+        return response()->streamDownload(function () use ($concours, $clientsData, $caisseData) {
             echo "\xEF\xBB\xBF"; // UTF-8 BOM
             $sep = ';';
 
@@ -123,6 +156,44 @@ class FactureController extends Controller
                 echo "\n";
             }
 
+            // Caisse
+            $caisseTotalVentes = $caisseData['totalCaisseVentes'];
+            $caisseTotalMods = $caisseData['totalCaisseModifications'];
+            $grandTotalVentes += $caisseTotalVentes;
+            $grandTotalModifications += $caisseTotalMods;
+
+            if ($caisseTotalVentes > 0 || $caisseTotalMods > 0) {
+                echo "=== CAISSE ===\n";
+
+                if ($caisseData['ventesGrouped']->isNotEmpty()) {
+                    echo implode($sep, ['', 'Produit', 'Qte', 'Paiement', 'Total TTC']) . "\n";
+                    foreach ($caisseData['ventesGrouped'] as $group) {
+                        echo implode($sep, [
+                            '',
+                            $group['produit'],
+                            $group['quantite'],
+                            $group['paiement'],
+                            number_format($group['total'], 2, ',', ''),
+                        ]) . "\n";
+                    }
+                }
+
+                if ($caisseData['modificationsGrouped']->isNotEmpty()) {
+                    echo implode($sep, ['', 'Type', 'Qte', 'Paiement', 'Total TTC']) . "\n";
+                    foreach ($caisseData['modificationsGrouped'] as $group) {
+                        echo implode($sep, [
+                            '',
+                            $group['label'],
+                            $group['quantite'],
+                            $group['paiement'],
+                            number_format($group['total'], 2, ',', ''),
+                        ]) . "\n";
+                    }
+                }
+
+                echo 'Total Caisse' . $sep . $sep . $sep . $sep . number_format($caisseTotalVentes + $caisseTotalMods, 2, ',', '') . "\n\n";
+            }
+
             echo 'TOTAL GENERAL VENTES' . $sep . $sep . $sep . $sep . $sep . $sep . $sep . number_format($grandTotalVentes, 2, ',', '') . "\n";
             echo 'TOTAL GENERAL MODIFICATIONS' . $sep . $sep . $sep . $sep . $sep . $sep . $sep . number_format($grandTotalModifications, 2, ',', '') . "\n";
             echo 'TOTAL GENERAL' . $sep . $sep . $sep . $sep . $sep . $sep . $sep . number_format($grandTotalVentes + $grandTotalModifications, 2, ',', '') . "\n";
@@ -135,8 +206,9 @@ class FactureController extends Controller
     public function print(Concours $concours)
     {
         $clientsData = $this->getAllClientsData($concours);
+        $caisseData = $this->getCaisseData($concours);
 
-        return view('concours.factures.print', compact('concours', 'clientsData'));
+        return view('concours.factures.print', compact('concours', 'clientsData', 'caisseData'));
     }
 
     private function getAllClientsData(Concours $concours): array
@@ -174,5 +246,88 @@ class FactureController extends Controller
         $totalModifications = $modifications->sum('prix');
 
         return [$ventes, $modifications, $totalVentes, $totalModifications];
+    }
+
+    private function getCaisseData(Concours $concours): array
+    {
+        // Ventes sans client facturation
+        $caisseVentes = Vente::where('concours_id', $concours->id)
+            ->whereNull('client_facturation_id')
+            ->with('lignes.produit')
+            ->get();
+
+        // Modifications payantes sans client facturation
+        $caisseModifications = Modification::where('concours_id', $concours->id)
+            ->where('statut', '!=', 'supprime')
+            ->whereIn('type', ['ajout_engagement', 'changement_epreuve'])
+            ->whereNull('client_facturation_id')
+            ->with(['engagement.epreuve'])
+            ->get();
+
+        // Grouper les ventes par produit + mode de paiement
+        $ventesFlat = collect();
+        foreach ($caisseVentes as $vente) {
+            $paiement = $this->getPaiementLabel($vente);
+            foreach ($vente->lignes as $ligne) {
+                $ventesFlat->push([
+                    'produit' => $ligne->produit->nom,
+                    'paiement' => $paiement,
+                    'quantite' => $ligne->quantite,
+                    'total' => (float) $ligne->total_ttc,
+                ]);
+            }
+        }
+
+        $ventesGrouped = $ventesFlat->groupBy(fn($item) => $item['produit'] . '|' . $item['paiement'])
+            ->map(function ($items, $key) {
+                $first = $items->first();
+                return [
+                    'produit' => $first['produit'],
+                    'paiement' => $first['paiement'],
+                    'quantite' => $items->sum('quantite'),
+                    'total' => $items->sum('total'),
+                ];
+            })
+            ->sortBy('produit')
+            ->values();
+
+        // Grouper les modifications par type + épreuve + mode de paiement
+        $modificationsGrouped = $caisseModifications->groupBy(function ($mod) {
+            $paiement = $this->getPaiementLabel($mod);
+            $epreuveNum = $mod->engagement->epreuve->numero ?? '?';
+            return $mod->type->value . '|' . $epreuveNum . '|' . $paiement;
+        })->map(function ($items, $key) {
+            $first = $items->first();
+            $epreuveNum = $first->engagement->epreuve->numero ?? '?';
+            $label = $first->type->label() . ' Ep.' . $epreuveNum;
+            $paiement = $this->getPaiementLabel($first);
+            return [
+                'label' => $label,
+                'type' => $first->type->value,
+                'epreuve_numero' => $epreuveNum,
+                'paiement' => $paiement,
+                'quantite' => $items->count(),
+                'total' => $items->sum('prix'),
+            ];
+        })->sortBy(['type', 'epreuve_numero'])
+            ->values();
+
+        $totalCaisseVentes = $caisseVentes->sum('total_ttc');
+        $totalCaisseModifications = $caisseModifications->sum('prix');
+
+        return compact(
+            'caisseVentes', 'caisseModifications',
+            'ventesGrouped', 'modificationsGrouped',
+            'totalCaisseVentes', 'totalCaisseModifications'
+        );
+    }
+
+    private function getPaiementLabel($item): string
+    {
+        $paiements = [];
+        if ($item->paiement_cb) $paiements[] = 'CB';
+        if ($item->paiement_especes) $paiements[] = 'Espèces';
+        if ($item->paiement_cheque) $paiements[] = 'Chèque';
+        return $paiements ? implode(', ', $paiements) : 'Non renseigné';
     }
 }

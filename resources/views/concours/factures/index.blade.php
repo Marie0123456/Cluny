@@ -26,7 +26,7 @@
             @endif
 
             <div class="bg-white shadow-sm sm:rounded-lg">
-                @if ($clients->isEmpty())
+                @if ($clients->isEmpty() && $caisseVentesCount === 0 && $caisseModificationsCount === 0)
                     <div class="p-6 text-center text-gray-500">
                         Aucun client de facturation pour le moment.
                     </div>
@@ -40,10 +40,54 @@
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
                                     <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Ventes</th>
                                     <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Modifications</th>
+                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Total</th>
                                     <th class="px-4 py-3"></th>
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200">
+                                {{-- Facture Caisse --}}
+                                @if ($caisseVentesCount > 0 || $caisseModificationsCount > 0)
+                                    <tr class="bg-amber-50">
+                                        <td class="px-4 py-3 text-sm font-bold">
+                                            <a href="{{ route('concours.factures.caisse', $concours) }}"
+                                                class="text-amber-700 hover:text-amber-900 hover:underline">
+                                                CAISSE
+                                            </a>
+                                        </td>
+                                        <td class="px-4 py-3 text-sm text-gray-400" colspan="2">Sans facturation nominative</td>
+                                        <td class="px-4 py-3 text-sm text-center">
+                                            @if ($caisseVentesCount > 0)
+                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
+                                                    {{ $caisseVentesCount }}
+                                                </span>
+                                            @else
+                                                <span class="text-gray-400">0</span>
+                                            @endif
+                                        </td>
+                                        <td class="px-4 py-3 text-sm text-center">
+                                            @if ($caisseModificationsCount > 0)
+                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
+                                                    {{ $caisseModificationsCount }}
+                                                </span>
+                                            @else
+                                                <span class="text-gray-400">0</span>
+                                            @endif
+                                        </td>
+                                        <td class="px-4 py-3 text-sm text-right font-bold text-amber-800">
+                                            {{ number_format($caisseTotal, 2, ',', ' ') }} &euro;
+                                        </td>
+                                        <td class="px-4 py-3 text-sm text-right">
+                                            <a href="{{ route('concours.factures.caisse', $concours) }}"
+                                                class="text-amber-500 hover:text-amber-700" title="Voir détail">
+                                                <svg class="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                                                </svg>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                @endif
+
+                                {{-- Clients facturés --}}
                                 @foreach ($clients as $client)
                                     <tr>
                                         <td class="px-4 py-3 text-sm font-medium">
@@ -72,6 +116,7 @@
                                                 <span class="text-gray-400">0</span>
                                             @endif
                                         </td>
+                                        <td class="px-4 py-3 text-sm text-right text-gray-500">-</td>
                                         <td class="px-4 py-3 text-sm text-right">
                                             <a href="{{ route('concours.factures.show', [$concours, $client]) }}"
                                                 class="text-gray-400 hover:text-indigo-600" title="Voir détail">

@@ -163,6 +163,74 @@
         </table>
     @endforeach
 
+    {{-- Caisse --}}
+    @php
+        $caisseTotalVentes = $caisseData['totalCaisseVentes'];
+        $caisseTotalMods = $caisseData['totalCaisseModifications'];
+        $grandTotalVentes += $caisseTotalVentes;
+        $grandTotalModifications += $caisseTotalMods;
+    @endphp
+
+    @if ($caisseTotalVentes > 0 || $caisseTotalMods > 0)
+        <h2>CAISSE</h2>
+        <div class="client-details">Ventes et modifications sans facturation nominative</div>
+
+        @if ($caisseData['ventesGrouped']->isNotEmpty())
+            <h3>Ventes</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Produit</th>
+                        <th class="text-center">Qte</th>
+                        <th>Paiement</th>
+                        <th class="text-right">Total TTC</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach ($caisseData['ventesGrouped'] as $group)
+                        <tr>
+                            <td class="font-bold">{{ $group['produit'] }}</td>
+                            <td class="text-center">{{ $group['quantite'] }}</td>
+                            <td>{{ $group['paiement'] }}</td>
+                            <td class="text-right font-bold">{{ number_format($group['total'], 2, ',', ' ') }} &euro;</td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        @endif
+
+        @if ($caisseData['modificationsGrouped']->isNotEmpty())
+            <h3>Modifications</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Type</th>
+                        <th class="text-center">Qte</th>
+                        <th>Paiement</th>
+                        <th class="text-right">Total TTC</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach ($caisseData['modificationsGrouped'] as $group)
+                        <tr>
+                            <td class="font-bold">{{ $group['label'] }}</td>
+                            <td class="text-center">{{ $group['quantite'] }}</td>
+                            <td>{{ $group['paiement'] }}</td>
+                            <td class="text-right font-bold">{{ number_format($group['total'], 2, ',', ' ') }} &euro;</td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        @endif
+
+        <table>
+            <tr class="client-total">
+                <td colspan="3" class="text-right">Total Caisse</td>
+                <td class="text-right">{{ number_format($caisseTotalVentes + $caisseTotalMods, 2, ',', ' ') }} &euro;</td>
+            </tr>
+        </table>
+    @endif
+
     <div class="grand-total">
         <div class="line"><span>Total Ventes</span> <span>{{ number_format($grandTotalVentes, 2, ',', ' ') }} &euro;</span></div>
         <div class="line"><span>Total Modifications</span> <span>{{ number_format($grandTotalModifications, 2, ',', ' ') }} &euro;</span></div>
