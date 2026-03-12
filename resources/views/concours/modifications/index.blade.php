@@ -509,7 +509,8 @@
 
                         <!-- Step 5: Prix calculated -->
                         <div x-show="chevalId || (isNouveauCheval && nouveauChevalNom)" class="p-4 bg-indigo-50 rounded-lg">
-                            <div class="flex justify-between items-center">
+                            {{-- Mode affichage normal --}}
+                            <div x-show="!prixOverride" class="flex justify-between items-center">
                                 <div>
                                     <p class="text-sm text-gray-600">Prix total :</p>
                                     <p class="text-xl font-bold text-indigo-900" x-text="calculatedPrix.toFixed(2).replace('.', ',') + ' €'"></p>
@@ -518,9 +519,32 @@
                                     <p class="text-sm text-gray-600">Part Fédérale :</p>
                                     <p class="text-lg font-semibold text-indigo-700" x-text="calculatedPf.toFixed(2).replace('.', ',') + ' €'"></p>
                                 </div>
+                                <button type="button" @click="enablePrixOverride()"
+                                    class="ml-3 inline-flex items-center px-2 py-1 text-xs font-medium text-gray-600 bg-white border border-gray-300 rounded hover:bg-gray-50">
+                                    Editer
+                                </button>
                             </div>
-                            <input type="hidden" name="prix" :value="calculatedPrix">
-                            <input type="hidden" name="pf" :value="calculatedPf">
+                            {{-- Mode édition manuelle --}}
+                            <div x-show="prixOverride" class="space-y-2">
+                                <div class="flex items-center gap-3">
+                                    <div class="flex-1">
+                                        <label class="block text-xs font-medium text-gray-600 mb-1">Prix total</label>
+                                        <input type="number" step="0.01" min="0" x-model="overridePrix"
+                                            class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                                    </div>
+                                    <div class="flex-1">
+                                        <label class="block text-xs font-medium text-gray-600 mb-1">Part Fédérale</label>
+                                        <input type="number" step="0.01" min="0" x-model="overridePf"
+                                            class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                                    </div>
+                                    <button type="button" @click="disablePrixOverride()"
+                                        class="mt-4 inline-flex items-center px-2 py-1 text-xs font-medium text-indigo-600 bg-white border border-indigo-300 rounded hover:bg-indigo-50">
+                                        Auto
+                                    </button>
+                                </div>
+                            </div>
+                            <input type="hidden" name="prix" :value="prixOverride ? overridePrix : calculatedPrix">
+                            <input type="hidden" name="pf" :value="prixOverride ? overridePf : calculatedPf">
                         </div>
 
                         <!-- Step 6: Jour de paiement -->
@@ -1892,6 +1916,10 @@
 
                 isGn: false,
 
+                prixOverride: false,
+                overridePrix: 0,
+                overridePf: 0,
+
                 typeCompte: '',
                 numeroCompte: '',
 
@@ -1916,6 +1944,16 @@
                     return base + 15;
                 },
 
+                enablePrixOverride() {
+                    this.overridePrix = this.calculatedPrix;
+                    this.overridePf = this.calculatedPf;
+                    this.prixOverride = true;
+                },
+
+                disablePrixOverride() {
+                    this.prixOverride = false;
+                },
+
                 get calculatedPf() {
                     if (__isSif) {
                         return 9.90;
@@ -1934,6 +1972,7 @@
                     this.typeCompte = '';
                     this.numeroCompte = '';
                     this.isGn = false;
+                    this.prixOverride = false;
                     const ep = epreuves.find(e => e.id == this.epreuveId);
                     if (ep) {
                         this.epreuvePrix = parseFloat(ep.prix) || 0;

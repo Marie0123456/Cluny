@@ -185,6 +185,8 @@ class ModificationController extends Controller
             'telephone' => 'nullable|string|max:20',
             'email' => 'nullable|email|max:255',
             'adresse' => 'nullable|string',
+            'prix' => 'nullable|numeric|min:0',
+            'pf' => 'nullable|numeric|min:0',
             'paiement_cb' => 'boolean',
             'paiement_especes' => 'boolean',
             'paiement_cheque' => 'boolean',
@@ -232,12 +234,16 @@ class ModificationController extends Controller
             'is_invitation' => true,
         ]);
 
-        // Calculate prix and PF server-side
+        // Calculate prix and PF (use submitted values if provided, otherwise auto-calculate)
         $isGn = $request->boolean('is_gn');
         $typeDetecte = $epreuve->type_detecte;
         $epreuvePrix = (float) ($epreuve->prix ?? 0);
 
-        if ($concours->type_ffe_sif) {
+        if (isset($validated['prix']) && isset($validated['pf'])) {
+            // Prix édité manuellement
+            $prix = (float) $validated['prix'];
+            $pf = (float) $validated['pf'];
+        } elseif ($concours->type_ffe_sif) {
             // FFE SIF : +10€, PF 9.90€, pas de GN
             $prix = $epreuvePrix + 10;
             $pf = 9.90;
