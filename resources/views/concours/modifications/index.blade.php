@@ -1821,9 +1821,9 @@
                     const diff = this.nouvelleEpreuvePrix - this.epreuvePrix;
 
                     if (isGrandNational && this.isGn && this.nouvelleEpreuveTypeDetecte === 'pro') {
-                        // GN + Pro : juste la différence (min 0), PF = 0
+                        // GN + Pro : juste la différence (min 0), PF = 4.80 si diff > 0, sinon 0
                         this.editablePrix = Math.max(diff, 0);
-                        this.editablePf = 0;
+                        this.editablePf = diff > 0 ? 4.80 : 0;
                     } else {
                         // Cas normal : si diff négative → 0 + 15€, sinon diff + 15€
                         this.editablePrix = Math.max(diff, 0) + 15;
