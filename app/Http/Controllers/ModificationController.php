@@ -237,10 +237,16 @@ class ModificationController extends Controller
         $typeDetecte = $epreuve->type_detecte;
         $epreuvePrix = (float) ($epreuve->prix ?? 0);
 
-        if ($concours->grand_national && $isGn && $typeDetecte === 'pro') {
+        if ($concours->type_ffe_sif) {
+            // FFE SIF : +10€, PF 9.90€, pas de GN
+            $prix = $epreuvePrix + 10;
+            $pf = 9.90;
+        } elseif ($concours->grand_national && $isGn && $typeDetecte === 'pro') {
+            // FFE Compet GN Pro
             $prix = $epreuvePrix;
             $pf = 4.80;
         } else {
+            // FFE Compet standard
             $prix = $epreuvePrix + 15;
             $pf = 14.40;
         }

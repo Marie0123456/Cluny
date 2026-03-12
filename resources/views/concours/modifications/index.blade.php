@@ -1482,6 +1482,7 @@
     <script>
         const __epreuves = @json($epreuvesJson);
         const __isGrandNational = @json($concours->grand_national);
+        const __isSif = @json($concours->type_ffe_sif);
         const __allCavaliersConcours = @json($allCavaliersJson);
 
         function modificationsFilter() {
@@ -1820,12 +1821,16 @@
                 recalculatePrix() {
                     const diff = this.nouvelleEpreuvePrix - this.epreuvePrix;
 
-                    if (isGrandNational && this.isGn && this.nouvelleEpreuveTypeDetecte === 'pro') {
-                        // GN + Pro : juste la différence (min 0), PF = 4.80 si diff > 0, sinon 0
+                    if (__isSif) {
+                        // FFE SIF : diff (min 0) + 10€, PF = 9.90€
+                        this.editablePrix = Math.max(diff, 0) + 10;
+                        this.editablePf = 9.90;
+                    } else if (isGrandNational && this.isGn && this.nouvelleEpreuveTypeDetecte === 'pro') {
+                        // FFE Compet GN + Pro : juste la différence (min 0), PF = 4.80 si diff > 0, sinon 0
                         this.editablePrix = Math.max(diff, 0);
                         this.editablePf = diff > 0 ? 4.80 : 0;
                     } else {
-                        // Cas normal : si diff négative → 0 + 15€, sinon diff + 15€
+                        // FFE Compet standard : diff (min 0) + 15€, PF = 14.40€
                         this.editablePrix = Math.max(diff, 0) + 15;
                         this.editablePf = 14.40;
                     }
@@ -1902,6 +1907,9 @@
 
                 get calculatedPrix() {
                     const base = this.epreuvePrix || 0;
+                    if (__isSif) {
+                        return base + 10;
+                    }
                     if (isGrandNational && this.isGn && this.epreuveTypeDetecte === 'pro') {
                         return base;
                     }
@@ -1909,6 +1917,9 @@
                 },
 
                 get calculatedPf() {
+                    if (__isSif) {
+                        return 9.90;
+                    }
                     if (isGrandNational && this.isGn && this.epreuveTypeDetecte === 'pro') {
                         return 4.80;
                     }
