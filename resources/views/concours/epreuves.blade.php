@@ -95,6 +95,19 @@
                         Prix enregistrés avec succès.
                     </div>
 
+                    @if ($concours->type_ffe_sif)
+                        <div x-show="editing" x-cloak class="mx-6 mt-3 flex items-center gap-3">
+                            <label class="text-sm font-medium text-gray-700 whitespace-nowrap">Même prix pour toutes :</label>
+                            <input type="number" step="0.01" min="0" x-model="prixCommun"
+                                class="w-28 text-sm rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                placeholder="0.00">
+                            <button @click="appliquerPrixCommun()" type="button"
+                                class="inline-flex items-center px-3 py-1.5 bg-indigo-100 border border-indigo-300 rounded-md text-xs font-semibold text-indigo-700 uppercase hover:bg-indigo-200 transition">
+                                Appliquer
+                            </button>
+                        </div>
+                    @endif
+
                     <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-gray-200 mt-3">
                         <thead class="bg-gray-50">
@@ -232,6 +245,13 @@
                     @endforeach
                 },
                 originalPrix: {},
+                prixCommun: '',
+
+                appliquerPrixCommun() {
+                    if (this.prixCommun === '') return;
+                    const ids = Object.keys(this.prix);
+                    ids.forEach(id => { this.prix[id] = this.prixCommun; });
+                },
 
                 startEditing() {
                     this.originalPrix = { ...this.prix };
