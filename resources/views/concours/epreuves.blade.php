@@ -122,8 +122,8 @@
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $epreuve->date ? $epreuve->date->format('d/m/Y') : '-' }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm">
-                                        <span x-show="!editing" class="text-gray-500">
-                                            {{ $epreuve->prix ? number_format($epreuve->prix, 2, ',', ' ') . ' EUR' : '-' }}
+                                        <span x-show="!editing" class="text-gray-500"
+                                            x-text="prix[{{ $epreuve->id }}] ? parseFloat(prix[{{ $epreuve->id }}]).toFixed(2).replace('.', ',') + ' EUR' : '-'">
                                         </span>
                                         <input x-show="editing" x-cloak type="number" step="0.01" min="0"
                                             x-model="prix[{{ $epreuve->id }}]"
