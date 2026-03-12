@@ -108,7 +108,53 @@
                         </div>
                     @endif
 
-                    <div class="overflow-x-auto">
+                    {{-- Mobile card layout --}}
+                    <div class="sm:hidden divide-y divide-gray-200 mt-3">
+                        @foreach ($epreuves as $epreuve)
+                            <div class="px-4 py-3">
+                                <div class="flex items-center justify-between mb-1">
+                                    <div class="flex items-center gap-2">
+                                        <span class="font-medium text-sm text-gray-900">{{ $epreuve->numero }}</span>
+                                        <span class="text-sm text-gray-700">{{ $epreuve->nom }}</span>
+                                        @if ($epreuve->badge_label)
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {{ $epreuve->badge_couleur }}">
+                                                {{ $epreuve->badge_label }}
+                                            </span>
+                                        @endif
+                                    </div>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center gap-3 text-xs text-gray-500">
+                                        <span>{{ $epreuve->date ? $epreuve->date->format('d/m/Y') : '' }}</span>
+                                        <span x-show="!editing"
+                                            x-text="prix[{{ $epreuve->id }}] ? parseFloat(prix[{{ $epreuve->id }}]).toFixed(2).replace('.', ',') + ' €' : '-'">
+                                        </span>
+                                        <input x-show="editing" x-cloak type="number" step="0.01" min="0"
+                                            x-model="prix[{{ $epreuve->id }}]"
+                                            class="w-24 text-sm rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+                                            {{ $epreuve->engagements_count }}
+                                        </span>
+                                        @if ($epreuve->invitations_count > 0)
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {{ $epreuve->invitations_count > 12 ? 'bg-red-100 text-red-800' : ($epreuve->invitations_count > 9 ? 'bg-orange-100 text-orange-800' : 'bg-blue-100 text-blue-800') }}">
+                                                +{{ $epreuve->invitations_count }}
+                                            </span>
+                                        @endif
+                                        @if ($epreuve->non_partants_count > 0)
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                                {{ $epreuve->non_partants_count }} NP
+                                            </span>
+                                        @endif
+                                    </div>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+
+                    {{-- Desktop table layout --}}
+                    <div class="hidden sm:block overflow-x-auto">
                     <table class="min-w-full divide-y divide-gray-200 mt-3">
                         <thead class="bg-gray-50">
                             <tr>
@@ -195,7 +241,7 @@
                             <code class="text-xs bg-gray-100 px-1.5 py-0.5 rounded">Epreuve_numero;Epreuve_nom;Epreuve_date;Num_depart;Nom;Prenom;Role_cavalier;Licence;Club;CRE;Departement;Num_dept;Dept_groom;Cheval;Role_cheval;SIRE;Age;Sexe;Robe;Race</code>
                         @endif
                     </p>
-                    <form method="POST" action="{{ route('concours.import.store', $concours) }}" enctype="multipart/form-data" class="flex items-end space-x-4">
+                    <form method="POST" action="{{ route('concours.import.store', $concours) }}" enctype="multipart/form-data" class="sm:flex sm:items-end sm:space-x-4 space-y-3 sm:space-y-0">
                         @csrf
                         <div class="flex-1">
                             <label for="fichier" class="block text-sm font-medium text-gray-700 mb-1">Fichier CSV/TXT</label>
@@ -203,7 +249,7 @@
                                 class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
                             @error('fichier') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
                         </div>
-                        <button type="submit" class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700">
+                        <button type="submit" class="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700">
                             Importer
                         </button>
                     </form>
@@ -221,10 +267,10 @@
                                 onsubmit="return confirm('Attention : cela supprimera TOUTES les épreuves, engagements et modifications de ce concours.\n\nCette action est irréversible.\n\nConfirmer la suppression ?')">
                                 @csrf
                                 @method('DELETE')
-                                <button type="submit" class="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700">
+                                <button type="submit" class="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700">
                                     Supprimer toutes les données importées
                                 </button>
-                                <span class="ml-3 text-sm text-gray-500">Supprime épreuves, engagements et modifications de ce concours.</span>
+                                <span class="block sm:inline sm:ml-3 mt-2 sm:mt-0 text-sm text-gray-500">Supprime épreuves, engagements et modifications de ce concours.</span>
                             </form>
                         </div>
                     @endif

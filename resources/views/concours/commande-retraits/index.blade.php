@@ -24,14 +24,14 @@
 
             @include('concours.partials.tabs', ['active' => 'commande-retraits'])
 
-            <div class="flex justify-between items-center mb-4">
+            <div class="sm:flex sm:justify-between sm:items-center mb-4 space-y-3 sm:space-y-0">
                 <h3 class="text-lg font-medium text-gray-900">Retrait Commandes</h3>
-                <form action="{{ route('concours.commande-retraits.import', $concours) }}" method="POST" enctype="multipart/form-data" class="flex items-center gap-3">
+                <form action="{{ route('concours.commande-retraits.import', $concours) }}" method="POST" enctype="multipart/form-data" class="sm:flex sm:items-center sm:gap-3 space-y-2 sm:space-y-0">
                     @csrf
                     <input type="file" name="csv_file" accept=".csv,.txt" required
-                        class="text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
+                        class="block w-full sm:w-auto text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
                     <button type="submit"
-                        class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 transition">
+                        class="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 transition">
                         Importer CSV
                     </button>
                 </form>
@@ -79,7 +79,42 @@
                         </div>
                     </div>
 
-                    <div class="overflow-x-auto">
+                    {{-- Mobile card layout --}}
+                    <div class="sm:hidden divide-y divide-gray-200">
+                        @foreach ($commandes as $commande)
+                            <div x-show="filterRow({{ json_encode([
+                                'nom' => $commande->nom,
+                                'prenom' => $commande->prenom,
+                                'produit' => $commande->produit,
+                                'numero' => $commande->numero_commande,
+                                'retire' => $commande->retire,
+                            ]) }})"
+                                class="p-4 {{ $commande->retire ? 'bg-green-50' : '' }}">
+                                <div class="flex items-center justify-between mb-1">
+                                    <span class="font-medium text-sm text-gray-900">{{ trim($commande->prenom . ' ' . $commande->nom) }}</span>
+                                    <form action="{{ route('concours.commande-retraits.toggle-retire', [$concours, $commande]) }}" method="POST">
+                                        @csrf
+                                        @method('PATCH')
+                                        <button type="submit"
+                                            class="inline-flex items-center px-3 py-1 rounded-md text-xs font-semibold transition
+                                                {{ $commande->retire
+                                                    ? 'bg-green-100 text-green-800 hover:bg-green-200'
+                                                    : 'bg-gray-100 text-gray-800 hover:bg-gray-200' }}">
+                                            {{ $commande->retire ? 'Retiré' : 'A retirer' }}
+                                        </button>
+                                    </form>
+                                </div>
+                                <div class="text-sm text-gray-700 mb-1">{{ $commande->produit }} <span class="text-gray-400">x{{ $commande->quantite }}</span></div>
+                                <div class="flex items-center gap-3 text-xs text-gray-500">
+                                    <span>N° {{ $commande->numero_commande }}</span>
+                                    <span>{{ $commande->date_commande->format('d/m/Y') }}</span>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+
+                    {{-- Desktop table layout --}}
+                    <div class="hidden sm:block overflow-x-auto">
                         <table class="min-w-full divide-y divide-gray-200">
                             <thead class="bg-gray-50">
                                 <tr>
