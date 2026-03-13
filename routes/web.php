@@ -80,6 +80,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/factures/print', [FactureController::class, 'print'])->name('factures.print');
         Route::get('/factures/caisse', [FactureController::class, 'caisse'])->name('factures.caisse');
         Route::get('/factures/{client}', [FactureController::class, 'show'])->name('factures.show');
+        Route::patch('/factures/{client}/paiement-global', [FactureController::class, 'updatePaiementGlobal'])->name('factures.update-paiement-global');
 
         // Statistiques (FFE SIF Open)
         Route::get('/statistiques', [StatistiqueController::class, 'index'])->name('statistiques.index');

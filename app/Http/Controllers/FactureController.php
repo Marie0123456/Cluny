@@ -6,6 +6,7 @@ use App\Models\ClientFacturation;
 use App\Models\Concours;
 use App\Models\Modification;
 use App\Models\Vente;
+use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class FactureController extends Controller
@@ -57,6 +58,39 @@ class FactureController extends Controller
         [$ventes, $modifications, $totalVentes, $totalModifications] = $this->getClientData($concours, $client);
 
         return view('concours.factures.show', compact('concours', 'client', 'ventes', 'modifications', 'totalVentes', 'totalModifications'));
+    }
+
+    public function updatePaiementGlobal(Request $request, Concours $concours, ClientFacturation $client)
+    {
+        $validated = $request->validate([
+            'paiement_cb' => 'boolean',
+            'paiement_especes' => 'boolean',
+            'paiement_cheque' => 'boolean',
+            'numero_cheque' => 'nullable|string|required_if:paiement_cheque,true',
+            'jour_paiement' => 'nullable|date',
+        ]);
+
+        $paiementData = [
+            'paiement_cb' => $validated['paiement_cb'] ?? false,
+            'paiement_especes' => $validated['paiement_especes'] ?? false,
+            'paiement_cheque' => $validated['paiement_cheque'] ?? false,
+            'numero_cheque' => $validated['numero_cheque'] ?? null,
+            'jour_paiement' => $validated['jour_paiement'] ?? null,
+        ];
+
+        // Mettre à jour toutes les ventes du client pour ce concours
+        $client->ventes()
+            ->where('concours_id', $concours->id)
+            ->update($paiementData);
+
+        // Mettre à jour toutes les modifications payantes du client pour ce concours
+        $client->modifications()
+            ->where('concours_id', $concours->id)
+            ->where('statut', '!=', 'supprime')
+            ->update($paiementData);
+
+        return redirect()->route('concours.factures.show', [$concours, $client])
+            ->with('success', 'Paiement mis à jour pour toutes les lignes.');
     }
 
     public function caisse(Concours $concours)

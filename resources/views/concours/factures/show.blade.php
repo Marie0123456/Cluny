@@ -51,6 +51,83 @@
                 </div>
             </div>
 
+            <!-- Paiement global -->
+            <div class="bg-white shadow-sm sm:rounded-lg p-6 mb-6" x-data="{
+                open: false,
+                cheque: false
+            }">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-lg font-medium text-gray-900">Paiement global</h3>
+                    <button type="button" @click="open = !open"
+                        class="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                        <span x-text="open ? 'Fermer' : 'Modifier le paiement de toutes les lignes'"></span>
+                    </button>
+                </div>
+
+                <form x-show="open" x-cloak method="POST"
+                    action="{{ route('concours.factures.update-paiement-global', [$concours, $client]) }}"
+                    class="mt-4 border-t pt-4">
+                    @csrf
+                    @method('PATCH')
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <!-- Moyen de paiement -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Moyen de paiement</label>
+                            <div class="flex flex-wrap gap-4">
+                                <label class="inline-flex items-center">
+                                    <input type="hidden" name="paiement_cb" value="0">
+                                    <input type="checkbox" name="paiement_cb" value="1"
+                                        class="rounded border-gray-300 text-blue-600 shadow-sm focus:ring-blue-500">
+                                    <span class="ml-2 text-sm text-gray-700">CB</span>
+                                </label>
+                                <label class="inline-flex items-center">
+                                    <input type="hidden" name="paiement_especes" value="0">
+                                    <input type="checkbox" name="paiement_especes" value="1"
+                                        class="rounded border-gray-300 text-green-600 shadow-sm focus:ring-green-500">
+                                    <span class="ml-2 text-sm text-gray-700">Espèces</span>
+                                </label>
+                                <label class="inline-flex items-center">
+                                    <input type="hidden" name="paiement_cheque" value="0">
+                                    <input type="checkbox" name="paiement_cheque" value="1"
+                                        x-model="cheque"
+                                        class="rounded border-gray-300 text-yellow-600 shadow-sm focus:ring-yellow-500">
+                                    <span class="ml-2 text-sm text-gray-700">Chèque</span>
+                                </label>
+                            </div>
+                            <!-- Numéro de chèque -->
+                            <div x-show="cheque" class="mt-2">
+                                <input type="text" name="numero_cheque" placeholder="Numéro de chèque"
+                                    class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                            </div>
+                        </div>
+
+                        <!-- Date de paiement -->
+                        <div>
+                            <label for="jour_paiement_global" class="block text-sm font-medium text-gray-700 mb-2">Date de paiement</label>
+                            <input type="date" name="jour_paiement" id="jour_paiement_global"
+                                value="{{ now()->format('Y-m-d') }}"
+                                class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                        </div>
+                    </div>
+
+                    <div class="mt-4 flex items-center gap-3">
+                        <button type="submit"
+                            class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 focus:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150"
+                            onclick="return confirm('Appliquer ce paiement à toutes les ventes et modifications de cette facture ?')">
+                            Appliquer à toutes les lignes
+                        </button>
+                        <span class="text-xs text-gray-500">Cette action mettra à jour le paiement de {{ $ventes->count() }} vente(s) et {{ $modifications->count() }} modification(s)</span>
+                    </div>
+                </form>
+
+                @if (session('success'))
+                    <div class="mt-3 p-3 bg-green-50 border border-green-200 rounded-md">
+                        <p class="text-sm text-green-700">{{ session('success') }}</p>
+                    </div>
+                @endif
+            </div>
+
             <!-- Ventes -->
             @if ($ventes->isNotEmpty())
                 <div class="bg-white shadow-sm sm:rounded-lg mb-6">
