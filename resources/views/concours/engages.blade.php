@@ -38,10 +38,13 @@
 
                 @forelse ($epreuvesByDate as $dateKey => $epreuvesJour)
                     @php
-                        $dateLabel = $dateKey === 'sans_date' ? 'Date non définie' : \Carbon\Carbon::parse($dateKey)->translatedFormat('l d/m/Y');
+                        $dateLabel = $dateKey === 'sans_date' ? 'Date non définie' : \Carbon\Carbon::parse($dateKey)->locale('fr')->translatedFormat('l d/m/Y');
                         $totalEngages = $epreuvesJour->sum(fn($e) => $e->engagements->count());
+                        $daySearchStr = strtolower(addslashes(
+                            $epreuvesJour->flatMap(fn($ep) => $ep->engagements->map(fn($e) => ($e->cavalier?->nom ?? '') . ' ' . ($e->cavalier?->prenom ?? '') . ' ' . ($e->cheval?->nom ?? '')))->implode('|||')
+                        ));
                     @endphp
-                    <div class="mb-6" x-data="{ openDay: true }">
+                    <div class="mb-6" x-data="{ openDay: true }" x-show="search === '' || '{{ $daySearchStr }}'.includes(search.toLowerCase())">
                         <!-- Date header -->
                         <button @click="openDay = !openDay" type="button"
                             class="w-full flex items-center justify-between px-4 py-3 bg-indigo-50 border border-indigo-200 rounded-lg hover:bg-indigo-100 transition mb-2">
@@ -57,7 +60,14 @@
 
                         <div x-show="openDay" x-transition x-cloak class="space-y-3 pl-2">
                             @foreach ($epreuvesJour as $epreuve)
-                                <div x-data="{ open: false }" x-show="epreuveFilter === '' || epreuveFilter === '{{ $epreuve->id }}'">
+                                @php
+                                    $epreuveSearchStr = strtolower(addslashes(
+                                        $epreuve->engagements->map(fn($e) => ($e->cavalier?->nom ?? '') . ' ' . ($e->cavalier?->prenom ?? '') . ' ' . ($e->cheval?->nom ?? ''))->implode('|||')
+                                    ));
+                                @endphp
+                                <div x-data="{ open: false }"
+                                    x-show="(epreuveFilter === '' || epreuveFilter === '{{ $epreuve->id }}') && (search === '' || '{{ $epreuveSearchStr }}'.includes(search.toLowerCase()))"
+                                    x-effect="if (search !== '' && '{{ $epreuveSearchStr }}'.includes(search.toLowerCase())) { open = true } else if (search === '') { open = false }">
                                     <div class="bg-white shadow-sm sm:rounded-lg">
                                         <!-- Épreuve accordion header -->
                                         <button @click="open = !open" type="button"
