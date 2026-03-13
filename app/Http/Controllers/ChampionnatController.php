@@ -49,7 +49,7 @@ class ChampionnatController extends Controller
         $concours->championnats()->create($validated);
 
         return redirect()->route('concours.championnats.index', $concours)
-            ->with('success', 'Championnat cree avec succes.');
+            ->with('success', 'Championnat créé avec succès.');
     }
 
     public function show(Concours $concours, Championnat $championnat)
@@ -691,7 +691,7 @@ class ChampionnatController extends Controller
         $championnat->resultats()->where('epreuve_id', $epreuveId)->delete();
 
         return redirect()->route('concours.championnats.show', [$concours, $championnat])
-            ->with('success', "$count resultats supprimes pour l'epreuve $request->epreuve.");
+            ->with('success', "$count résultats supprimés pour l'épreuve $request->epreuve.");
     }
 
     public function doublons(Concours $concours)
@@ -792,7 +792,7 @@ class ChampionnatController extends Controller
         }
 
         return redirect()->route('concours.championnats.doublons', $concours)
-            ->with('success', 'Selections enregistrees.');
+            ->with('success', 'Sélections enregistrées.');
     }
 
     public function toggleLibre(Request $request, Concours $concours, Championnat $championnat)

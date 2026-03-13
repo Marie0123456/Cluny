@@ -128,7 +128,7 @@ class FactureController extends Controller
 
                 // Modifications
                 if ($modifications->isNotEmpty()) {
-                    echo implode($sep, ['Nom facturation', 'N. Epreuve', 'Cavalier', 'Cheval', 'Type', 'PF', 'P.U. HT', 'Prix TTC', 'Paiement', 'Date']) . "\n";
+                    echo implode($sep, ['Nom facturation', 'N. Épreuve', 'Cavalier', 'Cheval', 'Type', 'PF', 'P.U. HT', 'Prix TTC', 'Paiement', 'Date']) . "\n";
                     foreach ($modifications as $index => $mod) {
                         $paiements = [];
                         if ($mod->paiement_cb) $paiements[] = 'CB';

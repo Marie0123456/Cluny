@@ -116,7 +116,7 @@ class ModificationController extends Controller
         $engagement->update(['cheval_id' => $nouveauCheval->id]);
 
         return redirect()->route('concours.modifications.index', $concours)
-            ->with('success', 'Changement de cheval enregistre.');
+            ->with('success', 'Changement de cheval enregistré.');
     }
 
     public function changementCavalier(Request $request, Concours $concours)
@@ -133,7 +133,7 @@ class ModificationController extends Controller
 
         // Block pro events when concours is GN
         if ($concours->grand_national && $engagement->epreuve->type_detecte === 'pro') {
-            return redirect()->back()->withErrors(['engagement_id' => 'Changement de cavalier non autorise sur les epreuves Pro en Grand National.']);
+            return redirect()->back()->withErrors(['engagement_id' => 'Changement de cavalier non autorisé sur les épreuves Pro en Grand National.']);
         }
 
         $ancienCavalierId = $engagement->cavalier_id;
@@ -163,7 +163,7 @@ class ModificationController extends Controller
         $engagement->update(['cavalier_id' => $nouveauCavalier->id]);
 
         return redirect()->route('concours.modifications.index', $concours)
-            ->with('success', 'Changement de cavalier enregistre.');
+            ->with('success', 'Changement de cavalier enregistré.');
     }
 
     public function invitation(Request $request, Concours $concours)
@@ -293,7 +293,7 @@ class ModificationController extends Controller
         ]);
 
         return redirect()->route('concours.modifications.index', $concours)
-            ->with('success', 'Invitation enregistree.');
+            ->with('success', 'Invitation enregistrée.');
     }
 
     public function changementEpreuve(Request $request, Concours $concours)
@@ -384,7 +384,7 @@ class ModificationController extends Controller
         $npMod->update(['linked_modification_id' => $changementMod->id]);
 
         return redirect()->route('concours.modifications.index', $concours)
-            ->with('success', "Changement d'epreuve enregistre.");
+            ->with('success', "Changement d'épreuve enregistré.");
     }
 
     public function nonPartant(Request $request, Concours $concours)
@@ -405,7 +405,7 @@ class ModificationController extends Controller
         ]);
 
         return redirect()->route('concours.modifications.index', $concours)
-            ->with('success', 'Non-partant enregistre.');
+            ->with('success', 'Non-partant enregistré.');
     }
 
     public function updatePaiement(Request $request, Modification $modification)
@@ -458,14 +458,14 @@ class ModificationController extends Controller
 
         $modification->update($updateData);
 
-        return redirect()->back()->with('success', 'Paiement mis a jour.');
+        return redirect()->back()->with('success', 'Paiement mis à jour.');
     }
 
     public function marquerFait(Modification $modification)
     {
         $modification->update(['statut' => 'fait']);
 
-        return redirect()->back()->with('success', 'Modification marquee comme faite.');
+        return redirect()->back()->with('success', 'Modification marquée comme faite.');
     }
 
     public function destroy(Modification $modification)
@@ -508,6 +508,6 @@ class ModificationController extends Controller
 
         $modification->update(['statut' => 'supprime']);
 
-        return redirect()->back()->with('success', 'Modification annulee.');
+        return redirect()->back()->with('success', 'Modification annulée.');
     }
 }

@@ -84,7 +84,7 @@
                         </form>
                         @if ($resultatsEpreuve1->isNotEmpty())
                             <form action="{{ route('concours.championnats.delete-resultats', [$concours, $championnat]) }}" method="POST" class="mt-2"
-                                onsubmit="return confirm('Supprimer les {{ $resultatsEpreuve1->count() }} résultats de l\'epreuve 1 ?')">
+                                onsubmit="return confirm('Supprimer les {{ $resultatsEpreuve1->count() }} résultats de l\'épreuve 1 ?')">
                                 @csrf
                                 @method('DELETE')
                                 <input type="hidden" name="epreuve" value="1">
@@ -121,7 +121,7 @@
                             </form>
                             @if ($resultatsEpreuve2->isNotEmpty())
                                 <form action="{{ route('concours.championnats.delete-resultats', [$concours, $championnat]) }}" method="POST" class="mt-2"
-                                    onsubmit="return confirm('Supprimer les {{ $resultatsEpreuve2->count() }} résultats de l\'epreuve 2 ?')">
+                                    onsubmit="return confirm('Supprimer les {{ $resultatsEpreuve2->count() }} résultats de l\'épreuve 2 ?')">
                                     @csrf
                                     @method('DELETE')
                                     <input type="hidden" name="epreuve" value="2">

@@ -42,7 +42,7 @@
 
             {{-- Cavaliers multi-epreuves --}}
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 mt-6">
-                <h3 class="text-lg font-medium text-gray-900 mb-4">Cavaliers faisant plusieurs epreuves</h3>
+                <h3 class="text-lg font-medium text-gray-900 mb-4">Cavaliers faisant plusieurs épreuves</h3>
 
                 <form method="GET" action="{{ route('concours.statistiques.index', $concours) }}" class="mb-4">
                     @foreach ($selectedDisciplinesCombinaisons as $disc)
@@ -81,9 +81,9 @@
 
                 @if (! empty($selectedDisciplines))
                     @if ($multiEpreuveCavaliers->isEmpty())
-                        <p class="text-sm text-gray-500">Aucun cavalier ne fait plusieurs epreuves en {{ implode(' / ', $selectedDisciplines) }}.</p>
+                        <p class="text-sm text-gray-500">Aucun cavalier ne fait plusieurs épreuves en {{ implode(' / ', $selectedDisciplines) }}.</p>
                     @else
-                        <p class="text-sm text-gray-500 mb-3">{{ $multiEpreuveCavaliers->count() }} cavalier(s) faisant plusieurs epreuves en {{ implode(' / ', $selectedDisciplines) }}</p>
+                        <p class="text-sm text-gray-500 mb-3">{{ $multiEpreuveCavaliers->count() }} cavalier(s) faisant plusieurs épreuves en {{ implode(' / ', $selectedDisciplines) }}</p>
                         <div class="overflow-x-auto">
                             <table class="min-w-full divide-y divide-gray-200" id="multi-epreuves-table">
                                 <thead class="bg-gray-50">
@@ -282,7 +282,7 @@
 
         {{-- Chevaux multi-epreuves --}}
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 mt-6">
-                <h3 class="text-lg font-medium text-gray-900 mb-4">Chevaux faisant plusieurs epreuves</h3>
+                <h3 class="text-lg font-medium text-gray-900 mb-4">Chevaux faisant plusieurs épreuves</h3>
 
                 <form method="GET" action="{{ route('concours.statistiques.index', $concours) }}" class="mb-4">
                     {{-- Preserve other selections --}}
@@ -322,9 +322,9 @@
 
                 @if (! empty($selectedDisciplinesChevaux))
                     @if ($multiEpreuveChevaux->isEmpty())
-                        <p class="text-sm text-gray-500">Aucun cheval ne fait plusieurs epreuves en {{ implode(' / ', $selectedDisciplinesChevaux) }}.</p>
+                        <p class="text-sm text-gray-500">Aucun cheval ne fait plusieurs épreuves en {{ implode(' / ', $selectedDisciplinesChevaux) }}.</p>
                     @else
-                        <p class="text-sm text-gray-500 mb-3">{{ $multiEpreuveChevaux->count() }} cheval(aux) faisant plusieurs epreuves en {{ implode(' / ', $selectedDisciplinesChevaux) }}</p>
+                        <p class="text-sm text-gray-500 mb-3">{{ $multiEpreuveChevaux->count() }} cheval(aux) faisant plusieurs épreuves en {{ implode(' / ', $selectedDisciplinesChevaux) }}</p>
                         <div class="overflow-x-auto">
                             <table class="min-w-full divide-y divide-gray-200" id="multi-epreuves-chevaux-table">
                                 <thead class="bg-gray-50">

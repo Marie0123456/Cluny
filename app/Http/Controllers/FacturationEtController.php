@@ -61,7 +61,7 @@ class FacturationEtController extends Controller
             fwrite($handle, "\xEF\xBB\xBF");
 
             fputcsv($handle, [
-                'N. Epreuve', 'Nom Epreuve', 'Cavalier', 'Cheval', 'Type de modif',
+                'N. Épreuve', 'Nom Épreuve', 'Cavalier', 'Cheval', 'Type de modif',
                 'PF', 'PU HT', 'Prix TTC',
                 'Paiement', 'N° Cheque', 'Jour paiement',
                 'Facture', 'Nom facturation', 'Telephone', 'Email', 'Adresse',

@@ -2,11 +2,11 @@
     <nav class="flex overflow-x-auto border-b border-gray-200">
         <a href="{{ route('concours.epreuves.index', $concours) }}"
             class="px-3 sm:px-6 py-3 text-xs sm:text-sm font-medium whitespace-nowrap border-b-2 {{ ($active ?? '') === 'epreuves' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
-            Epreuves
+            Épreuves
         </a>
         <a href="{{ route('concours.engages.index', $concours) }}"
             class="px-3 sm:px-6 py-3 text-xs sm:text-sm font-medium whitespace-nowrap border-b-2 {{ ($active ?? '') === 'engages' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
-            Engages
+            Engagés
         </a>
         <a href="{{ route('concours.modifications.index', $concours) }}"
             class="px-3 sm:px-6 py-3 text-xs sm:text-sm font-medium whitespace-nowrap border-b-2 {{ ($active ?? '') === 'modifications' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
