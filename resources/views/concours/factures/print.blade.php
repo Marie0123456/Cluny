@@ -98,6 +98,8 @@
                                         @if ($vente->paiement_cb) CB @endif
                                         @if ($vente->paiement_especes) Espèces @endif
                                         @if ($vente->paiement_cheque) Chèque @endif
+                                        @if ($vente->paiement_internet) Internet @endif
+                                        @if ($vente->paiement_virement) Virement @endif
                                     </td>
                                     <td rowspan="{{ $vente->lignes->count() }}">
                                         {{ $vente->jour_paiement ? $vente->jour_paiement->format('d/m/Y') : '-' }}
@@ -146,6 +148,8 @@
                                 @if ($mod->paiement_cb) CB @endif
                                 @if ($mod->paiement_especes) Espèces @endif
                                 @if ($mod->paiement_cheque) Chèque @endif
+                                @if ($mod->paiement_internet) Internet @endif
+                                @if ($mod->paiement_virement) Virement @endif
                             </td>
                             <td>{{ $mod->jour_paiement ? $mod->jour_paiement->format('d/m/Y') : '-' }}</td>
                         </tr>

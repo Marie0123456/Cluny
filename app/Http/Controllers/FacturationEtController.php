@@ -38,6 +38,8 @@ class FacturationEtController extends Controller
             'cb' => (bool) $m->paiement_cb,
             'especes' => (bool) $m->paiement_especes,
             'cheque' => (bool) $m->paiement_cheque,
+            'internet' => (bool) $m->paiement_internet,
+            'virement' => (bool) $m->paiement_virement,
         ]);
 
         return view('concours.facturation-et.index', compact(
@@ -72,6 +74,8 @@ class FacturationEtController extends Controller
                 if ($mod->paiement_cb) $moyens[] = 'CB';
                 if ($mod->paiement_especes) $moyens[] = 'Especes';
                 if ($mod->paiement_cheque) $moyens[] = 'Cheque';
+                if ($mod->paiement_internet) $moyens[] = 'Internet';
+                if ($mod->paiement_virement) $moyens[] = 'Virement';
 
                 $prix = (float) $mod->prix;
                 $pf = (float) $mod->pf;

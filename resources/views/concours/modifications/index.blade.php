@@ -573,6 +573,16 @@
                                         class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
                                     <span class="text-sm text-gray-700">Chèque</span>
                                 </label>
+                                <label class="flex items-center gap-2">
+                                    <input type="checkbox" name="paiement_internet" value="1"
+                                        class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
+                                    <span class="text-sm text-gray-700">Internet</span>
+                                </label>
+                                <label class="flex items-center gap-2">
+                                    <input type="checkbox" name="paiement_virement" value="1"
+                                        class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
+                                    <span class="text-sm text-gray-700">Virement</span>
+                                </label>
                             </div>
                         </div>
 
@@ -793,6 +803,16 @@
                                         class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
                                     <span class="ml-2 text-sm text-gray-700">Chèque</span>
                                 </label>
+                                <label class="inline-flex items-center">
+                                    <input type="checkbox" name="paiement_internet" value="1"
+                                        class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
+                                    <span class="ml-2 text-sm text-gray-700">Internet</span>
+                                </label>
+                                <label class="inline-flex items-center">
+                                    <input type="checkbox" name="paiement_virement" value="1"
+                                        class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
+                                    <span class="ml-2 text-sm text-gray-700">Virement</span>
+                                </label>
                             </div>
                         </div>
 
@@ -982,6 +1002,8 @@
                                 <option value="cb">CB</option>
                                 <option value="especes">Espèces</option>
                                 <option value="cheque">Chèque</option>
+                                <option value="internet">Internet</option>
+                                <option value="virement">Virement</option>
                                 <option value="sans">Sans paiement</option>
                             </select>
                         </div>
@@ -998,6 +1020,8 @@
                                 if ($mod->paiement_cb) $paiementValues[] = 'cb';
                                 if ($mod->paiement_especes) $paiementValues[] = 'especes';
                                 if ($mod->paiement_cheque) $paiementValues[] = 'cheque';
+                                if ($mod->paiement_internet) $paiementValues[] = 'internet';
+                                if ($mod->paiement_virement) $paiementValues[] = 'virement';
                             @endphp
                             <div class="p-4 {{ $mod->statut->value === 'fait' ? 'opacity-50' : '' }}"
                                 x-show="showRow({{ json_encode([
@@ -1078,6 +1102,8 @@
                                             if ($mod->paiement_cb) $moyens[] = 'CB';
                                             if ($mod->paiement_especes) $moyens[] = 'Espèces';
                                             if ($mod->paiement_cheque) $moyens[] = 'Chèque';
+                                            if ($mod->paiement_internet) $moyens[] = 'Internet';
+                                            if ($mod->paiement_virement) $moyens[] = 'Virement';
                                         @endphp
                                         @if (count($moyens) > 0)
                                             <span class="text-gray-400">{{ implode(', ', $moyens) }}</span>
@@ -1149,6 +1175,16 @@
                                                             <input type="checkbox" name="paiement_cheque" value="1" x-model="paiementCheque"
                                                                 class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
                                                             <span class="ml-1">Chèque</span>
+                                                        </label>
+                                                        <label class="inline-flex items-center text-sm">
+                                                            <input type="checkbox" name="paiement_internet" value="1" {{ $mod->paiement_internet ? 'checked' : '' }}
+                                                                class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
+                                                            <span class="ml-1">Internet</span>
+                                                        </label>
+                                                        <label class="inline-flex items-center text-sm">
+                                                            <input type="checkbox" name="paiement_virement" value="1" {{ $mod->paiement_virement ? 'checked' : '' }}
+                                                                class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
+                                                            <span class="ml-1">Virement</span>
                                                         </label>
                                                     </div>
                                                 </div>
@@ -1430,6 +1466,16 @@
                                                                     <input type="checkbox" name="paiement_cheque" value="1" x-model="paiementCheque"
                                                                         class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
                                                                     <span class="ml-1">Chèque</span>
+                                                                </label>
+                                                                <label class="inline-flex items-center text-sm">
+                                                                    <input type="checkbox" name="paiement_internet" value="1" {{ $mod->paiement_internet ? 'checked' : '' }}
+                                                                        class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
+                                                                    <span class="ml-1">Internet</span>
+                                                                </label>
+                                                                <label class="inline-flex items-center text-sm">
+                                                                    <input type="checkbox" name="paiement_virement" value="1" {{ $mod->paiement_virement ? 'checked' : '' }}
+                                                                        class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
+                                                                    <span class="ml-1">Virement</span>
                                                                 </label>
                                                             </div>
                                                         </div>

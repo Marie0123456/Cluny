@@ -119,6 +119,8 @@
                                                     @if ($vente->paiement_cb)<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">CB</span>@endif
                                                     @if ($vente->paiement_especes)<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">Espèces</span>@endif
                                                     @if ($vente->paiement_cheque)<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">Chèque</span>@endif
+                                                    @if ($vente->paiement_internet)<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800">Internet</span>@endif
+                                                    @if ($vente->paiement_virement)<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-indigo-100 text-indigo-800">Virement</span>@endif
                                                 </td>
                                                 <td class="px-4 py-3 text-sm" rowspan="{{ $ligneCount }}">
                                                     @if ($vente->facture && $vente->clientFacturation)
@@ -177,6 +179,8 @@
                             <option value="cb">CB</option>
                             <option value="especes">Espèces</option>
                             <option value="cheque">Chèque</option>
+                            <option value="internet">Internet</option>
+                            <option value="virement">Virement</option>
                         </select>
                     </div>
                 </div>
@@ -214,6 +218,8 @@
                         if (this.caissePaiement === 'cb' && !v.cb) return false;
                         if (this.caissePaiement === 'especes' && !v.especes) return false;
                         if (this.caissePaiement === 'cheque' && !v.cheque) return false;
+                        if (this.caissePaiement === 'internet' && !v.internet) return false;
+                        if (this.caissePaiement === 'virement' && !v.virement) return false;
                         return true;
                     });
                 },
@@ -227,7 +233,7 @@
                 },
 
                 get caissePaiementLabel() {
-                    return { cb: 'CB', especes: 'Espèces', cheque: 'Chèque' }[this.caissePaiement] || '';
+                    return { cb: 'CB', especes: 'Espèces', cheque: 'Chèque', internet: 'Internet', virement: 'Virement' }[this.caissePaiement] || '';
                 },
 
                 formatPrix(val) {

@@ -28,6 +28,8 @@ class VenteController extends Controller
             'cb' => (bool) $v->paiement_cb,
             'especes' => (bool) $v->paiement_especes,
             'cheque' => (bool) $v->paiement_cheque,
+            'internet' => (bool) $v->paiement_internet,
+            'virement' => (bool) $v->paiement_virement,
         ]);
 
         return view('concours.ventes.index', compact('concours', 'ventes', 'totalGeneral', 'caisseData'));
@@ -48,6 +50,8 @@ class VenteController extends Controller
             'paiement_cb' => 'boolean',
             'paiement_especes' => 'boolean',
             'paiement_cheque' => 'boolean',
+            'paiement_internet' => 'boolean',
+            'paiement_virement' => 'boolean',
             'numero_cheque' => 'nullable|string|required_if:paiement_cheque,true',
             'facture' => 'boolean',
             'nom_facturation' => 'nullable|required_if:facture,true|string|max:255',
@@ -83,6 +87,8 @@ class VenteController extends Controller
                 'paiement_cb' => $request->boolean('paiement_cb'),
                 'paiement_especes' => $request->boolean('paiement_especes'),
                 'paiement_cheque' => $request->boolean('paiement_cheque'),
+                'paiement_internet' => $request->boolean('paiement_internet'),
+                'paiement_virement' => $request->boolean('paiement_virement'),
                 'numero_cheque' => $validated['numero_cheque'] ?? null,
                 'facture' => $request->boolean('facture'),
                 'client_facturation_id' => $clientFacturationId,
@@ -164,6 +170,8 @@ class VenteController extends Controller
             'paiement_cb' => 'boolean',
             'paiement_especes' => 'boolean',
             'paiement_cheque' => 'boolean',
+            'paiement_internet' => 'boolean',
+            'paiement_virement' => 'boolean',
             'numero_cheque' => 'nullable|string|required_if:paiement_cheque,true',
             'facture' => 'boolean',
             'nom_facturation' => 'nullable|required_if:facture,true|string|max:255',
@@ -196,6 +204,8 @@ class VenteController extends Controller
                 'paiement_cb' => $request->boolean('paiement_cb'),
                 'paiement_especes' => $request->boolean('paiement_especes'),
                 'paiement_cheque' => $request->boolean('paiement_cheque'),
+                'paiement_internet' => $request->boolean('paiement_internet'),
+                'paiement_virement' => $request->boolean('paiement_virement'),
                 'numero_cheque' => $validated['numero_cheque'] ?? null,
                 'facture' => $request->boolean('facture'),
                 'client_facturation_id' => $clientFacturationId,
@@ -264,6 +274,8 @@ class VenteController extends Controller
                 if ($vente->paiement_cb) $moyens[] = 'CB';
                 if ($vente->paiement_especes) $moyens[] = 'Especes';
                 if ($vente->paiement_cheque) $moyens[] = 'Cheque';
+                if ($vente->paiement_internet) $moyens[] = 'Internet';
+                if ($vente->paiement_virement) $moyens[] = 'Virement';
                 $paiementStr = implode(', ', $moyens);
 
                 foreach ($vente->lignes as $index => $ligne) {

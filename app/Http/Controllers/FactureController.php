@@ -66,6 +66,8 @@ class FactureController extends Controller
             'paiement_cb' => 'boolean',
             'paiement_especes' => 'boolean',
             'paiement_cheque' => 'boolean',
+            'paiement_internet' => 'boolean',
+            'paiement_virement' => 'boolean',
             'numero_cheque' => 'nullable|string|required_if:paiement_cheque,true',
             'jour_paiement' => 'nullable|date',
         ]);
@@ -74,6 +76,8 @@ class FactureController extends Controller
             'paiement_cb' => $validated['paiement_cb'] ?? false,
             'paiement_especes' => $validated['paiement_especes'] ?? false,
             'paiement_cheque' => $validated['paiement_cheque'] ?? false,
+            'paiement_internet' => $validated['paiement_internet'] ?? false,
+            'paiement_virement' => $validated['paiement_virement'] ?? false,
             'numero_cheque' => $validated['numero_cheque'] ?? null,
             'jour_paiement' => $validated['jour_paiement'] ?? null,
         ];
@@ -139,6 +143,8 @@ class FactureController extends Controller
                         if ($vente->paiement_cb) $paiements[] = 'CB';
                         if ($vente->paiement_especes) $paiements[] = 'Especes';
                         if ($vente->paiement_cheque) $paiements[] = 'Cheque';
+                        if ($vente->paiement_internet) $paiements[] = 'Internet';
+                        if ($vente->paiement_virement) $paiements[] = 'Virement';
                         $paiementStr = implode(', ', $paiements);
                         $dateStr = $vente->jour_paiement ? $vente->jour_paiement->format('d/m/Y') : '';
 
@@ -168,6 +174,8 @@ class FactureController extends Controller
                         if ($mod->paiement_cb) $paiements[] = 'CB';
                         if ($mod->paiement_especes) $paiements[] = 'Especes';
                         if ($mod->paiement_cheque) $paiements[] = 'Cheque';
+                        if ($mod->paiement_internet) $paiements[] = 'Internet';
+                        if ($mod->paiement_virement) $paiements[] = 'Virement';
 
                         $puHt = ($mod->prix && $mod->pf !== null) ? round(($mod->prix - $mod->pf) / 1.055, 2) : '';
 
@@ -381,6 +389,8 @@ class FactureController extends Controller
         if ($item->paiement_cb) $paiements[] = 'CB';
         if ($item->paiement_especes) $paiements[] = 'Espèces';
         if ($item->paiement_cheque) $paiements[] = 'Chèque';
+        if ($item->paiement_internet) $paiements[] = 'Internet';
+        if ($item->paiement_virement) $paiements[] = 'Virement';
         return $paiements ? implode(', ', $paiements) : 'Non renseigné';
     }
 }

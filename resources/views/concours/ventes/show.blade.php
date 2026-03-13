@@ -28,6 +28,8 @@
                                     Chèque{{ $vente->numero_cheque ? ' #'.$vente->numero_cheque : '' }}
                                 </span>
                             @endif
+                            @if ($vente->paiement_internet)<span class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800">Internet</span>@endif
+                            @if ($vente->paiement_virement)<span class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium bg-indigo-100 text-indigo-800">Virement</span>@endif
                         </div>
                     </div>
                 </div>

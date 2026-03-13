@@ -148,6 +148,8 @@
                                                 if ($mod->paiement_cb) $paiements[] = 'CB';
                                                 if ($mod->paiement_especes) $paiements[] = 'Espèces';
                                                 if ($mod->paiement_cheque) $paiements[] = 'Chèque';
+                                                if ($mod->paiement_internet) $paiements[] = 'Internet';
+                                                if ($mod->paiement_virement) $paiements[] = 'Virement';
                                             @endphp
                                             {{ $paiements ? implode(', ', $paiements) : '-' }}
                                         </td>
@@ -204,6 +206,16 @@
                                                                 <input type="checkbox" name="paiement_cheque" value="1" {{ $mod->paiement_cheque ? 'checked' : '' }}
                                                                     class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
                                                                 <span class="ml-1">Chèque</span>
+                                                            </label>
+                                                            <label class="inline-flex items-center text-sm">
+                                                                <input type="checkbox" name="paiement_internet" value="1" {{ $mod->paiement_internet ? 'checked' : '' }}
+                                                                    class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
+                                                                <span class="ml-1">Internet</span>
+                                                            </label>
+                                                            <label class="inline-flex items-center text-sm">
+                                                                <input type="checkbox" name="paiement_virement" value="1" {{ $mod->paiement_virement ? 'checked' : '' }}
+                                                                    class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
+                                                                <span class="ml-1">Virement</span>
                                                             </label>
                                                         </div>
                                                     </div>
@@ -302,6 +314,8 @@
                             <option value="cb">CB</option>
                             <option value="especes">Espèces</option>
                             <option value="cheque">Chèque</option>
+                            <option value="internet">Internet</option>
+                            <option value="virement">Virement</option>
                         </select>
                     </div>
                 </div>
@@ -339,6 +353,8 @@
                         if (this.caissePaiement === 'cb' && !v.cb) return false;
                         if (this.caissePaiement === 'especes' && !v.especes) return false;
                         if (this.caissePaiement === 'cheque' && !v.cheque) return false;
+                        if (this.caissePaiement === 'internet' && !v.internet) return false;
+                        if (this.caissePaiement === 'virement' && !v.virement) return false;
                         return true;
                     });
                 },
@@ -352,7 +368,7 @@
                 },
 
                 get caissePaiementLabel() {
-                    return { cb: 'CB', especes: 'Espèces', cheque: 'Chèque' }[this.caissePaiement] || '';
+                    return { cb: 'CB', especes: 'Espèces', cheque: 'Chèque', internet: 'Internet', virement: 'Virement' }[this.caissePaiement] || '';
                 },
 
                 formatPrix(val) {

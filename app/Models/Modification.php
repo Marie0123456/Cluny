@@ -31,6 +31,8 @@ class Modification extends Model
         'paiement_cb',
         'paiement_especes',
         'paiement_cheque',
+        'paiement_internet',
+        'paiement_virement',
         'numero_cheque',
         'jour_paiement',
         'facture',
@@ -48,6 +50,8 @@ class Modification extends Model
             'paiement_cb' => 'boolean',
             'paiement_especes' => 'boolean',
             'paiement_cheque' => 'boolean',
+            'paiement_internet' => 'boolean',
+            'paiement_virement' => 'boolean',
             'jour_paiement' => 'date',
             'facture' => 'boolean',
         ];

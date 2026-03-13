@@ -94,6 +94,18 @@
                                         class="rounded border-gray-300 text-yellow-600 shadow-sm focus:ring-yellow-500">
                                     <span class="ml-2 text-sm text-gray-700">Chèque</span>
                                 </label>
+                                <label class="inline-flex items-center">
+                                    <input type="hidden" name="paiement_internet" value="0">
+                                    <input type="checkbox" name="paiement_internet" value="1"
+                                        class="rounded border-gray-300 text-purple-600 shadow-sm focus:ring-purple-500">
+                                    <span class="ml-2 text-sm text-gray-700">Internet</span>
+                                </label>
+                                <label class="inline-flex items-center">
+                                    <input type="hidden" name="paiement_virement" value="0">
+                                    <input type="checkbox" name="paiement_virement" value="1"
+                                        class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
+                                    <span class="ml-2 text-sm text-gray-700">Virement</span>
+                                </label>
                             </div>
                             <!-- Numéro de chèque -->
                             <div x-show="cheque" class="mt-2">
@@ -171,6 +183,8 @@
                                                     @if ($vente->paiement_cb)<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">CB</span>@endif
                                                     @if ($vente->paiement_especes)<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">Espèces</span>@endif
                                                     @if ($vente->paiement_cheque)<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">Chèque</span>@endif
+                                                    @if ($vente->paiement_internet)<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800">Internet</span>@endif
+                                                    @if ($vente->paiement_virement)<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-indigo-100 text-indigo-800">Virement</span>@endif
                                                 </td>
                                                 <td class="px-4 py-3 text-sm text-gray-500" rowspan="{{ $ligneCount }}">
                                                     {{ $vente->jour_paiement ? $vente->jour_paiement->format('d/m/Y') : '-' }}
@@ -245,6 +259,8 @@
                                                 if ($mod->paiement_cb) $paiements[] = 'CB';
                                                 if ($mod->paiement_especes) $paiements[] = 'Espèces';
                                                 if ($mod->paiement_cheque) $paiements[] = 'Chèque';
+                                                if ($mod->paiement_internet) $paiements[] = 'Internet';
+                                                if ($mod->paiement_virement) $paiements[] = 'Virement';
                                             @endphp
                                             {{ $paiements ? implode(', ', $paiements) : '-' }}
                                         </td>

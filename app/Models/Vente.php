@@ -18,6 +18,8 @@ class Vente extends Model
         'paiement_cb',
         'paiement_especes',
         'paiement_cheque',
+        'paiement_internet',
+        'paiement_virement',
         'numero_cheque',
         'facture',
         'client_facturation_id',
@@ -32,6 +34,8 @@ class Vente extends Model
             'paiement_cb' => 'boolean',
             'paiement_especes' => 'boolean',
             'paiement_cheque' => 'boolean',
+            'paiement_internet' => 'boolean',
+            'paiement_virement' => 'boolean',
             'facture' => 'boolean',
             'total_ttc' => 'decimal:2',
         ];

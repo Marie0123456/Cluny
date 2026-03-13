@@ -72,6 +72,10 @@
                                                     <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">Espèces</span>
                                                 @elseif ($p === 'Chèque')
                                                     <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">Chèque</span>
+                                                @elseif ($p === 'Internet')
+                                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800">Internet</span>
+                                                @elseif ($p === 'Virement')
+                                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-indigo-100 text-indigo-800">Virement</span>
                                                 @else
                                                     <span class="text-gray-400">{{ $p }}</span>
                                                 @endif
@@ -126,6 +130,10 @@
                                                     <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">Espèces</span>
                                                 @elseif ($p === 'Chèque')
                                                     <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">Chèque</span>
+                                                @elseif ($p === 'Internet')
+                                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800">Internet</span>
+                                                @elseif ($p === 'Virement')
+                                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-indigo-100 text-indigo-800">Virement</span>
                                                 @else
                                                     <span class="text-gray-400">{{ $p }}</span>
                                                 @endif

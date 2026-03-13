@@ -80,7 +80,7 @@
                     <!-- Moyens de paiement -->
                     <div class="mb-6">
                         <span class="block text-sm font-medium text-gray-700 mb-2">Moyen de paiement (optionnel)</span>
-                        <div class="flex gap-6">
+                        <div class="flex flex-wrap gap-6">
                             <label class="flex items-center gap-2">
                                 <input type="checkbox" name="paiement_cb" value="1" x-model="paiementCb"
                                     class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
@@ -95,6 +95,16 @@
                                 <input type="checkbox" name="paiement_cheque" value="1" x-model="paiementCheque"
                                     class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
                                 <span class="text-sm text-gray-700">Chèque</span>
+                            </label>
+                            <label class="flex items-center gap-2">
+                                <input type="checkbox" name="paiement_internet" value="1" x-model="paiementInternet"
+                                    class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
+                                <span class="text-sm text-gray-700">Internet</span>
+                            </label>
+                            <label class="flex items-center gap-2">
+                                <input type="checkbox" name="paiement_virement" value="1" x-model="paiementVirement"
+                                    class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
+                                <span class="text-sm text-gray-700">Virement</span>
                             </label>
                         </div>
                     </div>
@@ -201,6 +211,8 @@
                 paiementCb: @json($vente->paiement_cb),
                 paiementEspeces: @json($vente->paiement_especes),
                 paiementCheque: @json($vente->paiement_cheque),
+                paiementInternet: @json($vente->paiement_internet),
+                paiementVirement: @json($vente->paiement_virement),
                 facture: @json($vente->facture ? '1' : '0'),
                 nomFacturation: @json($vente->clientFacturation?->nom ?? ''),
                 telephone: @json($vente->clientFacturation?->telephone ?? ''),
