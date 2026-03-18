@@ -138,7 +138,7 @@
                             <td class="text-right">{{ $mod->pf !== null ? number_format($mod->pf, 2, ',', ' ') . ' €' : '-' }}</td>
                             <td class="text-right">
                                 @if ($mod->prix && $mod->pf !== null)
-                                    {{ number_format(($mod->prix - $mod->pf) / 1.055, 2, ',', ' ') }} &euro;
+                                    {{ number_format(($mod->prix - $mod->pf) / (1 + config('ehnc.tva_modifications') / 100), 2, ',', ' ') }} &euro;
                                 @else
                                     -
                                 @endif

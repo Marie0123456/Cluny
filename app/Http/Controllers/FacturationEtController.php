@@ -79,7 +79,7 @@ class FacturationEtController extends Controller
 
                 $prix = (float) $mod->prix;
                 $pf = (float) $mod->pf;
-                $puHt = $prix > 0 ? round(($prix - $pf) / 1.055, 2) : 0;
+                $puHt = $prix > 0 ? round(($prix - $pf) / (1 + config('ehnc.tva_modifications') / 100), 2) : 0;
 
                 fputcsv($handle, [
                     $mod->engagement->epreuve->numero ?? '-',

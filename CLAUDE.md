@@ -195,8 +195,8 @@ Vente    ──────── (1) ClientFacturation
 ### Qualité de code
 - Contrôleurs volumineux : `ChampionnatController` (829 lignes), `ModificationController` (525 lignes)
 - Logique métier dans les contrôleurs plutôt que dans des services dédiés
-- Calculs de prix/tarification hardcodés (10€, 15€, 4.80€, 9.90€)
-- Constante TVA magique `1.055` répartie dans plusieurs fichiers
+- ~~Calculs de prix/tarification hardcodés~~ → Extraits dans `config/ehnc.php`
+- ~~Constante TVA magique `1.055`~~ → Remplacée par `config('ehnc.tva_modifications')`
 - Duplication de code (création `ClientFacturation`, calculs de prix) entre méthodes
 - Pas de FormRequest classes pour la validation (validation inline)
 - Pas de localisation (chaînes françaises hardcodées dans le code)

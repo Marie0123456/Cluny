@@ -17,4 +17,14 @@ class ChampionnatExclusion extends Model
     {
         return $this->belongsTo(Championnat::class);
     }
+
+    public function cavalier(): BelongsTo
+    {
+        return $this->belongsTo(Cavalier::class);
+    }
+
+    public function cheval(): BelongsTo
+    {
+        return $this->belongsTo(Cheval::class);
+    }
 }

@@ -90,6 +90,7 @@ class ModificationController extends Controller
         ]);
 
         $engagement = Engagement::findOrFail($validated['engagement_id']);
+        $this->ensureEngagementBelongsToConcours($engagement, $concours);
         $ancienChevalId = $engagement->cheval_id;
 
         if (!empty($validated['nouveau_cheval_id'])) {
@@ -130,6 +131,7 @@ class ModificationController extends Controller
         ]);
 
         $engagement = Engagement::with(['cavalier', 'epreuve'])->findOrFail($validated['engagement_id']);
+        $this->ensureEngagementBelongsToConcours($engagement, $concours);
 
         // Block pro events when concours is GN
         if ($concours->grand_national && $engagement->epreuve->type_detecte === 'pro') {
@@ -197,6 +199,7 @@ class ModificationController extends Controller
         ]);
 
         $epreuve = Epreuve::findOrFail($validated['epreuve_id']);
+        abort_unless($epreuve->concours_id === $concours->id, 403, 'Cette épreuve n\'appartient pas à ce concours.');
 
         // Resolve or create cavalier
         if (!empty($validated['cavalier_id'])) {
@@ -247,16 +250,16 @@ class ModificationController extends Controller
             $pf = (float) $validated['pf'];
         } elseif ($concours->type_ffe_sif) {
             // FFE SIF : +10€, PF 9.90€, pas de GN
-            $prix = $epreuvePrix + 10;
-            $pf = 9.90;
+            $prix = $epreuvePrix + config('ehnc.tarifs.invitation_supplement_sif');
+            $pf = config('ehnc.tarifs.invitation_pf_sif');
         } elseif ($concours->grand_national && $isGn && $typeDetecte === 'pro') {
             // FFE Compet GN Pro
             $prix = $epreuvePrix;
-            $pf = 4.80;
+            $pf = config('ehnc.tarifs.pf_grand_national');
         } else {
             // FFE Compet standard
-            $prix = $epreuvePrix + 15;
-            $pf = 14.40;
+            $prix = $epreuvePrix + config('ehnc.tarifs.invitation_supplement');
+            $pf = config('ehnc.tarifs.invitation_pf');
         }
 
         // Handle facturation
@@ -325,7 +328,9 @@ class ModificationController extends Controller
         ]);
 
         $engagement = Engagement::with(['cavalier', 'cheval', 'epreuve'])->findOrFail($validated['engagement_id']);
+        $this->ensureEngagementBelongsToConcours($engagement, $concours);
         $nouvelleEpreuve = Epreuve::findOrFail($validated['nouvelle_epreuve_id']);
+        abort_unless($nouvelleEpreuve->concours_id === $concours->id, 403, 'Cette épreuve n\'appartient pas à ce concours.');
 
         // 1. Mark engagement as NP in old epreuve
         $engagement->update(['is_non_partant' => true]);
@@ -402,6 +407,7 @@ class ModificationController extends Controller
         ]);
 
         $engagement = Engagement::with(['cavalier', 'epreuve'])->findOrFail($validated['engagement_id']);
+        $this->ensureEngagementBelongsToConcours($engagement, $concours);
         $engagement->update(['is_non_partant' => true]);
 
         Modification::create([
@@ -521,5 +527,11 @@ class ModificationController extends Controller
         $modification->update(['statut' => 'supprime']);
 
         return redirect()->back()->with('success', 'Modification annulée.');
+    }
+
+    private function ensureEngagementBelongsToConcours(Engagement $engagement, Concours $concours): void
+    {
+        $engagement->loadMissing('epreuve:id,concours_id');
+        abort_unless($engagement->epreuve->concours_id === $concours->id, 403, 'Cet engagement n\'appartient pas à ce concours.');
     }
 }
