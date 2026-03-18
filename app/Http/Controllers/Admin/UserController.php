@@ -8,6 +8,7 @@ use App\Models\Concours;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rules;
 
 class UserController extends Controller
@@ -109,7 +110,7 @@ class UserController extends Controller
                 ->with('error', 'Vous ne pouvez pas réinitialiser votre propre mot de passe ici.');
         }
 
-        $newPassword = substr(str_shuffle('abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789'), 0, 10);
+        $newPassword = Str::random(12);
         $user->update(['password' => Hash::make($newPassword)]);
 
         return redirect()->route('admin.users.edit', $user)

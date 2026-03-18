@@ -21,10 +21,13 @@ class CommandeRetrait extends Model
         'retire',
     ];
 
-    protected $casts = [
-        'date_commande' => 'date',
-        'retire' => 'boolean',
-    ];
+    protected function casts(): array
+    {
+        return [
+            'date_commande' => 'date',
+            'retire' => 'boolean',
+        ];
+    }
 
     public function concours(): BelongsTo
     {

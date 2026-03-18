@@ -177,7 +177,7 @@ class FactureController extends Controller
                         if ($mod->paiement_internet) $paiements[] = 'Internet';
                         if ($mod->paiement_virement) $paiements[] = 'Virement';
 
-                        $puHt = ($mod->prix && $mod->pf !== null) ? round(($mod->prix - $mod->pf) / 1.055, 2) : '';
+                        $puHt = ($mod->prix && $mod->pf !== null) ? round(($mod->prix - $mod->pf) / (1 + config('ehnc.tva_modifications') / 100), 2) : '';
 
                         echo implode($sep, [
                             $index === 0 ? $client->nom : '',
@@ -359,7 +359,7 @@ class FactureController extends Controller
             $paiement = $this->getPaiementLabel($first);
             $pf = $first->pf;
             $totalTtc = $items->sum('prix');
-            $puHt = ($first->prix && $pf !== null) ? round(($first->prix - $pf) / 1.055, 2) : null;
+            $puHt = ($first->prix && $pf !== null) ? round(($first->prix - $pf) / (1 + config('ehnc.tva_modifications') / 100), 2) : null;
             return [
                 'label' => $label,
                 'type' => $first->type->value,
