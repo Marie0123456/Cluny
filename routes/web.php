@@ -127,7 +127,7 @@ Route::middleware(['auth'])->group(function () {
     Route::prefix('api')->group(function () {
         Route::get('/cavaliers/search', [CavalierSearchController::class, 'search'])->name('api.cavaliers.search');
         Route::get('/chevaux/search', [ChevalSearchController::class, 'search'])->name('api.chevaux.search');
-        Route::patch('/epreuves/{epreuve}/prix', [ApiEpreuveController::class, 'updatePrix'])->name('api.epreuves.update-prix');
+        Route::patch('/epreuves/{epreuve}/prix', [ApiEpreuveController::class, 'updatePrix'])->name('api.epreuves.update-prix')->middleware('role:admin');
         Route::get('/clients-facturation/search', [ClientFacturationController::class, 'search'])->name('api.clients-facturation.search');
     });
 

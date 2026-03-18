@@ -25,6 +25,7 @@ class CommandeRetrait extends Model
     {
         return [
             'date_commande' => 'date',
+            'quantite' => 'integer',
             'retire' => 'boolean',
         ];
     }
