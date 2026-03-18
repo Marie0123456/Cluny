@@ -12,7 +12,7 @@ class EnsureUserHasRole
     public function handle(Request $request, Closure $next, string ...$roles): Response
     {
         if (! $request->user()) {
-            abort(403, 'Accès non autorisé.');
+            abort(401, 'Authentification requise.');
         }
 
         $allowedRoles = array_map(fn ($r) => Role::from($r), $roles);

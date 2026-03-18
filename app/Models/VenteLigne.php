@@ -23,6 +23,7 @@ class VenteLigne extends Model
     protected function casts(): array
     {
         return [
+            'quantite' => 'integer',
             'prix_unitaire_ttc' => 'decimal:2',
             'total_ttc' => 'decimal:2',
         ];

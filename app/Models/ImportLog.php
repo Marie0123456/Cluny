@@ -23,6 +23,16 @@ class ImportLog extends Model
         'message_erreur',
     ];
 
+    protected function casts(): array
+    {
+        return [
+            'nb_epreuves' => 'integer',
+            'nb_engagements' => 'integer',
+            'nb_cavaliers' => 'integer',
+            'nb_chevaux' => 'integer',
+        ];
+    }
+
     public function concours(): BelongsTo
     {
         return $this->belongsTo(Concours::class);

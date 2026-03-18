@@ -182,10 +182,11 @@ Vente    ──────── (1) ClientFacturation
 ## Points d'attention (code review)
 
 ### Sécurité
-- Les endpoints API (`/api/*`) n'ont pas de vérification de rôle (seulement auth)
-- Génération de mots de passe dans `UserController` utilise `str_shuffle()` (non cryptographique)
-- Upload CSV : pas de vérification MIME type (`mimes:csv,txt`)
-- Vérification d'autorisation parfois inline dans les contrôleurs plutôt qu'en middleware/policies
+- ~~Les endpoints API (`/api/*`) n'ont pas de vérification de rôle~~ → `updatePrix` protégé par middleware `role:admin`
+- ~~Génération de mots de passe dans `UserController` utilise `str_shuffle()`~~ → Remplacé par `Str::random()`
+- ~~Upload CSV : pas de vérification MIME type~~ → Ajouté `mimes:csv,txt`
+- ~~Vérification d'autorisation inline dans les contrôleurs~~ → Déplacée en middleware route
+- ~~Middleware retournait 403 au lieu de 401 pour utilisateur non authentifié~~ → Corrigé
 
 ### Performance
 - Problèmes N+1 potentiels dans `ModificationController`, `ChampionnatController`, `FactureController`
@@ -202,10 +203,10 @@ Vente    ──────── (1) ClientFacturation
 - Pas de localisation (chaînes françaises hardcodées dans le code)
 
 ### Modèles
-- `CommandeRetrait` utilise l'ancien style `$casts` au lieu de `casts()` method
-- `Championnat` et `ChampionnatResultat` manquent le trait `HasFactory`
-- `ChampionnatExclusion` manque les relations vers `Cavalier` et `Cheval`
-- Certains modèles manquent de casts sur les champs numériques
+- ~~`CommandeRetrait` utilise l'ancien style `$casts`~~ → Migré vers `casts()` method
+- ~~`Championnat` et `ChampionnatResultat` manquent le trait `HasFactory`~~ → Ajouté
+- ~~`ChampionnatExclusion` manque les relations vers `Cavalier` et `Cheval`~~ → Ajoutées
+- ~~Certains modèles manquent de casts sur les champs numériques~~ → Ajoutés sur `ImportLog`, `CommandeRetrait`, `VenteLigne`
 
 ## Variables d'environnement requises
 
