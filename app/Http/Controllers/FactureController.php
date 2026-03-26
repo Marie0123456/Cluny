@@ -7,10 +7,12 @@ use App\Models\Concours;
 use App\Models\Modification;
 use App\Models\Vente;
 use Illuminate\Http\Request;
+use App\Http\Traits\HandlesPaiement;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class FactureController extends Controller
 {
+    use HandlesPaiement;
     public function index(Concours $concours)
     {
         $clients = ClientFacturation::whereHas('ventes', function ($q) use ($concours) {
@@ -139,17 +141,11 @@ class FactureController extends Controller
                 if ($ventes->isNotEmpty()) {
                     echo implode($sep, ['Nom facturation', 'Client', 'Produit', 'Qte', 'P.U. TTC', 'TVA %', 'Total HT', 'Total TTC', 'Paiement', 'Date']) . "\n";
                     foreach ($ventes as $vente) {
-                        $paiements = [];
-                        if ($vente->paiement_cb) $paiements[] = 'CB';
-                        if ($vente->paiement_especes) $paiements[] = 'Especes';
-                        if ($vente->paiement_cheque) $paiements[] = 'Cheque';
-                        if ($vente->paiement_internet) $paiements[] = 'Internet';
-                        if ($vente->paiement_virement) $paiements[] = 'Virement';
-                        $paiementStr = implode(', ', $paiements);
+                        $paiementStr = $this->getPaiementLabel($vente);
                         $dateStr = $vente->jour_paiement ? $vente->jour_paiement->format('d/m/Y') : '';
 
                         foreach ($vente->lignes as $index => $ligne) {
-                            $totalHt = round($ligne->total_ttc / (1 + $ligne->produit->tva / 100), 2);
+                            $totalHt = $this->calculateHtFromTtc((float) $ligne->total_ttc, (float) $ligne->produit->tva);
                             echo implode($sep, [
                                 $index === 0 ? $client->nom : '',
                                 $index === 0 ? $vente->nom_client : '',
@@ -170,14 +166,7 @@ class FactureController extends Controller
                 if ($modifications->isNotEmpty()) {
                     echo implode($sep, ['Nom facturation', 'N. Épreuve', 'Cavalier', 'Cheval', 'Type', 'PF', 'P.U. HT', 'Prix TTC', 'Paiement', 'Date']) . "\n";
                     foreach ($modifications as $index => $mod) {
-                        $paiements = [];
-                        if ($mod->paiement_cb) $paiements[] = 'CB';
-                        if ($mod->paiement_especes) $paiements[] = 'Especes';
-                        if ($mod->paiement_cheque) $paiements[] = 'Cheque';
-                        if ($mod->paiement_internet) $paiements[] = 'Internet';
-                        if ($mod->paiement_virement) $paiements[] = 'Virement';
-
-                        $puHt = ($mod->prix && $mod->pf !== null) ? round(($mod->prix - $mod->pf) / (1 + config('ehnc.tva_modifications') / 100), 2) : '';
+                        $puHt = $this->calculateModificationHt((float) $mod->prix, $mod->pf);
 
                         echo implode($sep, [
                             $index === 0 ? $client->nom : '',
@@ -188,7 +177,7 @@ class FactureController extends Controller
                             $mod->pf !== null ? number_format($mod->pf, 2, ',', '') : '',
                             $puHt !== '' ? number_format($puHt, 2, ',', '') : '',
                             $mod->prix ? number_format($mod->prix, 2, ',', '') : '',
-                            implode(', ', $paiements),
+                            $this->getPaiementLabel($mod),
                             $mod->jour_paiement ? $mod->jour_paiement->format('d/m/Y') : '',
                         ]) . "\n";
                     }
@@ -308,7 +297,7 @@ class FactureController extends Controller
             ->where('statut', '!=', 'supprime')
             ->whereIn('type', ['ajout_engagement', 'changement_epreuve'])
             ->whereNull('client_facturation_id')
-            ->with(['engagement.epreuve'])
+            ->with(['engagement.epreuve', 'engagement.cavalier', 'engagement.cheval'])
             ->get();
 
         // Grouper les ventes par produit + mode de paiement
@@ -332,7 +321,7 @@ class FactureController extends Controller
                 $first = $items->first();
                 $totalTtc = $items->sum('total');
                 $tva = $first['tva'];
-                $totalHt = round($totalTtc / (1 + $tva / 100), 2);
+                $totalHt = $this->calculateHtFromTtc($totalTtc, $tva);
                 return [
                     'produit' => $first['produit'],
                     'paiement' => $first['paiement'],
@@ -359,7 +348,7 @@ class FactureController extends Controller
             $paiement = $this->getPaiementLabel($first);
             $pf = $first->pf;
             $totalTtc = $items->sum('prix');
-            $puHt = ($first->prix && $pf !== null) ? round(($first->prix - $pf) / (1 + config('ehnc.tva_modifications') / 100), 2) : null;
+            $puHt = $this->calculateModificationHt((float) $first->prix, $pf);
             return [
                 'label' => $label,
                 'type' => $first->type->value,
@@ -383,14 +372,4 @@ class FactureController extends Controller
         );
     }
 
-    private function getPaiementLabel($item): string
-    {
-        $paiements = [];
-        if ($item->paiement_cb) $paiements[] = 'CB';
-        if ($item->paiement_especes) $paiements[] = 'Espèces';
-        if ($item->paiement_cheque) $paiements[] = 'Chèque';
-        if ($item->paiement_internet) $paiements[] = 'Internet';
-        if ($item->paiement_virement) $paiements[] = 'Virement';
-        return $paiements ? implode(', ', $paiements) : 'Non renseigné';
-    }
 }

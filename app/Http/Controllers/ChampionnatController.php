@@ -63,39 +63,37 @@ class ChampionnatController extends Controller
             ->map(fn ($e) => $e->cavalier_id . '-' . $e->cheval_id)
             ->flip();
 
-        // Load resultats for each epreuve
+        // Load all resultats in a single query, then split by epreuve
+        $allResultats = $championnat->resultats()
+            ->with(['cavalier', 'cheval'])
+            ->get();
+
         $sortEpreuve = $championnat->discipline->higherIsBetter()
             ? [['points', 'desc']]
             : [['points', 'asc'], ['temps', 'asc']];
 
-        $resultatsEpreuve1 = $championnat->resultats()
+        $resultatsEpreuve1 = $allResultats
             ->where('epreuve_id', $championnat->epreuve1_id)
-            ->with(['cavalier', 'cheval'])
-            ->get()
             ->sortBy($sortEpreuve)
             ->values();
 
         $resultatsEpreuve2 = collect();
         if ($championnat->epreuve2_id) {
-            $resultatsEpreuve2 = $championnat->resultats()
+            $resultatsEpreuve2 = $allResultats
                 ->where('epreuve_id', $championnat->epreuve2_id)
-                ->with(['cavalier', 'cheval'])
-                ->get()
                 ->sortBy($sortEpreuve)
                 ->values();
         }
 
-        // Calculate classement general
+        // Calculate classement general (pass pre-loaded resultats to avoid duplicate queries)
         $classementGeneral = collect();
         if ($championnat->epreuve2_id) {
-            // Two epreuves: need both to have resultats
             if ($resultatsEpreuve1->isNotEmpty() && $resultatsEpreuve2->isNotEmpty()) {
-                $classementGeneral = $this->calculerClassement($championnat, $exclusionKeys);
+                $classementGeneral = $this->calculerClassement($championnat, $exclusionKeys, $allResultats);
             }
         } else {
-            // Single epreuve: classement = E1 results
             if ($resultatsEpreuve1->isNotEmpty()) {
-                $classementGeneral = $this->calculerClassementSimple($championnat, $exclusionKeys);
+                $classementGeneral = $this->calculerClassementSimple($championnat, $exclusionKeys, $allResultats);
             }
         }
 
@@ -312,18 +310,16 @@ class ChampionnatController extends Controller
         return $value;
     }
 
-    private function calculerClassement(Championnat $championnat, $exclusionKeys): \Illuminate\Support\Collection
+    private function calculerClassement(Championnat $championnat, $exclusionKeys, ?\Illuminate\Support\Collection $preloadedResultats = null): \Illuminate\Support\Collection
     {
-        $resultats1 = $championnat->resultats()
+        $allResultats = $preloadedResultats ?? $championnat->resultats()->with(['cavalier', 'cheval'])->get();
+
+        $resultats1 = $allResultats
             ->where('epreuve_id', $championnat->epreuve1_id)
-            ->with(['cavalier', 'cheval'])
-            ->get()
             ->keyBy(fn ($r) => $r->cavalier_id . '-' . $r->cheval_id);
 
-        $resultats2 = $championnat->resultats()
+        $resultats2 = $allResultats
             ->where('epreuve_id', $championnat->epreuve2_id)
-            ->with(['cavalier', 'cheval'])
-            ->get()
             ->keyBy(fn ($r) => $r->cavalier_id . '-' . $r->cheval_id);
 
         $classement = collect();
@@ -381,12 +377,11 @@ class ChampionnatController extends Controller
         return $classement;
     }
 
-    private function calculerClassementSimple(Championnat $championnat, $exclusionKeys): \Illuminate\Support\Collection
+    private function calculerClassementSimple(Championnat $championnat, $exclusionKeys, ?\Illuminate\Support\Collection $preloadedResultats = null): \Illuminate\Support\Collection
     {
-        $resultats1 = $championnat->resultats()
-            ->where('epreuve_id', $championnat->epreuve1_id)
-            ->with(['cavalier', 'cheval'])
-            ->get();
+        $allResultats = $preloadedResultats ?? $championnat->resultats()->with(['cavalier', 'cheval'])->get();
+
+        $resultats1 = $allResultats->where('epreuve_id', $championnat->epreuve1_id);
 
         $classement = collect();
 
@@ -708,8 +703,11 @@ class ChampionnatController extends Controller
 
         $coupleChampionnats = [];
 
+        // Pre-load all participants to avoid N+1 queries per championnat
+        $participantsByChampionnat = $championnats->mapWithKeys(fn ($c) => [$c->id => $c->participants()]);
+
         foreach ($championnats as $championnat) {
-            $participants = $championnat->participants();
+            $participants = $participantsByChampionnat[$championnat->id];
 
             foreach ($participants as $participant) {
                 $key = $participant->cavalier_id . '-' . $participant->cheval_id;
@@ -759,6 +757,11 @@ class ChampionnatController extends Controller
             }
         }
 
+        // Pre-load all participants per championnat to avoid N+1
+        $participantsByChampionnat = $championnats->mapWithKeys(fn ($c) => [
+            $c->id => $c->participants()->map(fn ($p) => $p->cavalier_id . '-' . $p->cheval_id)->flip(),
+        ]);
+
         // For each couple, selections is an array of checked championnat IDs.
         // Unchecked championnats become exclusions.
         foreach ($selections as $coupleKey => $selectedChampionnatIds) {
@@ -769,10 +772,7 @@ class ChampionnatController extends Controller
             // Find all championnats this couple participates in
             $coupleChampionnatIds = [];
             foreach ($championnats as $championnat) {
-                $isParticipant = $championnat->participants()
-                    ->where('cavalier_id', $cavalierId)
-                    ->where('cheval_id', $chevalId)
-                    ->isNotEmpty();
+                $isParticipant = $participantsByChampionnat[$championnat->id]->has($cavalierId . '-' . $chevalId);
 
                 if ($isParticipant) {
                     $coupleChampionnatIds[] = $championnat->id;

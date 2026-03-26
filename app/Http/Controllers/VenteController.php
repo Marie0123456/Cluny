@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\ClientFacturation;
+use App\Http\Traits\HandlesPaiement;
 use App\Models\CommandeRetrait;
 use App\Models\Concours;
 use App\Models\Produit;
@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\DB;
 
 class VenteController extends Controller
 {
+    use HandlesPaiement;
     public function index(Concours $concours)
     {
         $ventes = $concours->ventes()
@@ -67,18 +68,7 @@ class VenteController extends Controller
 
         DB::transaction(function () use ($validated, $concours, $request) {
             $aRetirer = $request->boolean('a_retirer');
-            $clientFacturationId = null;
-            if ($request->boolean('facture') && !empty($validated['nom_facturation'])) {
-                $client = ClientFacturation::updateOrCreateByNom(
-                    $validated['nom_facturation'],
-                    [
-                        'telephone' => $validated['telephone'] ?? null,
-                        'email' => $validated['email'] ?? null,
-                        'adresse' => $validated['adresse'] ?? null,
-                    ]
-                );
-                $clientFacturationId = $client->id;
-            }
+            $clientFacturationId = $this->resolveClientFacturation($validated, $request->boolean('facture'));
 
             $vente = Vente::create([
                 'concours_id' => $concours->id,
@@ -185,18 +175,7 @@ class VenteController extends Controller
         ]);
 
         DB::transaction(function () use ($validated, $vente, $request) {
-            $clientFacturationId = null;
-            if ($request->boolean('facture') && !empty($validated['nom_facturation'])) {
-                $client = ClientFacturation::updateOrCreateByNom(
-                    $validated['nom_facturation'],
-                    [
-                        'telephone' => $validated['telephone'] ?? null,
-                        'email' => $validated['email'] ?? null,
-                        'adresse' => $validated['adresse'] ?? null,
-                    ]
-                );
-                $clientFacturationId = $client->id;
-            }
+            $clientFacturationId = $this->resolveClientFacturation($validated, $request->boolean('facture'));
 
             $vente->update([
                 'nom_client' => $validated['nom_client'],
@@ -270,19 +249,13 @@ class VenteController extends Controller
             ], ';');
 
             foreach ($ventes as $vente) {
-                $moyens = [];
-                if ($vente->paiement_cb) $moyens[] = 'CB';
-                if ($vente->paiement_especes) $moyens[] = 'Especes';
-                if ($vente->paiement_cheque) $moyens[] = 'Cheque';
-                if ($vente->paiement_internet) $moyens[] = 'Internet';
-                if ($vente->paiement_virement) $moyens[] = 'Virement';
-                $paiementStr = implode(', ', $moyens);
+                $paiementStr = $this->getPaiementLabel($vente);
 
                 foreach ($vente->lignes as $index => $ligne) {
                     $tva = (float) $ligne->produit->tva;
-                    $puHt = round($ligne->prix_unitaire_ttc / (1 + $tva / 100), 2);
+                    $puHt = $this->calculateHtFromTtc((float) $ligne->prix_unitaire_ttc, $tva);
                     $totalLigneTtc = (float) $ligne->total_ttc;
-                    $totalLigneHt = round($totalLigneTtc / (1 + $tva / 100), 2);
+                    $totalLigneHt = $this->calculateHtFromTtc($totalLigneTtc, $tva);
 
                     $row = [
                         $index === 0 ? $vente->nom_client : '',

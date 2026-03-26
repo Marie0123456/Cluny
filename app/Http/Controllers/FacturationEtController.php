@@ -3,10 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Enums\ModificationType;
+use App\Http\Traits\HandlesPaiement;
 use App\Models\Concours;
 
 class FacturationEtController extends Controller
 {
+    use HandlesPaiement;
     private function getModifications(Concours $concours)
     {
         return $concours->modifications()
@@ -70,16 +72,9 @@ class FacturationEtController extends Controller
             ], ';');
 
             foreach ($modifications as $mod) {
-                $moyens = [];
-                if ($mod->paiement_cb) $moyens[] = 'CB';
-                if ($mod->paiement_especes) $moyens[] = 'Especes';
-                if ($mod->paiement_cheque) $moyens[] = 'Cheque';
-                if ($mod->paiement_internet) $moyens[] = 'Internet';
-                if ($mod->paiement_virement) $moyens[] = 'Virement';
-
                 $prix = (float) $mod->prix;
                 $pf = (float) $mod->pf;
-                $puHt = $prix > 0 ? round(($prix - $pf) / (1 + config('ehnc.tva_modifications') / 100), 2) : 0;
+                $puHt = $prix > 0 ? $this->calculateModificationHt($prix, $pf) : 0;
 
                 fputcsv($handle, [
                     $mod->engagement->epreuve->numero ?? '-',
@@ -90,7 +85,7 @@ class FacturationEtController extends Controller
                     $mod->pf ? number_format((float) $mod->pf, 2, ',', '') : '',
                     $puHt > 0 ? number_format($puHt, 2, ',', '') : '',
                     $prix > 0 ? number_format($prix, 2, ',', '') : '',
-                    implode(', ', $moyens),
+                    $this->getPaiementLabel($mod),
                     $mod->numero_cheque ?? '',
                     $mod->jour_paiement ? $mod->jour_paiement->format('d/m/Y') : '',
                     $mod->facture ? 'Oui' : 'Non',

@@ -5,15 +5,16 @@ namespace App\Http\Controllers;
 use App\Enums\ModificationType;
 use App\Models\Cavalier;
 use App\Models\Cheval;
-use App\Models\ClientFacturation;
 use App\Models\Concours;
 use App\Models\Engagement;
 use App\Models\Epreuve;
 use App\Models\Modification;
+use App\Http\Traits\HandlesPaiement;
 use Illuminate\Http\Request;
 
 class ModificationController extends Controller
 {
+    use HandlesPaiement;
     public function index(Concours $concours)
     {
         $modifications = $concours->modifications()
@@ -263,18 +264,7 @@ class ModificationController extends Controller
         }
 
         // Handle facturation
-        $clientFacturationId = null;
-        if ($request->boolean('facture') && !empty($validated['nom_facturation'])) {
-            $client = ClientFacturation::updateOrCreateByNom(
-                $validated['nom_facturation'],
-                [
-                    'telephone' => $validated['telephone'] ?? null,
-                    'email' => $validated['email'] ?? null,
-                    'adresse' => $validated['adresse'] ?? null,
-                ]
-            );
-            $clientFacturationId = $client->id;
-        }
+        $clientFacturationId = $this->resolveClientFacturation($validated, $request->boolean('facture'));
 
         // Create modification record
         Modification::create([
@@ -356,18 +346,7 @@ class ModificationController extends Controller
         ]);
 
         // Handle facturation
-        $clientFacturationId = null;
-        if ($request->boolean('facture') && !empty($validated['nom_facturation'])) {
-            $client = ClientFacturation::updateOrCreateByNom(
-                $validated['nom_facturation'],
-                [
-                    'telephone' => $validated['telephone'] ?? null,
-                    'email' => $validated['email'] ?? null,
-                    'adresse' => $validated['adresse'] ?? null,
-                ]
-            );
-            $clientFacturationId = $client->id;
-        }
+        $clientFacturationId = $this->resolveClientFacturation($validated, $request->boolean('facture'));
 
         // 3. Create changement d'epreuve modification linked to NP
         $changementMod = Modification::create([
@@ -441,18 +420,9 @@ class ModificationController extends Controller
             'adresse' => 'nullable|string',
         ]);
 
-        $clientFacturationId = $modification->client_facturation_id;
-        if ($request->boolean('facture') && !empty($validated['nom_facturation'])) {
-            $client = ClientFacturation::updateOrCreateByNom(
-                $validated['nom_facturation'],
-                [
-                    'telephone' => $validated['telephone'] ?? null,
-                    'email' => $validated['email'] ?? null,
-                    'adresse' => $validated['adresse'] ?? null,
-                ]
-            );
-            $clientFacturationId = $client->id;
-        } elseif (!$request->boolean('facture')) {
+        $clientFacturationId = $this->resolveClientFacturation($validated, $request->boolean('facture'))
+            ?? $modification->client_facturation_id;
+        if (!$request->boolean('facture')) {
             $clientFacturationId = null;
         }
 
@@ -488,6 +458,8 @@ class ModificationController extends Controller
 
     public function destroy(Modification $modification)
     {
+        $modification->load('engagement');
+
         if ($modification->type->value === 'changement_cheval' && $modification->ancien_cheval_id) {
             $modification->engagement->update([
                 'cheval_id' => $modification->ancien_cheval_id,
@@ -516,7 +488,7 @@ class ModificationController extends Controller
             $modification->engagement->delete();
             // Cancel the linked NP
             if ($modification->linked_modification_id) {
-                $linked = Modification::find($modification->linked_modification_id);
+                $linked = Modification::with('engagement')->find($modification->linked_modification_id);
                 if ($linked) {
                     $linked->engagement->update(['is_non_partant' => false]);
                     $linked->update(['statut' => 'supprime']);
