@@ -288,7 +288,7 @@
                         {{-- Sauvegarder --}}
                         <div class="flex-1">
                             <p class="text-sm text-gray-500 mb-3">
-                                Télécharger un ZIP contenant toutes les données du concours (fichier de restauration + exports CSV).
+                                Télécharger un fichier JSON contenant toutes les données du concours pour restauration.
                             </p>
                             <a href="{{ route('concours.backup', $concours) }}"
                                 class="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700">
@@ -299,14 +299,14 @@
                         {{-- Restaurer --}}
                         <div class="flex-1">
                             <p class="text-sm text-gray-500 mb-3">
-                                Restaurer le concours depuis un fichier ZIP de sauvegarde. Les données actuelles seront remplacées.
+                                Restaurer le concours depuis un fichier JSON de sauvegarde. Les données actuelles seront remplacées.
                             </p>
                             <form method="POST" action="{{ route('concours.restore', $concours) }}" enctype="multipart/form-data"
                                 onsubmit="return confirm('Attention : la restauration va REMPLACER toutes les données actuelles du concours (épreuves, engagements, modifications, ventes, championnats).\n\nContinuer ?')"
                                 class="sm:flex sm:items-end sm:space-x-3 space-y-2 sm:space-y-0">
                                 @csrf
                                 <div class="flex-1">
-                                    <input type="file" name="backup_file" accept=".zip" required
+                                    <input type="file" name="backup_file" accept=".json" required
                                         class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100">
                                     @error('backup_file') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
                                 </div>

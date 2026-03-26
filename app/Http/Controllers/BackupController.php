@@ -16,60 +16,30 @@ use App\Models\Modification;
 use App\Models\Produit;
 use App\Models\Vente;
 use App\Models\VenteLigne;
-use App\Http\Traits\HandlesPaiement;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use ZipArchive;
 
 class BackupController extends Controller
 {
-    use HandlesPaiement;
 
     public function backup(Concours $concours)
     {
-        $zipFileName = 'backup_' . str_replace(' ', '_', $concours->nom) . '_' . now()->format('Y-m-d_His') . '.zip';
-        $tempZipPath = storage_path('app/' . $zipFileName);
+        $fileName = 'backup_' . str_replace(' ', '_', $concours->nom) . '_' . now()->format('Y-m-d_His') . '.json';
+        $jsonContent = $this->buildBackupJson($concours);
 
-        $zip = new ZipArchive;
-        if ($zip->open($tempZipPath, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
-            return back()->with('error', 'Impossible de créer le fichier ZIP.');
-        }
-
-        // 1. backup.json — complete snapshot for restore
-        $zip->addFromString('backup.json', $this->buildBackupJson($concours));
-
-        // 2. CSV exports
-        $zip->addFromString('export-ventes.csv', $this->buildVentesCsv($concours));
-        $zip->addFromString('export-factures.csv', $this->buildFacturesCsv($concours));
-        $zip->addFromString('export-cavaliers.csv', $this->buildCavaliersCsv($concours));
-        $zip->addFromString('export-clubs.csv', $this->buildClubsCsv($concours));
-
-        $zip->close();
-
-        return response()->download($tempZipPath, $zipFileName, [
-            'Content-Type' => 'application/zip',
-        ])->deleteFileAfterSend(true);
+        return response($jsonContent, 200, [
+            'Content-Type' => 'application/json',
+            'Content-Disposition' => 'attachment; filename="' . $fileName . '"',
+        ]);
     }
 
     public function restore(Request $request, Concours $concours)
     {
         $request->validate([
-            'backup_file' => 'required|file|mimes:zip',
+            'backup_file' => 'required|file|mimes:json,txt',
         ]);
 
-        $zipPath = $request->file('backup_file')->getRealPath();
-        $zip = new ZipArchive;
-
-        if ($zip->open($zipPath) !== true) {
-            return back()->with('error', 'Impossible d\'ouvrir le fichier ZIP.');
-        }
-
-        $jsonContent = $zip->getFromName('backup.json');
-        $zip->close();
-
-        if ($jsonContent === false) {
-            return back()->with('error', 'Le fichier backup.json est introuvable dans le ZIP.');
-        }
+        $jsonContent = file_get_contents($request->file('backup_file')->getRealPath());
 
         $data = json_decode($jsonContent, true);
         if (!$data || !isset($data['concours'])) {
@@ -344,193 +314,4 @@ class BackupController extends Controller
         }
     }
 
-    private function buildVentesCsv(Concours $concours): string
-    {
-        $ventes = $concours->ventes()
-            ->with(['lignes.produit', 'clientFacturation'])
-            ->latest()
-            ->get();
-
-        $output = fopen('php://memory', 'r+');
-        fwrite($output, "\xEF\xBB\xBF");
-
-        fputcsv($output, [
-            'Client', 'Date paiement', 'Produit', 'Qte',
-            'P.U. HT', 'P.U. TTC', 'TVA %',
-            'Total HT', 'Total TTC',
-            'Paiement', 'N° Cheque',
-            'Facture', 'Nom facturation', 'Telephone', 'Email', 'Adresse',
-        ], ';');
-
-        foreach ($ventes as $vente) {
-            $paiementStr = $this->getPaiementLabel($vente);
-
-            foreach ($vente->lignes as $index => $ligne) {
-                $tva = (float) $ligne->produit->tva;
-                $puHt = $this->calculateHtFromTtc((float) $ligne->prix_unitaire_ttc, $tva);
-                $totalLigneTtc = (float) $ligne->total_ttc;
-                $totalLigneHt = $this->calculateHtFromTtc($totalLigneTtc, $tva);
-
-                fputcsv($output, [
-                    $index === 0 ? $vente->nom_client : '',
-                    $index === 0 ? ($vente->jour_paiement ? $vente->jour_paiement->format('d/m/Y') : '') : '',
-                    $ligne->produit->nom,
-                    $ligne->quantite,
-                    number_format($puHt, 2, ',', ''),
-                    number_format((float) $ligne->prix_unitaire_ttc, 2, ',', ''),
-                    number_format($tva, 1, ',', ''),
-                    number_format($totalLigneHt, 2, ',', ''),
-                    number_format($totalLigneTtc, 2, ',', ''),
-                    $index === 0 ? $paiementStr : '',
-                    $index === 0 ? ($vente->numero_cheque ?? '') : '',
-                    $index === 0 ? ($vente->facture ? 'Oui' : 'Non') : '',
-                    $index === 0 ? ($vente->clientFacturation->nom ?? '') : '',
-                    $index === 0 ? ($vente->clientFacturation->telephone ?? '') : '',
-                    $index === 0 ? ($vente->clientFacturation->email ?? '') : '',
-                    $index === 0 ? ($vente->clientFacturation->adresse ?? '') : '',
-                ], ';');
-            }
-        }
-
-        rewind($output);
-        $content = stream_get_contents($output);
-        fclose($output);
-
-        return $content;
-    }
-
-    private function buildFacturesCsv(Concours $concours): string
-    {
-        $clients = ClientFacturation::whereHas('ventes', fn($q) => $q->where('concours_id', $concours->id))
-            ->orWhereHas('modifications', fn($q) => $q->where('concours_id', $concours->id)->where('statut', '!=', 'supprime'))
-            ->orderBy('nom')
-            ->get();
-
-        $output = fopen('php://memory', 'r+');
-        fwrite($output, "\xEF\xBB\xBF");
-
-        $sep = ';';
-        fwrite($output, 'Factures - ' . $concours->nom . "\n");
-        fwrite($output, 'Du ' . $concours->date_debut->format('d/m/Y') . ' au ' . $concours->date_fin->format('d/m/Y') . "\n\n");
-
-        $grandTotalVentes = 0;
-        $grandTotalModifications = 0;
-
-        foreach ($clients as $client) {
-            $ventes = $client->ventes()->where('concours_id', $concours->id)->with('lignes.produit')->latest()->get();
-            $modifications = $client->modifications()->where('concours_id', $concours->id)->where('statut', '!=', 'supprime')
-                ->with(['engagement.epreuve', 'engagement.cavalier', 'engagement.cheval'])->latest()->get();
-            $totalVentes = $ventes->sum('total_ttc');
-            $totalModifications = $modifications->sum('prix');
-            $grandTotalVentes += $totalVentes;
-            $grandTotalModifications += $totalModifications;
-
-            fwrite($output, '=== ' . $client->nom . " ===\n");
-
-            if ($ventes->isNotEmpty()) {
-                fwrite($output, implode($sep, ['Nom facturation', 'Client', 'Produit', 'Qte', 'P.U. TTC', 'TVA %', 'Total HT', 'Total TTC', 'Paiement', 'Date']) . "\n");
-                foreach ($ventes as $vente) {
-                    $paiementStr = $this->getPaiementLabel($vente);
-                    $dateStr = $vente->jour_paiement ? $vente->jour_paiement->format('d/m/Y') : '';
-                    foreach ($vente->lignes as $index => $ligne) {
-                        $totalHt = $this->calculateHtFromTtc((float) $ligne->total_ttc, (float) $ligne->produit->tva);
-                        fwrite($output, implode($sep, [
-                            $index === 0 ? $client->nom : '',
-                            $index === 0 ? $vente->nom_client : '',
-                            $ligne->produit->nom,
-                            $ligne->quantite,
-                            number_format((float) $ligne->prix_unitaire_ttc, 2, ',', ''),
-                            number_format((float) $ligne->produit->tva, 1, ',', ''),
-                            number_format($totalHt, 2, ',', ''),
-                            number_format((float) $ligne->total_ttc, 2, ',', ''),
-                            $index === 0 ? $paiementStr : '',
-                            $index === 0 ? $dateStr : '',
-                        ]) . "\n");
-                    }
-                }
-            }
-
-            if ($modifications->isNotEmpty()) {
-                fwrite($output, implode($sep, ['Nom facturation', 'N. Épreuve', 'Cavalier', 'Cheval', 'Type', 'PF', 'P.U. HT', 'Prix TTC', 'Paiement', 'Date']) . "\n");
-                foreach ($modifications as $index => $mod) {
-                    $puHt = $this->calculateModificationHt((float) $mod->prix, $mod->pf);
-                    fwrite($output, implode($sep, [
-                        $index === 0 ? $client->nom : '',
-                        $mod->engagement->epreuve->numero ?? '-',
-                        trim(($mod->engagement->cavalier->prenom ?? '') . ' ' . ($mod->engagement->cavalier->nom ?? '')),
-                        $mod->engagement->cheval->nom ?? '-',
-                        $mod->type->label(),
-                        $mod->pf !== null ? number_format($mod->pf, 2, ',', '') : '',
-                        $puHt !== null ? number_format($puHt, 2, ',', '') : '',
-                        $mod->prix ? number_format($mod->prix, 2, ',', '') : '',
-                        $this->getPaiementLabel($mod),
-                        $mod->jour_paiement ? $mod->jour_paiement->format('d/m/Y') : '',
-                    ]) . "\n");
-                }
-            }
-
-            fwrite($output, 'Total ' . $client->nom . $sep . $sep . $sep . $sep . $sep . $sep . $sep . number_format($totalVentes + $totalModifications, 2, ',', '') . "\n\n");
-        }
-
-        fwrite($output, 'TOTAL GENERAL VENTES' . $sep . $sep . $sep . $sep . $sep . $sep . $sep . number_format($grandTotalVentes, 2, ',', '') . "\n");
-        fwrite($output, 'TOTAL GENERAL MODIFICATIONS' . $sep . $sep . $sep . $sep . $sep . $sep . $sep . number_format($grandTotalModifications, 2, ',', '') . "\n");
-        fwrite($output, 'TOTAL GENERAL' . $sep . $sep . $sep . $sep . $sep . $sep . $sep . number_format($grandTotalVentes + $grandTotalModifications, 2, ',', '') . "\n");
-
-        rewind($output);
-        $content = stream_get_contents($output);
-        fclose($output);
-
-        return $content;
-    }
-
-    private function buildCavaliersCsv(Concours $concours): string
-    {
-        $cavaliers = DB::table('engagements')
-            ->join('epreuves', 'engagements.epreuve_id', '=', 'epreuves.id')
-            ->join('cavaliers', 'engagements.cavalier_id', '=', 'cavaliers.id')
-            ->where('epreuves.concours_id', $concours->id)
-            ->select('cavaliers.nom', 'cavaliers.prenom', 'cavaliers.club')
-            ->distinct()
-            ->orderBy('cavaliers.nom')
-            ->orderBy('cavaliers.prenom')
-            ->get();
-
-        $output = fopen('php://memory', 'r+');
-        fwrite($output, "\xEF\xBB\xBF");
-        fputcsv($output, ['Nom', 'Prenom', 'Club'], ';');
-        foreach ($cavaliers as $c) {
-            fputcsv($output, [$c->nom, $c->prenom, $c->club ?? ''], ';');
-        }
-        rewind($output);
-        $content = stream_get_contents($output);
-        fclose($output);
-
-        return $content;
-    }
-
-    private function buildClubsCsv(Concours $concours): string
-    {
-        $clubs = DB::table('engagements')
-            ->join('epreuves', 'engagements.epreuve_id', '=', 'epreuves.id')
-            ->join('cavaliers', 'engagements.cavalier_id', '=', 'cavaliers.id')
-            ->where('epreuves.concours_id', $concours->id)
-            ->whereNotNull('cavaliers.club')
-            ->where('cavaliers.club', '!=', '')
-            ->select('cavaliers.club')
-            ->distinct()
-            ->orderBy('cavaliers.club')
-            ->pluck('club');
-
-        $output = fopen('php://memory', 'r+');
-        fwrite($output, "\xEF\xBB\xBF");
-        fputcsv($output, ['Club'], ';');
-        foreach ($clubs as $club) {
-            fputcsv($output, [$club], ';');
-        }
-        rewind($output);
-        $content = stream_get_contents($output);
-        fclose($output);
-
-        return $content;
-    }
 }
