@@ -39,8 +39,8 @@
                     <p class="text-2xl font-bold text-gray-900">{{ number_format($totalPrix, 2, ',', ' ') }} &euro;</p>
                 </div>
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-4">
-                    <p class="text-sm text-gray-500">Total PF</p>
-                    <p class="text-2xl font-bold text-gray-900">{{ number_format($totalPf, 2, ',', ' ') }} &euro;</p>
+                    <p class="text-sm text-gray-500">Paiements non réglés</p>
+                    <p class="text-2xl font-bold {{ $nonRegles > 0 ? 'text-red-600' : 'text-green-600' }}">{{ $nonRegles }}</p>
                 </div>
             </div>
 
@@ -128,10 +128,10 @@
                                                 {{ $mod->type->label() }}
                                             </span>
                                         </td>
-                                        <td class="px-4 py-3 text-sm text-gray-900">
+                                        <td class="px-4 py-3 text-sm text-gray-900 whitespace-nowrap">
                                             {{ $mod->pf ? number_format($mod->pf, 2, ',', ' ') . ' €' : '-' }}
                                         </td>
-                                        <td class="px-4 py-3 text-sm text-gray-500">
+                                        <td class="px-4 py-3 text-sm text-gray-500 whitespace-nowrap">
                                             @if ($mod->prix)
                                                 @php $puHt = round(((float) $mod->prix - (float) $mod->pf) / (1 + config('ehnc.tva_modifications') / 100), 2); @endphp
                                                 {{ number_format($puHt, 2, ',', ' ') }} &euro;
@@ -139,7 +139,7 @@
                                                 -
                                             @endif
                                         </td>
-                                        <td class="px-4 py-3 text-sm text-gray-900 font-medium">
+                                        <td class="px-4 py-3 text-sm text-gray-900 font-medium whitespace-nowrap">
                                             {{ $mod->prix ? number_format($mod->prix, 2, ',', ' ') . ' €' : '-' }}
                                         </td>
                                         <td class="px-4 py-3 text-sm text-gray-500">
@@ -285,10 +285,11 @@
                             <tfoot class="bg-gray-50">
                                 <tr>
                                     <td colspan="4" class="px-4 py-3 text-sm font-bold text-gray-900">Totaux</td>
-                                    <td class="px-4 py-3 text-sm font-bold text-gray-900">{{ number_format($totalPf, 2, ',', ' ') }} &euro;</td>
-                                    <td class="px-4 py-3 text-sm font-bold text-gray-900">{{ number_format(round(($totalPrix - $totalPf) / (1 + config('ehnc.tva_modifications') / 100), 2), 2, ',', ' ') }} &euro;</td>
-                                    <td class="px-4 py-3 text-sm font-bold text-gray-900">{{ number_format($totalPrix, 2, ',', ' ') }} &euro;</td>
-                                    <td colspan="4"></td>
+                                    <td class="px-4 py-3 text-sm font-bold text-gray-900 whitespace-nowrap">{{ number_format($totalPf, 2, ',', ' ') }} &euro;</td>
+                                    <td class="px-4 py-3 text-sm font-bold text-gray-900 whitespace-nowrap">{{ number_format(round(($totalPrix - $totalPf) / (1 + config('ehnc.tva_modifications') / 100), 2), 2, ',', ' ') }} &euro;</td>
+                                    <td class="px-4 py-3 text-sm font-bold text-gray-900 whitespace-nowrap">{{ number_format($totalPrix, 2, ',', ' ') }} &euro;</td>
+                                    <td class="px-4 py-3 text-sm font-bold {{ $nonRegles > 0 ? 'text-red-600' : 'text-green-600' }}">{{ $nonRegles }} non réglé{{ $nonRegles > 1 ? 's' : '' }}</td>
+                                    <td colspan="3"></td>
                                 </tr>
                             </tfoot>
                         </table>
