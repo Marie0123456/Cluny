@@ -46,6 +46,10 @@ class BackupController extends Controller
             return back()->with('error', 'Le fichier backup.json est invalide.');
         }
 
+        // Increase time limit for large restores (default 30s is not enough)
+        set_time_limit(300);
+        DB::disableQueryLog();
+
         DB::transaction(function () use ($concours, $data) {
             // Purge existing data for this concours
             $this->purgeConcoursData($concours);
