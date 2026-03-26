@@ -37,6 +37,10 @@ class Modification extends Model
         'jour_paiement',
         'facture',
         'client_facturation_id',
+        'created_by',
+        'modified_by',
+        'done_by',
+        'done_at',
     ];
 
     protected function casts(): array
@@ -54,6 +58,7 @@ class Modification extends Model
             'paiement_virement' => 'boolean',
             'jour_paiement' => 'date',
             'facture' => 'boolean',
+            'done_at' => 'datetime',
         ];
     }
 
@@ -95,5 +100,20 @@ class Modification extends Model
     public function clientFacturation(): BelongsTo
     {
         return $this->belongsTo(ClientFacturation::class);
+    }
+
+    public function createdByUser(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function modifiedByUser(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'modified_by');
+    }
+
+    public function doneByUser(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'done_by');
     }
 }

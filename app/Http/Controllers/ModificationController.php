@@ -28,6 +28,9 @@ class ModificationController extends Controller
                 'nouveauCavalier:id,nom,prenom,num_licence',
                 'linkedModification.engagement.epreuve:id,numero',
                 'clientFacturation:id,nom,telephone,email,adresse',
+                'createdByUser:id,name',
+                'modifiedByUser:id,name',
+                'doneByUser:id,name',
             ])
             ->join('engagements', 'modifications.engagement_id', '=', 'engagements.id')
             ->join('epreuves', 'engagements.epreuve_id', '=', 'epreuves.id')
@@ -113,6 +116,7 @@ class ModificationController extends Controller
             'ancien_cheval_id' => $ancienChevalId,
             'nouveau_cheval_id' => $nouveauCheval->id,
             'statut' => 'cree',
+            'created_by' => auth()->id(),
         ]);
 
         $engagement->update(['cheval_id' => $nouveauCheval->id]);
@@ -161,6 +165,7 @@ class ModificationController extends Controller
             'ancien_cavalier_id' => $ancienCavalierId,
             'nouveau_cavalier_id' => $nouveauCavalier->id,
             'statut' => 'cree',
+            'created_by' => auth()->id(),
         ]);
 
         $engagement->update(['cavalier_id' => $nouveauCavalier->id]);
@@ -287,6 +292,7 @@ class ModificationController extends Controller
             'facture' => $request->boolean('facture'),
             'client_facturation_id' => $clientFacturationId,
             'statut' => 'cree',
+            'created_by' => auth()->id(),
         ]);
 
         return redirect()->route('concours.modifications.index', $concours)
@@ -331,6 +337,7 @@ class ModificationController extends Controller
             'type' => ModificationType::NON_PARTANT->value,
             'description' => "NP (changement épreuve): {$engagement->cavalier->nom} — Épreuve {$engagement->epreuve->numero}",
             'statut' => 'cree',
+            'created_by' => auth()->id(),
         ]);
 
         // 2. Create new engagement in new epreuve
@@ -370,6 +377,7 @@ class ModificationController extends Controller
             'facture' => $request->boolean('facture'),
             'client_facturation_id' => $clientFacturationId,
             'statut' => 'cree',
+            'created_by' => auth()->id(),
         ]);
 
         // Link NP to changement too
@@ -395,6 +403,7 @@ class ModificationController extends Controller
             'type' => ModificationType::NON_PARTANT->value,
             'description' => "Non-partant: {$engagement->cavalier->prenom} {$engagement->cavalier->nom} — Épreuve {$engagement->epreuve->numero}",
             'statut' => 'cree',
+            'created_by' => auth()->id(),
         ]);
 
         return redirect()->route('concours.modifications.index', $concours)
@@ -444,6 +453,7 @@ class ModificationController extends Controller
             $updateData['statut'] = 'modifie';
         }
 
+        $updateData['modified_by'] = auth()->id();
         $modification->update($updateData);
 
         return redirect()->back()->with('success', 'Paiement mis à jour.');
@@ -451,7 +461,11 @@ class ModificationController extends Controller
 
     public function marquerFait(Modification $modification)
     {
-        $modification->update(['statut' => 'fait']);
+        $modification->update([
+            'statut' => 'fait',
+            'done_by' => auth()->id(),
+            'done_at' => now(),
+        ]);
 
         return redirect()->back()->with('success', 'Modification marquée comme faite.');
     }
