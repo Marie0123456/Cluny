@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\CavalierSearchController;
 use App\Http\Controllers\Api\ChevalSearchController;
 use App\Http\Controllers\Api\ClientFacturationController;
 use App\Http\Controllers\Api\EpreuveController as ApiEpreuveController;
+use App\Http\Controllers\BackupController;
 use App\Http\Controllers\ChampionnatController;
 use App\Http\Controllers\CommandeRetraitController;
 use App\Http\Controllers\ConcoursAccessRequestController;
@@ -68,6 +69,10 @@ Route::middleware(['auth'])->group(function () {
     Route::prefix('concours/{concours}')->name('concours.')->middleware(['concours.access', 'role:admin'])->group(function () {
         Route::post('/import', [ImportController::class, 'store'])->name('import.store');
         Route::delete('/purge', [ConcoursController::class, 'purge'])->name('purge');
+
+        // Backup & Restore
+        Route::get('/backup', [BackupController::class, 'backup'])->name('backup');
+        Route::post('/restore', [BackupController::class, 'restore'])->name('restore');
 
         // Facturation ET
         Route::get('/facturation-et', [FacturationEtController::class, 'index'])->name('facturation-et.index');
