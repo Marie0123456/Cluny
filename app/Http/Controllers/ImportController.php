@@ -21,6 +21,17 @@ class ImportController extends Controller
             'Content-Type' => 'text/csv; charset=UTF-8',
         ]);
     }
+    public function templateCompet(): StreamedResponse
+    {
+        $columns = CsvImportService::TEMPLATE_COLUMNS;
+
+        return response()->streamDownload(function () use ($columns) {
+            echo implode(';', $columns) . "\n";
+        }, 'template_import_compet.csv', [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+        ]);
+    }
+
     public function store(Request $request, Concours $concours)
     {
         if (! auth()->user()->isAdmin()) {

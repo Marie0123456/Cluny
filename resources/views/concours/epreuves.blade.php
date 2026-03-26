@@ -253,13 +253,17 @@
                             Importer
                         </button>
                     </form>
-                    @if ($concours->type_ffe_sif)
-                        <div class="mt-3">
+                    <div class="mt-3">
+                        @if ($concours->type_ffe_sif)
                             <a href="{{ route('import.template-sif') }}" class="text-sm text-indigo-600 hover:text-indigo-800 underline">
                                 Télécharger le template CSV vide
                             </a>
-                        </div>
-                    @endif
+                        @else
+                            <a href="{{ route('import.template-compet') }}" class="text-sm text-indigo-600 hover:text-indigo-800 underline">
+                                Télécharger le template CSV vide
+                            </a>
+                        @endif
+                    </div>
 
                     @if ($concours->engagements_count > 0)
                         <div class="mt-4 pt-4 border-t border-gray-200">

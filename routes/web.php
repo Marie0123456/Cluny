@@ -62,6 +62,7 @@ Route::middleware(['auth'])->group(function () {
 
     // Template CSV download
     Route::get('/import/template-sif', [ImportController::class, 'templateSif'])->name('import.template-sif');
+    Route::get('/import/template-compet', [ImportController::class, 'templateCompet'])->name('import.template-compet');
 
     // Concours sub-pages (admin seulement)
     Route::prefix('concours/{concours}')->name('concours.')->middleware(['concours.access', 'role:admin'])->group(function () {
