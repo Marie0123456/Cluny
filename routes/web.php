@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\ClientFacturationController;
 use App\Http\Controllers\Api\EpreuveController as ApiEpreuveController;
 use App\Http\Controllers\ChampionnatController;
 use App\Http\Controllers\CommandeRetraitController;
+use App\Http\Controllers\ConcoursAccessRequestController;
 use App\Http\Controllers\ConcoursController;
 use App\Http\Controllers\EngageController;
 use App\Http\Controllers\EpreuveController;
@@ -27,6 +28,9 @@ Route::get('/', function () {
 Route::middleware(['auth'])->group(function () {
     // Dashboard — Mes Concours
     Route::get('/dashboard', [ConcoursController::class, 'dashboard'])->name('dashboard');
+
+    // Demandes d'acces aux concours
+    Route::post('/access-requests', [ConcoursAccessRequestController::class, 'store'])->name('access-requests.store');
 
     // Concours — création/modification/suppression (admin seulement)
     // NB : ces routes doivent être déclarées AVANT index/show pour que
@@ -138,6 +142,11 @@ Route::middleware(['auth'])->group(function () {
         Route::post('users/{user}/reset-password', [UserController::class, 'resetPassword'])->name('users.reset-password');
         Route::resource('produits', ProduitController::class)->except(['show', 'destroy']);
         Route::patch('produits/{produit}/toggle', [ProduitController::class, 'toggleActif'])->name('produits.toggle');
+
+        // Demandes d'acces
+        Route::get('access-requests', [ConcoursAccessRequestController::class, 'index'])->name('access-requests.index');
+        Route::post('access-requests/{concoursAccessRequest}/approve', [ConcoursAccessRequestController::class, 'approve'])->name('access-requests.approve');
+        Route::post('access-requests/{concoursAccessRequest}/reject', [ConcoursAccessRequestController::class, 'reject'])->name('access-requests.reject');
     });
 
     // Profile (Breeze)

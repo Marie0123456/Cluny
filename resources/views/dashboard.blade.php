@@ -22,7 +22,12 @@
 
             @if ($concoursFuturs->isEmpty() && $concoursPasses->isEmpty())
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 text-center text-gray-500">
-                    Aucun concours pour le moment.
+                    @cannot('admin')
+                        <p class="mb-2 text-lg font-medium text-gray-700">Vous n'avez acces a aucun concours.</p>
+                        <p>Vous pouvez demander l'acces a un concours ci-dessous, un administrateur validera votre demande.</p>
+                    @else
+                        Aucun concours pour le moment.
+                    @endcannot
                 </div>
             @endif
 
@@ -97,6 +102,46 @@
                     @endforeach
                 </div>
             @endif
+            {{-- Demander acces (non-admin seulement) --}}
+            @cannot('admin')
+                @if ($availableConcours->isNotEmpty())
+                    <h3 class="text-lg font-semibold text-gray-700 mb-4 mt-10">Demander l'acces a un concours</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        @foreach ($availableConcours as $c)
+                            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg border border-dashed border-gray-300">
+                                <div class="p-6">
+                                    <div class="flex justify-between items-start mb-2">
+                                        <h4 class="text-lg font-semibold text-gray-900">{{ $c->nom }}</h4>
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                            @if($c->discipline->value === 'CSO') bg-blue-100 text-blue-800
+                                            @elseif($c->discipline->value === 'Dressage') bg-purple-100 text-purple-800
+                                            @else bg-gray-100 text-gray-800 @endif">
+                                            {{ $c->discipline->value }}
+                                        </span>
+                                    </div>
+                                    <p class="text-sm text-gray-600 mb-4">
+                                        {{ $c->date_debut->format('d/m/Y') }} - {{ $c->date_fin->format('d/m/Y') }}
+                                    </p>
+
+                                    @if (in_array($c->id, $pendingRequestIds))
+                                        <span class="inline-flex items-center px-3 py-1.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">
+                                            Demande en attente...
+                                        </span>
+                                    @else
+                                        <form method="POST" action="{{ route('access-requests.store') }}">
+                                            @csrf
+                                            <input type="hidden" name="concours_id" value="{{ $c->id }}">
+                                            <button type="submit" class="inline-flex items-center px-3 py-1.5 bg-indigo-600 border border-transparent rounded text-xs font-semibold text-white uppercase tracking-widest hover:bg-indigo-700 transition">
+                                                Demander l'acces
+                                            </button>
+                                        </form>
+                                    @endif
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                @endif
+            @endcannot
         </div>
     </div>
 </x-app-layout>
