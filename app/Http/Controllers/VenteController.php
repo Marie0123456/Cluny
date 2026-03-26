@@ -17,7 +17,7 @@ class VenteController extends Controller
     public function index(Concours $concours)
     {
         $ventes = $concours->ventes()
-            ->with(['lignes.produit', 'clientFacturation'])
+            ->with(['lignes.produit', 'clientFacturation', 'createdByUser:id,name', 'modifiedByUser:id,name'])
             ->latest()
             ->get();
 
@@ -84,6 +84,7 @@ class VenteController extends Controller
                 'client_facturation_id' => $clientFacturationId,
                 'commentaire' => $validated['commentaire'] ?? null,
                 'total_ttc' => 0,
+                'created_by' => auth()->id(),
             ]);
 
             foreach ($validated['lignes'] as $ligne) {
@@ -133,7 +134,7 @@ class VenteController extends Controller
 
     public function show(Vente $vente)
     {
-        $vente->load('lignes.produit', 'clientFacturation', 'concours');
+        $vente->load('lignes.produit', 'clientFacturation', 'concours', 'createdByUser:id,name', 'modifiedByUser:id,name');
 
         return view('concours.ventes.show', compact('vente'));
     }
@@ -189,6 +190,7 @@ class VenteController extends Controller
                 'facture' => $request->boolean('facture'),
                 'client_facturation_id' => $clientFacturationId,
                 'commentaire' => $validated['commentaire'] ?? null,
+                'modified_by' => auth()->id(),
             ]);
 
             $vente->lignes()->delete();

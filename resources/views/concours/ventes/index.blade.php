@@ -106,7 +106,9 @@
                                             'nom_facturation' => $vente->clientFacturation->nom ?? '',
                                         ]) }})" class="{{ $loop->first ? 'border-t-2 border-gray-300' : '' }}">
                                             @if ($loop->first)
-                                                <td class="px-4 py-3 text-sm font-medium text-gray-900" rowspan="{{ $ligneCount }}">{{ $vente->nom_client }}</td>
+                                                <td class="px-4 py-3 text-sm font-medium text-gray-900" rowspan="{{ $ligneCount }}">
+                                                    <span class="cursor-help" title="Créé par {{ $vente->createdByUser->name ?? 'inconnu' }} le {{ $vente->created_at->format('d/m/Y à H:i') }}{{ $vente->modifiedByUser ? ' — Modifié par ' . $vente->modifiedByUser->name . ' le ' . $vente->updated_at->format('d/m/Y à H:i') : '' }}">{{ $vente->nom_client }}</span>
+                                                </td>
                                                 <td class="px-4 py-3 text-sm text-gray-500" rowspan="{{ $ligneCount }}">{{ $vente->jour_paiement ? $vente->jour_paiement->format('d/m/Y') : '-' }}</td>
                                             @endif
                                             <td class="px-4 py-3 text-sm text-gray-900">{{ $ligne->produit->nom }}</td>

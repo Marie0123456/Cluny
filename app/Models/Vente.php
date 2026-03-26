@@ -25,6 +25,8 @@ class Vente extends Model
         'client_facturation_id',
         'commentaire',
         'total_ttc',
+        'created_by',
+        'modified_by',
     ];
 
     protected function casts(): array
@@ -54,6 +56,16 @@ class Vente extends Model
     public function lignes(): HasMany
     {
         return $this->hasMany(VenteLigne::class);
+    }
+
+    public function createdByUser(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function modifiedByUser(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'modified_by');
     }
 
     public function recalculerTotal(): void

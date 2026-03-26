@@ -99,7 +99,10 @@
                                             class="inline-flex items-center px-3 py-1 rounded-md text-xs font-semibold transition
                                                 {{ $commande->retire
                                                     ? 'bg-green-100 text-green-800 hover:bg-green-200'
-                                                    : 'bg-gray-100 text-gray-800 hover:bg-gray-200' }}">
+                                                    : 'bg-gray-100 text-gray-800 hover:bg-gray-200' }}"
+                                            @if ($commande->retire && $commande->retiredByUser)
+                                                title="Retiré par {{ $commande->retiredByUser->name }} le {{ $commande->retired_at?->format('d/m/Y à H:i') }}"
+                                            @endif>
                                             {{ $commande->retire ? 'Retiré' : 'A retirer' }}
                                         </button>
                                     </form>
@@ -149,7 +152,10 @@
                                                     class="inline-flex items-center px-3 py-1 rounded-md text-xs font-semibold transition
                                                         {{ $commande->retire
                                                             ? 'bg-green-100 text-green-800 hover:bg-green-200'
-                                                            : 'bg-gray-100 text-gray-800 hover:bg-gray-200' }}">
+                                                            : 'bg-gray-100 text-gray-800 hover:bg-gray-200' }}"
+                                                    @if ($commande->retire && $commande->retiredByUser)
+                                                        title="Retiré par {{ $commande->retiredByUser->name }} le {{ $commande->retired_at?->format('d/m/Y à H:i') }}"
+                                                    @endif>
                                                     {{ $commande->retire ? 'Retiré' : 'A retirer' }}
                                                 </button>
                                             </form>
