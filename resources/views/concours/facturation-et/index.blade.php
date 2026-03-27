@@ -18,7 +18,7 @@
 
             @include('concours.partials.tabs', ['active' => 'facturation-et'])
 
-            <div class="flex justify-between items-center mb-4">
+            <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4">
                 <h3 class="text-lg font-medium text-gray-900">Facturation ET</h3>
                 @if ($modifications->isNotEmpty())
                     <a href="{{ route('concours.facturation-et.export-csv', $concours) }}"

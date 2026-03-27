@@ -18,9 +18,9 @@
 
             @include('concours.partials.tabs', ['active' => 'ventes'])
 
-            <div class="flex justify-between items-center mb-4">
+            <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4">
                 <h3 class="text-lg font-medium text-gray-900">Ventes</h3>
-                <div class="flex gap-3">
+                <div class="flex flex-wrap gap-3">
                     @if ($ventes->isNotEmpty())
                         <a href="{{ route('concours.ventes.export-csv', $concours) }}"
                             class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 transition">
@@ -41,7 +41,7 @@
                     </div>
                 @else
                     <!-- Filtres -->
-                    <div class="px-4 pt-4 pb-2 grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <div class="px-4 pt-4 pb-2 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
                         <div>
                             <label class="block text-xs font-medium text-gray-500 mb-1">Client</label>
                             <input type="text" x-model="filterClient" placeholder="Nom du client..."

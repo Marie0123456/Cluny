@@ -56,11 +56,11 @@
                 open: false,
                 cheque: false
             }">
-                <div class="flex items-center justify-between">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                     <h3 class="text-lg font-medium text-gray-900">Paiement global</h3>
                     <button type="button" @click="open = !open"
                         class="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
-                        <span x-text="open ? 'Fermer' : 'Modifier le paiement de toutes les lignes'"></span>
+                        <span x-text="open ? 'Fermer' : 'Modifier le paiement'"></span>
                     </button>
                 </div>
 
