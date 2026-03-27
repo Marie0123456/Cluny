@@ -10,11 +10,11 @@
             </div>
             @can('admin')
                 <div class="flex space-x-2">
-                    <a href="{{ route('concours.backup', $concours) }}" class="inline-flex items-center px-3 py-2 bg-green-600 border border-transparent rounded-md text-xs font-semibold text-white uppercase hover:bg-green-700">
-                        Sauvegarder
-                    </a>
                     <a href="{{ route('concours.edit', $concours) }}" class="inline-flex items-center px-3 py-2 bg-white border border-gray-300 rounded-md text-xs font-semibold text-gray-700 uppercase hover:bg-gray-50">
                         Modifier
+                    </a>
+                    <a href="{{ route('concours.backup', $concours) }}" class="inline-flex items-center px-3 py-2 bg-green-600 border border-transparent rounded-md text-xs font-semibold text-white uppercase hover:bg-green-700">
+                        Sauvegarder
                     </a>
                     <form method="POST" action="{{ route('concours.destroy', $concours) }}" onsubmit="return confirm('Supprimer ce concours ?')">
                         @csrf
