@@ -62,6 +62,47 @@ class BackupController extends Controller
             ->with('success', 'Concours restauré avec succès depuis la sauvegarde.');
     }
 
+    public function restoreAsNew(Request $request)
+    {
+        $request->validate([
+            'backup_file' => 'required|file|mimes:json,txt',
+        ]);
+
+        $jsonContent = file_get_contents($request->file('backup_file')->getRealPath());
+
+        $data = json_decode($jsonContent, true);
+        if (!$data || !isset($data['concours'])) {
+            return back()->with('error', 'Le fichier de sauvegarde est invalide.');
+        }
+
+        set_time_limit(300);
+        DB::disableQueryLog();
+
+        $concours = null;
+
+        DB::transaction(function () use ($data, &$concours) {
+            $concoursData = $data['concours'];
+
+            $concours = Concours::create([
+                'nom' => $concoursData['nom'],
+                'date_debut' => $concoursData['date_debut'],
+                'date_fin' => $concoursData['date_fin'],
+                'discipline' => $concoursData['discipline'],
+                'type_ffe_sif' => $concoursData['type_ffe_sif'] ?? false,
+                'type_ffe_compet' => $concoursData['type_ffe_compet'] ?? false,
+                'grand_national' => $concoursData['grand_national'] ?? false,
+            ]);
+
+            // Assign the current user to the concours
+            $concours->users()->attach(auth()->id());
+
+            $this->restoreFromData($concours, $data);
+        });
+
+        return redirect()->route('concours.epreuves.index', $concours)
+            ->with('success', 'Concours restauré avec succès depuis la sauvegarde.');
+    }
+
     private function buildBackupJson(Concours $concours): string
     {
         // Load all related data

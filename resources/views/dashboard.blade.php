@@ -5,9 +5,32 @@
                 Mes Concours
             </h2>
             @can('admin')
-                <a href="{{ route('concours.create') }}" class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 transition">
-                    + Nouveau concours
-                </a>
+                <div class="flex items-center space-x-3">
+                    <a href="{{ route('concours.create') }}" class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 transition">
+                        + Nouveau concours
+                    </a>
+                    <div x-data="{ open: false }" class="relative">
+                        <button @click="open = !open" type="button" class="inline-flex items-center px-4 py-2 bg-orange-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-orange-700 transition">
+                            Restaurer
+                        </button>
+                        <div x-show="open" @click.away="open = false" x-transition
+                            class="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 p-4 z-50">
+                            <p class="text-sm text-gray-500 mb-3">
+                                Créer un concours depuis un fichier de sauvegarde JSON.
+                            </p>
+                            <form method="POST" action="{{ route('concours.restore-new') }}" enctype="multipart/form-data"
+                                onsubmit="return confirm('Un nouveau concours sera créé à partir de la sauvegarde.\n\nContinuer ?')">
+                                @csrf
+                                <input type="file" name="backup_file" accept=".json" required
+                                    class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100 mb-3">
+                                <button type="submit"
+                                    class="w-full inline-flex items-center justify-center px-4 py-2 bg-orange-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-orange-700">
+                                    Restaurer
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
             @endcan
         </div>
     </x-slot>
@@ -17,6 +40,11 @@
             @if (session('success'))
                 <div class="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">
                     {{ session('success') }}
+                </div>
+            @endif
+            @if (session('error'))
+                <div class="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+                    {{ session('error') }}
                 </div>
             @endif
 

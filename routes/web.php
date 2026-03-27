@@ -40,6 +40,9 @@ Route::middleware(['auth'])->group(function () {
         Route::resource('concours', ConcoursController::class)
             ->parameters(['concours' => 'concours'])
             ->except(['index', 'show']);
+
+        // Restaurer un concours depuis une sauvegarde (crée un nouveau concours)
+        Route::post('concours-restore', [BackupController::class, 'restoreAsNew'])->name('concours.restore-new');
     });
 
     // Concours — consultation (tous les utilisateurs)
