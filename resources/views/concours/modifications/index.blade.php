@@ -550,7 +550,7 @@
                         <!-- Step 6: Jour de paiement -->
                         <div x-show="chevalId || (isNouveauCheval && nouveauChevalNom)">
                             <label class="block text-sm font-medium text-gray-700 mb-1">Jour de paiement (optionnel)</label>
-                            <input type="date" name="jour_paiement"
+                            <input type="date" name="jour_paiement" value="{{ now()->format('Y-m-d') }}"
                                 class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                         </div>
 
@@ -780,7 +780,7 @@
                         <!-- Step 6: Jour de paiement -->
                         <div x-show="nouvelleEpreuveId && nouvelleEpreuveId != epreuveId">
                             <label class="block text-sm font-medium text-gray-700 mb-1">Jour de paiement (optionnel)</label>
-                            <input type="date" name="jour_paiement"
+                            <input type="date" name="jour_paiement" value="{{ now()->format('Y-m-d') }}"
                                 class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                         </div>
 
