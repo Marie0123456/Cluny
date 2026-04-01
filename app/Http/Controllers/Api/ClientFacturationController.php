@@ -16,7 +16,7 @@ class ClientFacturationController extends Controller
             return response()->json([]);
         }
 
-        $clients = ClientFacturation::whereRaw('LOWER(nom) LIKE ?', ['%' . mb_strtolower($query) . '%'])
+        $clients = ClientFacturation::where('nom', 'LIKE', '%' . $query . '%')
             ->limit(10)
             ->get(['id', 'nom', 'telephone', 'email', 'adresse']);
 

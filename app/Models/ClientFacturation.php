@@ -24,7 +24,7 @@ class ClientFacturation extends Model
      */
     public static function updateOrCreateByNom(string $nom, array $attributes = []): self
     {
-        $client = static::whereRaw('LOWER(nom) = ?', [mb_strtolower($nom)])->first();
+        $client = static::where('nom', $nom)->first();
 
         if ($client) {
             $client->update(array_filter($attributes, fn ($v) => $v !== null));

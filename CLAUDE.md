@@ -7,10 +7,10 @@ Application web de **gestion de concours équestres** (EHNC - Equivallée Haras 
 ## Stack technique
 
 - **Backend** : Laravel 11.31, PHP 8.4+
-- **Base de données** : PostgreSQL (pgsql)
+- **Base de données** : MySQL (mysql)
 - **Frontend** : Blade + Alpine.js 3.4.2 + Tailwind CSS 3.1
 - **Build** : Vite 6.0.11
-- **Déploiement** : Railway.app (configuré dans `railway.toml`)
+- **Déploiement** : Fortrabbit (hébergeur Laravel spécialisé, Allemagne)
 - **Auth** : Laravel Breeze
 
 ## Commandes essentielles
@@ -190,7 +190,7 @@ Vente    ──────── (1) ClientFacturation
 
 ### Performance
 - Problèmes N+1 potentiels dans `ModificationController`, `ChampionnatController`, `FactureController`
-- Requêtes SQL brutes spécifiques PostgreSQL (`SPLIT_PART`, `CAST`, `LOWER()`) limitant la portabilité
+- ~~Requêtes SQL brutes spécifiques PostgreSQL~~ → Migrées vers MySQL (`CAST AS UNSIGNED`, `SUBSTRING_INDEX`, collation case-insensitive)
 - Index manquants sur certaines clés étrangères
 
 ### Qualité de code
@@ -214,9 +214,9 @@ Vente    ──────── (1) ClientFacturation
 APP_NAME=EHNC_Concours
 APP_ENV=production
 APP_KEY=                    # Généré avec php artisan key:generate
-DB_CONNECTION=pgsql
+DB_CONNECTION=mysql
 DB_HOST=
-DB_PORT=5432
+DB_PORT=3306
 DB_DATABASE=
 DB_USERNAME=
 DB_PASSWORD=
