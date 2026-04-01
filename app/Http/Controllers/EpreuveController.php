@@ -20,7 +20,7 @@ class EpreuveController extends Controller
                     $query->where('is_non_partant', true);
                 },
             ])
-            ->orderByRaw('CAST(numero AS INTEGER), numero')
+            ->orderByRaw('CAST(numero AS UNSIGNED), numero')
             ->get();
 
         return view('concours.epreuves', compact('concours', 'epreuves'));

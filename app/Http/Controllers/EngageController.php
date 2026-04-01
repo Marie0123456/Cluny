@@ -13,7 +13,7 @@ class EngageController extends Controller
                 $query->withCount('modifications')->with(['cavalier', 'cheval']);
             }])
             ->orderBy('date')
-            ->orderByRaw('CAST(numero AS INTEGER), numero')
+            ->orderByRaw('CAST(numero AS UNSIGNED), numero')
             ->get();
 
         $epreuvesByDate = $epreuves->groupBy(fn($e) => $e->date ? $e->date->format('Y-m-d') : 'sans_date');
