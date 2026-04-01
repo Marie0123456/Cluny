@@ -182,9 +182,11 @@ class VenteController extends Controller
             'lignes' => 'required|array|min:1',
             'lignes.*.produit_id' => 'required|exists:produits,id',
             'lignes.*.quantite' => 'required|integer|min:1',
+            'a_retirer' => 'boolean',
         ]);
 
         DB::transaction(function () use ($validated, $vente, $request) {
+            $aRetirer = $request->boolean('a_retirer');
             $clientFacturationId = null;
             if ($request->boolean('facture') && !empty($validated['nom_facturation'])) {
                 $client = ClientFacturation::updateOrCreateByNom(
@@ -228,6 +230,31 @@ class VenteController extends Controller
             }
 
             $vente->recalculerTotal();
+
+            if ($aRetirer) {
+                $today = now()->format('Y-m-d');
+                $maxSeq = CommandeRetrait::where('numero_commande', 'like', $today . '-%')
+                    ->selectRaw("MAX(CAST(SUBSTRING_INDEX(numero_commande, '-', -1) AS UNSIGNED)) as max_seq")
+                    ->value('max_seq');
+
+                $nextSeq = ($maxSeq ?? 0) + 1;
+
+                foreach ($validated['lignes'] as $ligne) {
+                    $produit = Produit::find($ligne['produit_id']);
+                    CommandeRetrait::create([
+                        'concours_id' => $vente->concours_id,
+                        'numero_commande' => $today . '-' . $nextSeq,
+                        'date_commande' => $today,
+                        'prenom' => '',
+                        'nom' => $validated['nom_client'],
+                        'produit' => $produit->nom,
+                        'quantite' => $ligne['quantite'],
+                        'emplacement_boxes' => null,
+                        'retire' => false,
+                    ]);
+                    $nextSeq++;
+                }
+            }
         });
 
         return redirect()->route('concours.ventes.index', $vente->concours)
