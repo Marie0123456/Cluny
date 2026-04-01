@@ -344,7 +344,7 @@
             const data = @json($caisseData);
 
             return {
-                caisseJour: '',
+                caisseJour: new Date().toISOString().slice(0, 10),
                 caissePaiement: '',
 
                 get caisseFiltered() {

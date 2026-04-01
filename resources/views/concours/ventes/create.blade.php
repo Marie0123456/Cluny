@@ -72,7 +72,7 @@
                     <!-- Jour de paiement -->
                     <div class="mb-6">
                         <x-input-label for="jour_paiement" value="Jour de paiement (optionnel)" />
-                        <x-text-input id="jour_paiement" name="jour_paiement" type="date" class="mt-1 block w-full" />
+                        <x-text-input id="jour_paiement" name="jour_paiement" type="date" class="mt-1 block w-full" value="{{ now()->format('Y-m-d') }}" />
                     </div>
 
                     <!-- Moyens de paiement -->
