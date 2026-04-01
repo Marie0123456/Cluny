@@ -13,6 +13,29 @@ use Illuminate\Support\Facades\DB;
 
 class CsvImportService
 {
+    public const TEMPLATE_COLUMNS = [
+        'Epreuve_numero',
+        'Epreuve_nom',
+        'Epreuve_date',
+        'Num_depart',
+        'Nom',
+        'Prenom',
+        'Role_cavalier',
+        'Licence',
+        'Club',
+        'CRE',
+        'Departement',
+        'Num_dept',
+        'Dept_groom',
+        'Cheval',
+        'Role_cheval',
+        'SIRE',
+        'Age',
+        'Sexe',
+        'Robe',
+        'Race',
+    ];
+
     public function import(Concours $concours, UploadedFile $file): array
     {
         $content = file_get_contents($file->getRealPath());

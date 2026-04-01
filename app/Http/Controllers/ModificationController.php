@@ -5,15 +5,16 @@ namespace App\Http\Controllers;
 use App\Enums\ModificationType;
 use App\Models\Cavalier;
 use App\Models\Cheval;
-use App\Models\ClientFacturation;
 use App\Models\Concours;
 use App\Models\Engagement;
 use App\Models\Epreuve;
 use App\Models\Modification;
+use App\Http\Traits\HandlesPaiement;
 use Illuminate\Http\Request;
 
 class ModificationController extends Controller
 {
+    use HandlesPaiement;
     public function index(Concours $concours)
     {
         $modifications = $concours->modifications()
@@ -27,6 +28,9 @@ class ModificationController extends Controller
                 'nouveauCavalier:id,nom,prenom,num_licence',
                 'linkedModification.engagement.epreuve:id,numero',
                 'clientFacturation:id,nom,telephone,email,adresse',
+                'createdByUser:id,name',
+                'modifiedByUser:id,name',
+                'doneByUser:id,name',
             ])
             ->join('engagements', 'modifications.engagement_id', '=', 'engagements.id')
             ->join('epreuves', 'engagements.epreuve_id', '=', 'epreuves.id')
@@ -112,6 +116,7 @@ class ModificationController extends Controller
             'ancien_cheval_id' => $ancienChevalId,
             'nouveau_cheval_id' => $nouveauCheval->id,
             'statut' => 'cree',
+            'created_by' => auth()->id(),
         ]);
 
         $engagement->update(['cheval_id' => $nouveauCheval->id]);
@@ -160,6 +165,7 @@ class ModificationController extends Controller
             'ancien_cavalier_id' => $ancienCavalierId,
             'nouveau_cavalier_id' => $nouveauCavalier->id,
             'statut' => 'cree',
+            'created_by' => auth()->id(),
         ]);
 
         $engagement->update(['cavalier_id' => $nouveauCavalier->id]);
@@ -263,18 +269,7 @@ class ModificationController extends Controller
         }
 
         // Handle facturation
-        $clientFacturationId = null;
-        if ($request->boolean('facture') && !empty($validated['nom_facturation'])) {
-            $client = ClientFacturation::updateOrCreateByNom(
-                $validated['nom_facturation'],
-                [
-                    'telephone' => $validated['telephone'] ?? null,
-                    'email' => $validated['email'] ?? null,
-                    'adresse' => $validated['adresse'] ?? null,
-                ]
-            );
-            $clientFacturationId = $client->id;
-        }
+        $clientFacturationId = $this->resolveClientFacturation($validated, $request->boolean('facture'));
 
         // Create modification record
         Modification::create([
@@ -297,6 +292,7 @@ class ModificationController extends Controller
             'facture' => $request->boolean('facture'),
             'client_facturation_id' => $clientFacturationId,
             'statut' => 'cree',
+            'created_by' => auth()->id(),
         ]);
 
         return redirect()->route('concours.modifications.index', $concours)
@@ -341,6 +337,7 @@ class ModificationController extends Controller
             'type' => ModificationType::NON_PARTANT->value,
             'description' => "NP (changement épreuve): {$engagement->cavalier->nom} — Épreuve {$engagement->epreuve->numero}",
             'statut' => 'cree',
+            'created_by' => auth()->id(),
         ]);
 
         // 2. Create new engagement in new epreuve
@@ -356,18 +353,7 @@ class ModificationController extends Controller
         ]);
 
         // Handle facturation
-        $clientFacturationId = null;
-        if ($request->boolean('facture') && !empty($validated['nom_facturation'])) {
-            $client = ClientFacturation::updateOrCreateByNom(
-                $validated['nom_facturation'],
-                [
-                    'telephone' => $validated['telephone'] ?? null,
-                    'email' => $validated['email'] ?? null,
-                    'adresse' => $validated['adresse'] ?? null,
-                ]
-            );
-            $clientFacturationId = $client->id;
-        }
+        $clientFacturationId = $this->resolveClientFacturation($validated, $request->boolean('facture'));
 
         // 3. Create changement d'epreuve modification linked to NP
         $changementMod = Modification::create([
@@ -391,6 +377,7 @@ class ModificationController extends Controller
             'facture' => $request->boolean('facture'),
             'client_facturation_id' => $clientFacturationId,
             'statut' => 'cree',
+            'created_by' => auth()->id(),
         ]);
 
         // Link NP to changement too
@@ -416,6 +403,7 @@ class ModificationController extends Controller
             'type' => ModificationType::NON_PARTANT->value,
             'description' => "Non-partant: {$engagement->cavalier->prenom} {$engagement->cavalier->nom} — Épreuve {$engagement->epreuve->numero}",
             'statut' => 'cree',
+            'created_by' => auth()->id(),
         ]);
 
         return redirect()->route('concours.modifications.index', $concours)
@@ -441,18 +429,9 @@ class ModificationController extends Controller
             'adresse' => 'nullable|string',
         ]);
 
-        $clientFacturationId = $modification->client_facturation_id;
-        if ($request->boolean('facture') && !empty($validated['nom_facturation'])) {
-            $client = ClientFacturation::updateOrCreateByNom(
-                $validated['nom_facturation'],
-                [
-                    'telephone' => $validated['telephone'] ?? null,
-                    'email' => $validated['email'] ?? null,
-                    'adresse' => $validated['adresse'] ?? null,
-                ]
-            );
-            $clientFacturationId = $client->id;
-        } elseif (!$request->boolean('facture')) {
+        $clientFacturationId = $this->resolveClientFacturation($validated, $request->boolean('facture'))
+            ?? $modification->client_facturation_id;
+        if (!$request->boolean('facture')) {
             $clientFacturationId = null;
         }
 
@@ -474,6 +453,7 @@ class ModificationController extends Controller
             $updateData['statut'] = 'modifie';
         }
 
+        $updateData['modified_by'] = auth()->id();
         $modification->update($updateData);
 
         return redirect()->back()->with('success', 'Paiement mis à jour.');
@@ -481,13 +461,19 @@ class ModificationController extends Controller
 
     public function marquerFait(Modification $modification)
     {
-        $modification->update(['statut' => 'fait']);
+        $modification->update([
+            'statut' => 'fait',
+            'done_by' => auth()->id(),
+            'done_at' => now(),
+        ]);
 
         return redirect()->back()->with('success', 'Modification marquée comme faite.');
     }
 
     public function destroy(Modification $modification)
     {
+        $modification->load('engagement');
+
         if ($modification->type->value === 'changement_cheval' && $modification->ancien_cheval_id) {
             $modification->engagement->update([
                 'cheval_id' => $modification->ancien_cheval_id,
@@ -516,7 +502,7 @@ class ModificationController extends Controller
             $modification->engagement->delete();
             // Cancel the linked NP
             if ($modification->linked_modification_id) {
-                $linked = Modification::find($modification->linked_modification_id);
+                $linked = Modification::with('engagement')->find($modification->linked_modification_id);
                 if ($linked) {
                     $linked->engagement->update(['is_non_partant' => false]);
                     $linked->update(['statut' => 'supprime']);

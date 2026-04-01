@@ -7,7 +7,6 @@ use App\Http\Controllers\Controller;
 use App\Models\Concours;
 use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules;
 
@@ -37,7 +36,7 @@ class UserController extends Controller
         User::create([
             'name' => $validated['name'],
             'email' => $validated['email'],
-            'password' => Hash::make($validated['password']),
+            'password' => $validated['password'],
             'role' => $validated['role'],
         ]);
 
@@ -70,7 +69,7 @@ class UserController extends Controller
         ]);
 
         if (! empty($validated['password'])) {
-            $user->update(['password' => Hash::make($validated['password'])]);
+            $user->update(['password' => $validated['password']]);
         }
 
         return redirect()->route('admin.users.index')
@@ -111,7 +110,7 @@ class UserController extends Controller
         }
 
         $newPassword = Str::random(12);
-        $user->update(['password' => Hash::make($newPassword)]);
+        $user->update(['password' => $newPassword]);
 
         return redirect()->route('admin.users.edit', $user)
             ->with('success', 'Mot de passe réinitialisé : ' . $newPassword);

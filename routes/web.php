@@ -6,8 +6,10 @@ use App\Http\Controllers\Api\CavalierSearchController;
 use App\Http\Controllers\Api\ChevalSearchController;
 use App\Http\Controllers\Api\ClientFacturationController;
 use App\Http\Controllers\Api\EpreuveController as ApiEpreuveController;
+use App\Http\Controllers\BackupController;
 use App\Http\Controllers\ChampionnatController;
 use App\Http\Controllers\CommandeRetraitController;
+use App\Http\Controllers\ConcoursAccessRequestController;
 use App\Http\Controllers\ConcoursController;
 use App\Http\Controllers\EngageController;
 use App\Http\Controllers\EpreuveController;
@@ -28,6 +30,9 @@ Route::middleware(['auth'])->group(function () {
     // Dashboard — Mes Concours
     Route::get('/dashboard', [ConcoursController::class, 'dashboard'])->name('dashboard');
 
+    // Demandes d'acces aux concours
+    Route::post('/access-requests', [ConcoursAccessRequestController::class, 'store'])->name('access-requests.store');
+
     // Concours — création/modification/suppression (admin seulement)
     // NB : ces routes doivent être déclarées AVANT index/show pour que
     //       concours/create ne soit pas capturé par concours/{concours}
@@ -35,6 +40,9 @@ Route::middleware(['auth'])->group(function () {
         Route::resource('concours', ConcoursController::class)
             ->parameters(['concours' => 'concours'])
             ->except(['index', 'show']);
+
+        // Restaurer un concours depuis une sauvegarde (crée un nouveau concours)
+        Route::post('concours-restore', [BackupController::class, 'restoreAsNew'])->name('concours.restore-new');
     });
 
     // Concours — consultation (tous les utilisateurs)
@@ -58,11 +66,16 @@ Route::middleware(['auth'])->group(function () {
 
     // Template CSV download
     Route::get('/import/template-sif', [ImportController::class, 'templateSif'])->name('import.template-sif');
+    Route::get('/import/template-compet', [ImportController::class, 'templateCompet'])->name('import.template-compet');
 
     // Concours sub-pages (admin seulement)
     Route::prefix('concours/{concours}')->name('concours.')->middleware(['concours.access', 'role:admin'])->group(function () {
         Route::post('/import', [ImportController::class, 'store'])->name('import.store');
         Route::delete('/purge', [ConcoursController::class, 'purge'])->name('purge');
+
+        // Backup & Restore
+        Route::get('/backup', [BackupController::class, 'backup'])->name('backup');
+        Route::post('/restore', [BackupController::class, 'restore'])->name('restore');
 
         // Facturation ET
         Route::get('/facturation-et', [FacturationEtController::class, 'index'])->name('facturation-et.index');
@@ -138,6 +151,11 @@ Route::middleware(['auth'])->group(function () {
         Route::post('users/{user}/reset-password', [UserController::class, 'resetPassword'])->name('users.reset-password');
         Route::resource('produits', ProduitController::class)->except(['show', 'destroy']);
         Route::patch('produits/{produit}/toggle', [ProduitController::class, 'toggleActif'])->name('produits.toggle');
+
+        // Demandes d'acces
+        Route::get('access-requests', [ConcoursAccessRequestController::class, 'index'])->name('access-requests.index');
+        Route::post('access-requests/{concoursAccessRequest}/approve', [ConcoursAccessRequestController::class, 'approve'])->name('access-requests.approve');
+        Route::post('access-requests/{concoursAccessRequest}/reject', [ConcoursAccessRequestController::class, 'reject'])->name('access-requests.reject');
     });
 
     // Profile (Breeze)

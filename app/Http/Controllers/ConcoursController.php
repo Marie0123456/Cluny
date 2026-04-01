@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\Discipline;
 use App\Models\Concours;
+use App\Models\ConcoursAccessRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -23,7 +24,23 @@ class ConcoursController extends Controller
         $concoursFuturs = $concours->where('date_fin', '>=', $now)->values();
         $concoursPasses = $concours->where('date_fin', '<', $now)->values();
 
-        return view('dashboard', compact('concoursFuturs', 'concoursPasses'));
+        $availableConcours = collect();
+        $pendingRequestIds = [];
+
+        if (! $user->isAdmin()) {
+            $assignedIds = $user->concours()->pluck('concours.id')->toArray();
+            $availableConcours = Concours::whereNotIn('id', $assignedIds)
+                ->where('date_fin', '>=', $now)
+                ->orderBy('date_debut', 'desc')
+                ->get();
+
+            $pendingRequestIds = ConcoursAccessRequest::where('user_id', $user->id)
+                ->where('status', 'pending')
+                ->pluck('concours_id')
+                ->toArray();
+        }
+
+        return view('dashboard', compact('concoursFuturs', 'concoursPasses', 'availableConcours', 'pendingRequestIds'));
     }
 
     public function index()

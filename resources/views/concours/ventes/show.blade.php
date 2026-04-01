@@ -16,7 +16,13 @@
                     <div>
                         <h3 class="text-sm font-medium text-gray-500 uppercase mb-2">Client</h3>
                         <p class="text-gray-900 font-medium">{{ $vente->nom_client }}</p>
-                        <p class="text-sm text-gray-500">Paiement le {{ $vente->jour_paiement->format('d/m/Y') }}</p>
+                        <p class="text-sm text-gray-500">Paiement le {{ $vente->jour_paiement?->format('d/m/Y') ?? '-' }}</p>
+                        <p class="text-xs text-gray-400 mt-1">
+                            Créé par {{ $vente->createdByUser->name ?? 'inconnu' }} le {{ $vente->created_at->format('d/m/Y à H:i') }}
+                            @if ($vente->modifiedByUser)
+                                — Modifié par {{ $vente->modifiedByUser->name }} le {{ $vente->updated_at->format('d/m/Y à H:i') }}
+                            @endif
+                        </p>
                     </div>
                     <div>
                         <h3 class="text-sm font-medium text-gray-500 uppercase mb-2">Paiement</h3>

@@ -19,6 +19,8 @@ class CommandeRetrait extends Model
         'quantite',
         'emplacement_boxes',
         'retire',
+        'retired_by',
+        'retired_at',
     ];
 
     protected function casts(): array
@@ -27,11 +29,17 @@ class CommandeRetrait extends Model
             'date_commande' => 'date',
             'quantite' => 'integer',
             'retire' => 'boolean',
+            'retired_at' => 'datetime',
         ];
     }
 
     public function concours(): BelongsTo
     {
         return $this->belongsTo(Concours::class);
+    }
+
+    public function retiredByUser(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'retired_by');
     }
 }

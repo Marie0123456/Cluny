@@ -20,6 +20,15 @@
                         <x-nav-link :href="route('admin.produits.index')" :active="request()->routeIs('admin.produits.*')">
                             Produits
                         </x-nav-link>
+                        @php
+                            $pendingAccessRequests = \App\Models\ConcoursAccessRequest::where('status', 'pending')->count();
+                        @endphp
+                        <x-nav-link :href="route('admin.access-requests.index')" :active="request()->routeIs('admin.access-requests.*')">
+                            Demandes d'acces
+                            @if($pendingAccessRequests > 0)
+                                <span class="ml-1 inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-bold bg-red-500 text-white">{{ $pendingAccessRequests }}</span>
+                            @endif
+                        </x-nav-link>
                     @endcan
                 </div>
             </div>
@@ -76,6 +85,12 @@
                 </x-responsive-nav-link>
                 <x-responsive-nav-link :href="route('admin.produits.index')" :active="request()->routeIs('admin.produits.*')">
                     Produits
+                </x-responsive-nav-link>
+                <x-responsive-nav-link :href="route('admin.access-requests.index')" :active="request()->routeIs('admin.access-requests.*')">
+                    Demandes d'acces
+                    @if($pendingAccessRequests > 0)
+                        <span class="ml-1 inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-bold bg-red-500 text-white">{{ $pendingAccessRequests }}</span>
+                    @endif
                 </x-responsive-nav-link>
             @endcan
         </div>

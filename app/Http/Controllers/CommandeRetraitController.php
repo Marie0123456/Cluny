@@ -10,7 +10,8 @@ class CommandeRetraitController extends Controller
 {
     public function index(Concours $concours)
     {
-        $commandes = CommandeRetrait::where('concours_id', $concours->id)
+        $commandes = CommandeRetrait::with('retiredByUser:id,name')
+            ->where('concours_id', $concours->id)
             ->orderBy('date_commande', 'desc')
             ->orderBy('numero_commande', 'desc')
             ->get();
@@ -122,8 +123,14 @@ class CommandeRetraitController extends Controller
 
     public function toggleRetire(Concours $concours, CommandeRetrait $commandeRetrait)
     {
-        $commandeRetrait->update(['retire' => !$commandeRetrait->retire]);
+        $newState = !$commandeRetrait->retire;
 
-        return back()->with('success', $commandeRetrait->retire ? 'Commande marquée comme retirée.' : 'Commande marquée comme non retirée.');
+        $commandeRetrait->update([
+            'retire' => $newState,
+            'retired_by' => $newState ? auth()->id() : null,
+            'retired_at' => $newState ? now() : null,
+        ]);
+
+        return back()->with('success', $newState ? 'Commande marquée comme retirée.' : 'Commande marquée comme non retirée.');
     }
 }

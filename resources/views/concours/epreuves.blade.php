@@ -1,6 +1,6 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex justify-between items-center">
+        <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
             <div>
                 <h2 class="font-semibold text-xl text-gray-800 leading-tight">{{ $concours->nom }}</h2>
                 <p class="text-sm text-gray-500 mt-1">
@@ -9,9 +9,12 @@
                 </p>
             </div>
             @can('admin')
-                <div class="flex space-x-2">
+                <div class="flex flex-wrap gap-2">
                     <a href="{{ route('concours.edit', $concours) }}" class="inline-flex items-center px-3 py-2 bg-white border border-gray-300 rounded-md text-xs font-semibold text-gray-700 uppercase hover:bg-gray-50">
                         Modifier
+                    </a>
+                    <a href="{{ route('concours.backup', $concours) }}" class="inline-flex items-center px-3 py-2 bg-green-600 border border-transparent rounded-md text-xs font-semibold text-white uppercase hover:bg-green-700">
+                        Sauvegarder
                     </a>
                     <form method="POST" action="{{ route('concours.destroy', $concours) }}" onsubmit="return confirm('Supprimer ce concours ?')">
                         @csrf
@@ -253,13 +256,17 @@
                             Importer
                         </button>
                     </form>
-                    @if ($concours->type_ffe_sif)
-                        <div class="mt-3">
+                    <div class="mt-3">
+                        @if ($concours->type_ffe_sif)
                             <a href="{{ route('import.template-sif') }}" class="text-sm text-indigo-600 hover:text-indigo-800 underline">
                                 Télécharger le template CSV vide
                             </a>
-                        </div>
-                    @endif
+                        @else
+                            <a href="{{ route('import.template-compet') }}" class="text-sm text-indigo-600 hover:text-indigo-800 underline">
+                                Télécharger le template CSV vide
+                            </a>
+                        @endif
+                    </div>
 
                     @if ($concours->engagements_count > 0)
                         <div class="mt-4 pt-4 border-t border-gray-200">
@@ -275,6 +282,7 @@
                         </div>
                     @endif
                 </div>
+
             @endcan
         </div>
     </div>
