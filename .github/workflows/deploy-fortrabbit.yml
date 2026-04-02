@@ -3,7 +3,7 @@ name: Deploy to Fortrabbit
 on:
   push:
     branches:
-      - main
+      - claude/equestrian-competition-project-0CEUO
 
 jobs:
   deploy:
@@ -39,4 +39,4 @@ jobs:
           git add public/build -f
           git commit -m "Build assets production [skip ci]" || true
           git remote add fortrabbit ${{ secrets.FORTRABBIT_GIT_URL }}
-          git push fortrabbit main --force
+          git push fortrabbit HEAD:main --force
