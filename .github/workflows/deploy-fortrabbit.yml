@@ -1,0 +1,42 @@
+name: Deploy to Fortrabbit
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies and build assets
+        run: |
+          npm ci
+          npm run build
+
+      - name: Setup SSH key
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-known-hosts: ${{ secrets.FORTRABBIT_KNOWN_HOSTS }}
+          ssh-private-key: ${{ secrets.FORTRABBIT_SSH_KEY }}
+
+      - name: Deploy to Fortrabbit
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add public/build -f
+          git commit -m "Build assets production [skip ci]" || true
+          git remote add fortrabbit ${{ secrets.FORTRABBIT_GIT_URL }}
+          git push fortrabbit main --force
