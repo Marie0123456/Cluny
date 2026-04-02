@@ -31,7 +31,7 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.FORTRABBIT_SSH_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan deploy.eu2.frbit.com >> ~/.ssh/known_hosts 2>/dev/null
+          ssh-keyscan ssh.eu-w1a.frbit.app >> ~/.ssh/known_hosts 2>/dev/null
 
       - name: Deploy to Fortrabbit
         run: |
