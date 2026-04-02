@@ -18,7 +18,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
 
       - name: Install dependencies and build assets
@@ -27,10 +27,11 @@ jobs:
           npm run build
 
       - name: Setup SSH key
-        uses: webfactory/ssh-agent@v0.9.0
-        with:
-          ssh-known-hosts: ${{ secrets.FORTRABBIT_KNOWN_HOSTS }}
-          ssh-private-key: ${{ secrets.FORTRABBIT_SSH_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.FORTRABBIT_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan deploy.eu2.frbit.com >> ~/.ssh/known_hosts 2>/dev/null
 
       - name: Deploy to Fortrabbit
         run: |
