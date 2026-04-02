@@ -27,11 +27,15 @@ jobs:
           npm run build
 
       - name: Setup SSH key
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.FORTRABBIT_SSH_KEY }}
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.FORTRABBIT_SSH_KEY }}" > ~/.ssh/id_rsa
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan ssh.eu-w1a.frbit.app >> ~/.ssh/known_hosts 2>/dev/null
+          eval $(ssh-agent -s)
+          ssh-add ~/.ssh/id_rsa
 
       - name: Deploy to Fortrabbit
         run: |
