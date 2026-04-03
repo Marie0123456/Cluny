@@ -44,7 +44,7 @@
                             $epreuvesJour->flatMap(fn($ep) => $ep->engagements->map(fn($e) => ($e->cavalier?->nom ?? '') . ' ' . ($e->cavalier?->prenom ?? '') . ' ' . ($e->cheval?->nom ?? '')))->implode('|||')
                         ));
                     @endphp
-                    <div class="mb-6" x-data="{ openDay: true }" x-show="search === '' || '{{ $daySearchStr }}'.includes(search.toLowerCase())">
+                    <div class="mb-6" x-data="{ openDay: false }" x-show="search === '' || '{{ $daySearchStr }}'.includes(search.toLowerCase())">
                         <!-- Date header -->
                         <button @click="openDay = !openDay" type="button"
                             class="w-full flex items-center justify-between px-4 py-3 bg-indigo-50 border border-indigo-200 rounded-lg hover:bg-indigo-100 transition mb-2">
