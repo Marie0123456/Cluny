@@ -34,7 +34,7 @@ class ModificationController extends Controller
             ])
             ->join('engagements', 'modifications.engagement_id', '=', 'engagements.id')
             ->join('epreuves', 'engagements.epreuve_id', '=', 'epreuves.id')
-            ->orderByRaw('CAST(epreuves.numero AS UNSIGNED), epreuves.numero')
+            ->orderByRaw('CAST(epreuves.numero AS INTEGER), epreuves.numero')
             ->orderBy('modifications.created_at', 'desc')
             ->select('modifications.*')
             ->get();
@@ -45,7 +45,7 @@ class ModificationController extends Controller
                 'engagements.cavalier:id,nom,prenom,num_licence',
                 'engagements.cheval:id,nom,num_sire',
             ])
-            ->orderByRaw('CAST(numero AS UNSIGNED), numero')
+            ->orderByRaw('CAST(numero AS INTEGER), numero')
             ->get();
 
         $epreuvesJson = $epreuves->map(function ($e) {
@@ -233,7 +233,7 @@ class ModificationController extends Controller
         }
 
         // Auto-assign numero_depart (cast to numeric to avoid string comparison: "9" > "80")
-        $maxNumero = (int) $epreuve->engagements()->selectRaw('MAX(CAST(numero_depart AS UNSIGNED)) as max_num')->value('max_num');
+        $maxNumero = (int) $epreuve->engagements()->selectRaw('MAX(CAST(numero_depart AS INTEGER)) as max_num')->value('max_num');
         $numeroDepart = $maxNumero + 1;
 
         // Create the engagement
@@ -341,7 +341,7 @@ class ModificationController extends Controller
         ]);
 
         // 2. Create new engagement in new epreuve
-        $maxNumero = (int) $nouvelleEpreuve->engagements()->selectRaw('MAX(CAST(numero_depart AS UNSIGNED)) as max_num')->value('max_num');
+        $maxNumero = (int) $nouvelleEpreuve->engagements()->selectRaw('MAX(CAST(numero_depart AS INTEGER)) as max_num')->value('max_num');
         $numeroDepart = $maxNumero + 1;
 
         $newEngagement = Engagement::create([

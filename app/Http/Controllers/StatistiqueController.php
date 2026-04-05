@@ -40,7 +40,7 @@ class StatistiqueController extends Controller
                 ->where('epreuves.concours_id', $concours->id)
                 ->where(function ($q) use ($selectedDisciplines) {
                     foreach ($selectedDisciplines as $disc) {
-                        $q->orWhere('epreuves.nom', 'LIKE', $disc . '%');
+                        $q->orWhereRaw('LOWER(epreuves.nom) LIKE ?', [mb_strtolower($disc) . '%']);
                     }
                 })
                 ->select(
@@ -94,7 +94,7 @@ class StatistiqueController extends Controller
                 ->where('epreuves.concours_id', $concours->id)
                 ->where(function ($q) use ($selectedDisciplinesCombinaisons) {
                     foreach ($selectedDisciplinesCombinaisons as $disc) {
-                        $q->orWhere('epreuves.nom', 'LIKE', $disc . '%');
+                        $q->orWhereRaw('LOWER(epreuves.nom) LIKE ?', [mb_strtolower($disc) . '%']);
                     }
                 });
 
@@ -170,7 +170,7 @@ class StatistiqueController extends Controller
                 ->where('epreuves.concours_id', $concours->id)
                 ->where(function ($q) use ($selectedDisciplinesChevaux) {
                     foreach ($selectedDisciplinesChevaux as $disc) {
-                        $q->orWhere('epreuves.nom', 'LIKE', $disc . '%');
+                        $q->orWhereRaw('LOWER(epreuves.nom) LIKE ?', [mb_strtolower($disc) . '%']);
                     }
                 })
                 ->select(
@@ -299,7 +299,7 @@ class StatistiqueController extends Controller
             ->where('epreuves.concours_id', $concours->id)
             ->where(function ($q) use ($selectedDisciplines) {
                 foreach ($selectedDisciplines as $disc) {
-                    $q->orWhere('epreuves.nom', 'LIKE', $disc . '%');
+                    $q->orWhereRaw('LOWER(epreuves.nom) LIKE ?', [mb_strtolower($disc) . '%']);
                 }
             })
             ->select(
@@ -374,7 +374,7 @@ class StatistiqueController extends Controller
             ->where('epreuves.concours_id', $concours->id)
             ->where(function ($q) use ($selectedDisciplines) {
                 foreach ($selectedDisciplines as $disc) {
-                    $q->orWhere('epreuves.nom', 'LIKE', $disc . '%');
+                    $q->orWhereRaw('LOWER(epreuves.nom) LIKE ?', [mb_strtolower($disc) . '%']);
                 }
             })
             ->select(
