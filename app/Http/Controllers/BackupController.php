@@ -210,6 +210,11 @@ class BackupController extends Controller
         $produitMap = [];
         $clientMap = [];
         $championnatMap = [];
+        $modificationMap = [];
+
+        // Valid user IDs in the target DB (to avoid FK violations)
+        $validUserIds = \App\Models\User::pluck('id')->flip();
+        $sanitizeUserId = fn ($id) => ($id !== null && isset($validUserIds[$id])) ? $id : null;
 
         // Restore cavaliers (upsert by licence or nom+prenom)
         foreach ($data['cavaliers'] ?? [] as $row) {
@@ -286,8 +291,9 @@ class BackupController extends Controller
             $engagementMap[$oldId] = $engagement->id;
         }
 
-        // Restore modifications
+        // Restore modifications (1st pass: create without linked_modification_id)
         foreach ($data['modifications'] ?? [] as $row) {
+            $oldId = $row['id'];
             unset($row['id'], $row['created_at'], $row['updated_at']);
             $row['concours_id'] = $concours->id;
             $row['engagement_id'] = $engagementMap[$row['engagement_id']] ?? null;
@@ -296,8 +302,22 @@ class BackupController extends Controller
             $row['ancien_cavalier_id'] = isset($row['ancien_cavalier_id']) ? ($cavalierMap[$row['ancien_cavalier_id']] ?? null) : null;
             $row['nouveau_cavalier_id'] = isset($row['nouveau_cavalier_id']) ? ($cavalierMap[$row['nouveau_cavalier_id']] ?? null) : null;
             $row['client_facturation_id'] = isset($row['client_facturation_id']) ? ($clientMap[$row['client_facturation_id']] ?? null) : null;
-            $row['linked_modification_id'] = null; // Will be re-linked in a second pass if needed
-            Modification::create($row);
+            $row['created_by'] = isset($row['created_by']) ? $sanitizeUserId($row['created_by']) : null;
+            $row['modified_by'] = isset($row['modified_by']) ? $sanitizeUserId($row['modified_by']) : null;
+            $row['done_by'] = isset($row['done_by']) ? $sanitizeUserId($row['done_by']) : null;
+            $row['linked_modification_id'] = null; // 2nd pass
+            $modification = Modification::create($row);
+            $modificationMap[$oldId] = $modification->id;
+        }
+
+        // Restore modifications (2nd pass: re-link linked_modification_id)
+        foreach ($data['modifications'] ?? [] as $row) {
+            if (empty($row['linked_modification_id'])) continue;
+            $newId = $modificationMap[$row['id']] ?? null;
+            $newLinkedId = $modificationMap[$row['linked_modification_id']] ?? null;
+            if ($newId && $newLinkedId) {
+                Modification::where('id', $newId)->update(['linked_modification_id' => $newLinkedId]);
+            }
         }
 
         // Restore ventes
@@ -306,6 +326,9 @@ class BackupController extends Controller
             unset($row['id'], $row['created_at'], $row['updated_at']);
             $row['concours_id'] = $concours->id;
             $row['client_facturation_id'] = isset($row['client_facturation_id']) ? ($clientMap[$row['client_facturation_id']] ?? null) : null;
+            if (array_key_exists('created_by', $row)) {
+                $row['created_by'] = $sanitizeUserId($row['created_by']);
+            }
             $vente = Vente::create($row);
             $venteMap[$oldId] = $vente->id;
         }
@@ -355,6 +378,9 @@ class BackupController extends Controller
         foreach ($data['commande_retraits'] ?? [] as $row) {
             unset($row['id'], $row['created_at'], $row['updated_at']);
             $row['concours_id'] = $concours->id;
+            if (array_key_exists('retired_by', $row)) {
+                $row['retired_by'] = $sanitizeUserId($row['retired_by']);
+            }
             CommandeRetrait::create($row);
         }
     }
