@@ -47,7 +47,7 @@ class BackupController extends Controller
         }
 
         // Increase time limit for large restores (default 30s is not enough)
-        set_time_limit(300);
+        set_time_limit(900);
         DB::disableQueryLog();
 
         DB::transaction(function () use ($concours, $data) {
@@ -75,7 +75,7 @@ class BackupController extends Controller
             return back()->with('error', 'Le fichier de sauvegarde est invalide.');
         }
 
-        set_time_limit(300);
+        set_time_limit(900);
         DB::disableQueryLog();
 
         $concours = null;
