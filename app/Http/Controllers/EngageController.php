@@ -10,7 +10,9 @@ class EngageController extends Controller
     {
         $epreuves = $concours->epreuves()
             ->with(['engagements' => function ($query) {
-                $query->withCount('modifications')->with(['cavalier', 'cheval']);
+                $query->withCount('modifications')
+                    ->with(['cavalier', 'cheval'])
+                    ->orderByRaw("CASE WHEN numero_depart ~ '^[0-9]+$' THEN CAST(numero_depart AS INTEGER) END NULLS LAST, numero_depart NULLS LAST");
             }])
             ->orderBy('date')
             ->orderByRaw('CAST(numero AS INTEGER), numero')
