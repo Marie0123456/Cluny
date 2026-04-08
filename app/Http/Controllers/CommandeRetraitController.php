@@ -57,16 +57,21 @@ class CommandeRetraitController extends Controller
             'produit' => 'Produit',
             'quantite' => 'Quantité',
             'emplacement_boxes' => 'emplacement et numeros de boxes',
+            'note_client' => 'Note du client',
         ];
+
+        $optionalColumns = ['note_client'];
 
         $indexes = [];
         foreach ($columnMap as $key => $csvColumn) {
             $index = array_search($csvColumn, $header);
-            if ($index === false) {
+            if ($index === false && !in_array($key, $optionalColumns)) {
                 fclose($handle);
                 return back()->with('error', "Colonne manquante dans le CSV : {$csvColumn}");
             }
-            $indexes[$key] = $index;
+            if ($index !== false) {
+                $indexes[$key] = $index;
+            }
         }
 
         $imported = 0;
@@ -106,6 +111,7 @@ class CommandeRetraitController extends Controller
                 'produit' => trim($row[$indexes['produit']] ?? ''),
                 'quantite' => (int) ($row[$indexes['quantite']] ?? 1),
                 'emplacement_boxes' => trim($row[$indexes['emplacement_boxes']] ?? '') ?: null,
+                'note_client' => isset($indexes['note_client']) ? (trim($row[$indexes['note_client']] ?? '') ?: null) : null,
             ]);
 
             $imported++;

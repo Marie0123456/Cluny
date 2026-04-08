@@ -18,6 +18,7 @@ class CommandeRetrait extends Model
         'produit',
         'quantite',
         'emplacement_boxes',
+        'note_client',
         'retire',
         'retired_by',
         'retired_at',
