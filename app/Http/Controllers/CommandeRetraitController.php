@@ -84,8 +84,12 @@ class CommandeRetraitController extends Controller
                 continue;
             }
 
-            // Skip if already imported
-            $exists = CommandeRetrait::where('numero_commande', $numeroCommande)->exists();
+            // Skip if already imported (same numero_commande + produit)
+            $produit = trim($row[$indexes['produit']] ?? '');
+            $exists = CommandeRetrait::where('concours_id', $concours->id)
+                ->where('numero_commande', $numeroCommande)
+                ->where('produit', $produit)
+                ->exists();
             if ($exists) {
                 $skipped++;
                 continue;
@@ -108,7 +112,7 @@ class CommandeRetraitController extends Controller
                 'date_commande' => $date ?? now()->toDateString(),
                 'prenom' => trim($row[$indexes['prenom']] ?? ''),
                 'nom' => trim($row[$indexes['nom']] ?? ''),
-                'produit' => trim($row[$indexes['produit']] ?? ''),
+                'produit' => $produit,
                 'quantite' => (int) ($row[$indexes['quantite']] ?? 1),
                 'emplacement_boxes' => trim($row[$indexes['emplacement_boxes']] ?? '') ?: null,
                 'note_client' => isset($indexes['note_client']) ? (trim($row[$indexes['note_client']] ?? '') ?: null) : null,
