@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Traits\HandlesPaiement;
+use App\Models\ClientFacturation;
 use App\Models\CommandeRetrait;
 use App\Models\Concours;
 use App\Models\Produit;
