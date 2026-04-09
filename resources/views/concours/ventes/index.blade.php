@@ -84,13 +84,13 @@
                             <thead class="bg-gray-50">
                                 <tr>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Client</th>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date paiement</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Produit</th>
                                     <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Qte</th>
                                     <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">P.U. TTC</th>
                                     <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">TVA</th>
                                     <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Total TTC</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Paiement</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date paiement</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Facture</th>
                                     <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
                                 </tr>
@@ -109,13 +109,13 @@
                                                 <td class="px-4 py-3 text-sm font-medium text-gray-900" rowspan="{{ $ligneCount }}">
                                                     <span class="cursor-help" title="Créé par {{ $vente->createdByUser->name ?? 'inconnu' }} le {{ $vente->created_at->format('d/m/Y à H:i') }}{{ $vente->modifiedByUser ? ' — Modifié par ' . $vente->modifiedByUser->name . ' le ' . $vente->updated_at->format('d/m/Y à H:i') : '' }}">{{ $vente->nom_client }}</span>
                                                 </td>
-                                                <td class="px-4 py-3 text-sm text-gray-500" rowspan="{{ $ligneCount }}">{{ $vente->jour_paiement ? $vente->jour_paiement->format('d/m/Y') : '-' }}</td>
                                             @endif
                                             <td class="px-4 py-3 text-sm text-gray-900">{{ $ligne->produit->nom }}</td>
                                             <td class="px-4 py-3 text-sm text-gray-900 text-center">{{ $ligne->quantite }}</td>
                                             <td class="px-4 py-3 text-sm text-gray-500 text-right">{{ number_format($ligne->prix_unitaire_ttc, 2, ',', ' ') }} &euro;</td>
                                             <td class="px-4 py-3 text-sm text-gray-500 text-right">{{ number_format($ligne->produit->tva, 1) }}%</td>
                                             @if ($loop->first)
+                                                @php $hasPaiement = $vente->paiement_cb || $vente->paiement_especes || $vente->paiement_cheque || $vente->paiement_internet || $vente->paiement_virement; @endphp
                                                 <td class="px-4 py-3 text-sm text-gray-900 font-medium text-right" rowspan="{{ $ligneCount }}">{{ number_format($vente->total_ttc, 2, ',', ' ') }} &euro;</td>
                                                 <td class="px-4 py-3 text-sm text-gray-500" rowspan="{{ $ligneCount }}">
                                                     @if ($vente->paiement_cb)<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">CB</span>@endif
@@ -124,6 +124,7 @@
                                                     @if ($vente->paiement_internet)<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800">Internet</span>@endif
                                                     @if ($vente->paiement_virement)<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-indigo-100 text-indigo-800">Virement</span>@endif
                                                 </td>
+                                                <td class="px-4 py-3 text-sm text-gray-500" rowspan="{{ $ligneCount }}">{{ $hasPaiement && $vente->jour_paiement ? $vente->jour_paiement->format('d/m/Y') : '-' }}</td>
                                                 <td class="px-4 py-3 text-sm" rowspan="{{ $ligneCount }}">
                                                     @if ($vente->facture && $vente->clientFacturation)
                                                         <a href="{{ route('concours.factures.show', [$concours, $vente->clientFacturation]) }}"
