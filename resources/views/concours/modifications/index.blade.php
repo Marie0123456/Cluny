@@ -1425,6 +1425,16 @@
                                                     @csrf
                                                     @method('PATCH')
 
+                                                    @if ($concours->grand_national)
+                                                    <div class="mb-2">
+                                                        <label class="inline-flex items-center text-sm">
+                                                            <input type="checkbox" name="is_gn" value="1" {{ $mod->is_gn ? 'checked' : '' }}
+                                                                class="rounded border-gray-300 text-red-600 shadow-sm focus:ring-red-500">
+                                                            <span class="ml-2 font-medium">Cavalier Grand National</span>
+                                                        </label>
+                                                    </div>
+                                                    @endif
+
                                                     <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                                                         {{-- Type de compte --}}
                                                         <div>
