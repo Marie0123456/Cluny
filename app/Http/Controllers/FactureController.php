@@ -26,6 +26,8 @@ class FactureController extends Controller
                 'ventes' => fn($q) => $q->where('concours_id', $concours->id),
                 'modifications' => fn($q) => $q->where('concours_id', $concours->id)->where('statut', '!=', 'supprime'),
             ])
+            ->withSum(['ventes' => fn($q) => $q->where('concours_id', $concours->id)], 'total_ttc')
+            ->withSum(['modifications' => fn($q) => $q->where('concours_id', $concours->id)->where('statut', '!=', 'supprime')], 'prix')
             ->orderBy('nom')
             ->get();
 
