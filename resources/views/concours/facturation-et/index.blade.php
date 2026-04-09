@@ -364,6 +364,7 @@
                 get caisseFiltered() {
                     return data.filter(v => {
                         if (!v.jour || v.jour !== this.caisseJour) return false;
+                        if (!v.cb && !v.especes && !v.cheque && !v.internet && !v.virement) return false;
                         if (this.caissePaiement === 'cb' && !v.cb) return false;
                         if (this.caissePaiement === 'especes' && !v.especes) return false;
                         if (this.caissePaiement === 'cheque' && !v.cheque) return false;
