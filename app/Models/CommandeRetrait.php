@@ -11,6 +11,7 @@ class CommandeRetrait extends Model
 
     protected $fillable = [
         'concours_id',
+        'vente_id',
         'numero_commande',
         'date_commande',
         'prenom',
@@ -37,6 +38,11 @@ class CommandeRetrait extends Model
     public function concours(): BelongsTo
     {
         return $this->belongsTo(Concours::class);
+    }
+
+    public function vente(): BelongsTo
+    {
+        return $this->belongsTo(Vente::class);
     }
 
     public function retiredByUser(): BelongsTo

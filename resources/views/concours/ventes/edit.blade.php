@@ -230,7 +230,7 @@
                 adresseFacturation: @json($vente->clientFacturation?->adresse ?? ''),
                 clientsResultats: [],
                 showClientsResults: false,
-                aRetirer: false,
+                aRetirer: {{ $hasRetraits ? 'true' : 'false' }},
 
                 get totalGeneral() {
                     return this.lignes.reduce((sum, l) => sum + (l.total || 0), 0);
