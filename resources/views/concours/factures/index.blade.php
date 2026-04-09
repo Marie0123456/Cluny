@@ -116,7 +116,14 @@
                                                 <span class="text-gray-400">0</span>
                                             @endif
                                         </td>
-                                        <td class="px-4 py-3 text-sm text-right text-gray-500">-</td>
+                                        <td class="px-4 py-3 text-sm text-right font-medium text-gray-900">
+                                            @php $clientTotal = ($client->ventes_sum_total_ttc ?? 0) + ($client->modifications_sum_prix ?? 0); @endphp
+                                            @if ($clientTotal > 0)
+                                                {{ number_format($clientTotal, 2, ',', ' ') }} &euro;
+                                            @else
+                                                -
+                                            @endif
+                                        </td>
                                         <td class="px-4 py-3 text-sm text-right">
                                             <a href="{{ route('concours.factures.show', [$concours, $client]) }}"
                                                 class="text-gray-400 hover:text-indigo-600" title="Voir détail">
