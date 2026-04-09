@@ -233,7 +233,7 @@ class ModificationController extends Controller
         }
 
         // Auto-assign numero_depart (cast to numeric to avoid string comparison: "9" > "80")
-        $maxNumero = (int) $epreuve->engagements()->selectRaw('MAX(CAST(numero_depart AS INTEGER)) as max_num')->value('max_num');
+        $maxNumero = (int) $epreuve->engagements()->selectRaw("MAX(CASE WHEN numero_depart ~ '^[0-9]+$' THEN CAST(numero_depart AS INTEGER) END) as max_num")->value('max_num');
         $numeroDepart = $maxNumero + 1;
 
         // Create the engagement
@@ -341,7 +341,7 @@ class ModificationController extends Controller
         ]);
 
         // 2. Create new engagement in new epreuve
-        $maxNumero = (int) $nouvelleEpreuve->engagements()->selectRaw('MAX(CAST(numero_depart AS INTEGER)) as max_num')->value('max_num');
+        $maxNumero = (int) $nouvelleEpreuve->engagements()->selectRaw("MAX(CASE WHEN numero_depart ~ '^[0-9]+$' THEN CAST(numero_depart AS INTEGER) END) as max_num")->value('max_num');
         $numeroDepart = $maxNumero + 1;
 
         $newEngagement = Engagement::create([
