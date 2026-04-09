@@ -1029,7 +1029,7 @@
                                     'nom' => $mod->type === \App\Enums\ModificationType::CHANGEMENT_CAVALIER
                                         ? trim(($mod->ancienCavalier->nom ?? '') . ' ' . ($mod->ancienCavalier->prenom ?? '') . ' ' . ($mod->nouveauCavalier->nom ?? '') . ' ' . ($mod->nouveauCavalier->prenom ?? ''))
                                         : trim(($mod->engagement->cavalier->nom ?? '') . ' ' . ($mod->engagement->cavalier->prenom ?? '')),
-                                    'jour' => $mod->engagement->epreuve->date?->format('Y-m-d') ?? '',
+                                    'jour' => $mod->engagement->epreuve->date?->format('Y-m-d') ?? $mod->created_at->format('Y-m-d'),
                                     'statut' => $mod->statut->value,
                                     'paiement' => $paiementValues,
                                 ]) }})">
@@ -1280,7 +1280,7 @@
                                             'nom' => $mod->type === \App\Enums\ModificationType::CHANGEMENT_CAVALIER
                                                 ? trim(($mod->ancienCavalier->nom ?? '') . ' ' . ($mod->ancienCavalier->prenom ?? '') . ' ' . ($mod->nouveauCavalier->nom ?? '') . ' ' . ($mod->nouveauCavalier->prenom ?? ''))
                                                 : trim(($mod->engagement->cavalier->nom ?? '') . ' ' . ($mod->engagement->cavalier->prenom ?? '')),
-                                            'jour' => $mod->engagement->epreuve->date?->format('Y-m-d') ?? '',
+                                            'jour' => $mod->engagement->epreuve->date?->format('Y-m-d') ?? $mod->created_at->format('Y-m-d'),
                                             'statut' => $mod->statut->value,
                                             'paiement' => $paiementValues,
                                         ]) }})">
