@@ -93,8 +93,18 @@
                         <table class="min-w-full divide-y divide-gray-200">
                             <thead class="bg-gray-50">
                                 <tr>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">N° Épreuve</th>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cavalier</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer select-none hover:text-gray-700" @click="toggleSort('epreuve')">
+                                        N° Épreuve
+                                        <span x-show="sortBy === 'epreuve' && sortDir === 'asc'" class="ml-0.5">&uarr;</span>
+                                        <span x-show="sortBy === 'epreuve' && sortDir === 'desc'" class="ml-0.5">&darr;</span>
+                                        <span x-show="sortBy !== 'epreuve'" class="ml-0.5 text-gray-300">&updownarrow;</span>
+                                    </th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer select-none hover:text-gray-700" @click="toggleSort('cavalier')">
+                                        Cavalier
+                                        <span x-show="sortBy === 'cavalier' && sortDir === 'asc'" class="ml-0.5">&uarr;</span>
+                                        <span x-show="sortBy === 'cavalier' && sortDir === 'desc'" class="ml-0.5">&darr;</span>
+                                        <span x-show="sortBy !== 'cavalier'" class="ml-0.5 text-gray-300">&updownarrow;</span>
+                                    </th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cheval</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type de modif</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">PF</th>
@@ -106,14 +116,17 @@
                                     <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
                                 </tr>
                             </thead>
-                            <tbody class="bg-white divide-y divide-gray-200">
+                            <tbody class="bg-white divide-y divide-gray-200" x-ref="tbody">
                                 @foreach ($modifications as $mod)
                                     <tr x-show="showRow({{ json_encode([
                                         'epreuve' => (string) ($mod->engagement->epreuve->numero ?? ''),
                                         'cavalier' => trim(($mod->engagement->cavalier->prenom ?? '') . ' ' . ($mod->engagement->cavalier->nom ?? '')),
                                         'facture' => $mod->facture,
                                         'nom_facturation' => $mod->clientFacturation->nom ?? '',
-                                    ]) }})">
+                                    ]) }})"
+                                        data-sort-epreuve="{{ $mod->engagement->epreuve->numero ?? '0' }}"
+                                        data-sort-cavalier="{{ mb_strtolower(trim(($mod->engagement->cavalier->nom ?? '') . ' ' . ($mod->engagement->cavalier->prenom ?? ''))) }}"
+                                        data-row="data">
                                         <td class="px-4 py-3 text-sm text-gray-900 font-medium">
                                             {{ $mod->engagement->epreuve->numero ?? '-' }}
                                         </td>
@@ -175,7 +188,7 @@
                                         </td>
                                     </tr>
                                     {{-- Inline edit row --}}
-                                    <tr id="edit-row-et-{{ $mod->id }}" class="hidden bg-gray-50">
+                                    <tr id="edit-row-et-{{ $mod->id }}" class="hidden bg-gray-50" data-row="edit">
                                         <td colspan="11" class="px-4 py-4">
                                             <form method="POST" action="{{ route('modifications.update-paiement', $mod) }}" class="space-y-4">
                                                 @csrf
@@ -397,6 +410,46 @@
                 filterCavalier: '',
                 filterFacture: '',
                 filterNomFacturation: '',
+                sortBy: '',
+                sortDir: 'asc',
+
+                toggleSort(column) {
+                    if (this.sortBy === column) {
+                        this.sortDir = this.sortDir === 'asc' ? 'desc' : 'asc';
+                    } else {
+                        this.sortBy = column;
+                        this.sortDir = 'asc';
+                    }
+                    this.sortRows();
+                },
+
+                sortRows() {
+                    const tbody = this.$refs.tbody;
+                    if (!tbody) return;
+                    const dataRows = [...tbody.querySelectorAll('tr[data-row="data"]')];
+                    const sortBy = this.sortBy;
+                    const dir = this.sortDir;
+
+                    dataRows.sort((a, b) => {
+                        let cmp;
+                        if (sortBy === 'epreuve') {
+                            cmp = (parseInt(a.dataset.sortEpreuve) || 0) - (parseInt(b.dataset.sortEpreuve) || 0);
+                        } else {
+                            const va = a.dataset.sortCavalier;
+                            const vb = b.dataset.sortCavalier;
+                            cmp = va < vb ? -1 : va > vb ? 1 : 0;
+                        }
+                        return dir === 'desc' ? -cmp : cmp;
+                    });
+
+                    dataRows.forEach(row => {
+                        const editRow = row.nextElementSibling;
+                        tbody.appendChild(row);
+                        if (editRow && editRow.dataset.row === 'edit') {
+                            tbody.appendChild(editRow);
+                        }
+                    });
+                },
 
                 showRow(row) {
                     if (this.filterEpreuve && row.epreuve !== this.filterEpreuve) return false;
