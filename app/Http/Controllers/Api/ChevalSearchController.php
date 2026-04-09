@@ -26,9 +26,9 @@ class ChevalSearchController extends Controller
                 });
             });
 
-        // Try SQL LIKE first (fast, works for non-accented searches)
+        // Try SQL LIKE first (fast, case-insensitive via LOWER)
         $chevaux = (clone $baseQuery)
-            ->where('nom', 'like', "%{$query}%")
+            ->whereRaw('LOWER(nom) LIKE ?', ['%' . mb_strtolower($query) . '%'])
             ->limit(20)
             ->get(['id', 'nom', 'num_sire', 'race', 'sexe']);
 
