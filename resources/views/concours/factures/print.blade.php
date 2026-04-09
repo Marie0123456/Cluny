@@ -84,7 +84,12 @@
                         @foreach ($vente->lignes as $index => $ligne)
                             <tr>
                                 @if ($index === 0)
-                                    <td rowspan="{{ $vente->lignes->count() }}" class="font-bold">{{ $vente->nom_client }}</td>
+                                    <td rowspan="{{ $vente->lignes->count() }}" class="font-bold">
+                                        {{ $vente->nom_client }}
+                                        @if ($vente->commentaire)
+                                            <div style="font-weight: normal; font-size: 0.85em; color: #92400e; margin-top: 2px;">{{ $vente->commentaire }}</div>
+                                        @endif
+                                    </td>
                                 @endif
                                 <td>{{ $ligne->produit->nom }}</td>
                                 <td class="text-center">{{ $ligne->quantite }}</td>
