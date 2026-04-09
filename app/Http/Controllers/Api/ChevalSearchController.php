@@ -19,16 +19,16 @@ class ChevalSearchController extends Controller
 
         $normalizedQuery = $this->removeAccents(mb_strtolower($query));
 
-        $baseQuery = Cheval::query()
-            ->when($concoursId, function ($q) use ($concoursId) {
-                $q->whereHas('engagements.epreuve', function ($sub) use ($concoursId) {
-                    $sub->where('concours_id', $concoursId);
-                });
-            });
+        // Search all horses, prioritize those from the concours
+        $baseQuery = Cheval::query();
 
         // Try SQL LIKE first (fast, case-insensitive via LOWER)
         $chevaux = (clone $baseQuery)
             ->whereRaw('LOWER(nom) LIKE ?', ['%' . mb_strtolower($query) . '%'])
+            ->when($concoursId, function ($q) use ($concoursId) {
+                $q->orderByRaw('CASE WHEN id IN (SELECT cheval_id FROM engagements WHERE epreuve_id IN (SELECT id FROM epreuves WHERE concours_id = ?)) THEN 0 ELSE 1 END', [$concoursId]);
+            })
+            ->orderBy('nom')
             ->limit(20)
             ->get(['id', 'nom', 'num_sire', 'race', 'sexe']);
 
@@ -38,6 +38,10 @@ class ChevalSearchController extends Controller
 
         // Fallback: accent-insensitive search in PHP
         $chevaux = $baseQuery
+            ->when($concoursId, function ($q) use ($concoursId) {
+                $q->orderByRaw('CASE WHEN id IN (SELECT cheval_id FROM engagements WHERE epreuve_id IN (SELECT id FROM epreuves WHERE concours_id = ?)) THEN 0 ELSE 1 END', [$concoursId]);
+            })
+            ->orderBy('nom')
             ->get(['id', 'nom', 'num_sire', 'race', 'sexe'])
             ->filter(function ($cheval) use ($normalizedQuery) {
                 return str_contains(
