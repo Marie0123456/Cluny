@@ -115,6 +115,7 @@ class VenteController extends Controller
                     $produit = Produit::find($ligne['produit_id']);
                     CommandeRetrait::create([
                         'concours_id' => $concours->id,
+                        'vente_id' => $vente->id,
                         'numero_commande' => $today . '-' . $nextSeq,
                         'date_commande' => $today,
                         'prenom' => '',
@@ -151,7 +152,9 @@ class VenteController extends Controller
             'total' => (float) $l->total_ttc,
         ]);
 
-        return view('concours.ventes.edit', compact('vente', 'produits', 'initialLignes'));
+        $hasRetraits = CommandeRetrait::where('vente_id', $vente->id)->exists();
+
+        return view('concours.ventes.edit', compact('vente', 'produits', 'initialLignes', 'hasRetraits'));
     }
 
     public function update(Request $request, Vente $vente)
@@ -224,6 +227,9 @@ class VenteController extends Controller
 
             $vente->recalculerTotal();
 
+            // Supprimer les anciens retraits liés à cette vente (non encore retirés)
+            CommandeRetrait::where('vente_id', $vente->id)->where('retire', false)->delete();
+
             if ($aRetirer) {
                 $today = now()->format('Y-m-d');
                 $maxSeq = CommandeRetrait::where('numero_commande', 'like', $today . '-%')
@@ -236,6 +242,7 @@ class VenteController extends Controller
                     $produit = Produit::find($ligne['produit_id']);
                     CommandeRetrait::create([
                         'concours_id' => $vente->concours_id,
+                        'vente_id' => $vente->id,
                         'numero_commande' => $today . '-' . $nextSeq,
                         'date_commande' => $today,
                         'prenom' => '',

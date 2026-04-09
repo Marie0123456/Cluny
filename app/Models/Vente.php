@@ -68,6 +68,11 @@ class Vente extends Model
         return $this->belongsTo(User::class, 'modified_by');
     }
 
+    public function commandeRetraits(): HasMany
+    {
+        return $this->hasMany(CommandeRetrait::class);
+    }
+
     public function recalculerTotal(): void
     {
         $this->update([
