@@ -19,7 +19,7 @@ class ModificationController extends Controller
     {
         $modifications = $concours->modifications()
             ->with([
-                'engagement.epreuve:id,numero,nom',
+                'engagement.epreuve:id,numero,nom,date',
                 'engagement.cavalier:id,nom,prenom,num_licence',
                 'engagement.cheval:id,nom,num_sire',
                 'ancienCheval:id,nom,num_sire',
