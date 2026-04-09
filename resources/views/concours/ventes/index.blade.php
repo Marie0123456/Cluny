@@ -1,3 +1,7 @@
+@push('head')
+    <meta http-equiv="refresh" content="300">
+@endpush
+
 <x-app-layout>
     <x-slot name="header">
         <div>
