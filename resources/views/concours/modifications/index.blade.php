@@ -1782,7 +1782,7 @@
                         this.cavalierApiResults = [];
                         return;
                     }
-                    const res = await fetch(`/api/cavaliers/search?q=${encodeURIComponent(this.searchNouveauCavalier)}`);
+                    const res = await fetch(`/api/cavaliers/search?q=${encodeURIComponent(this.searchNouveauCavalier)}&concours_id={{ $concours->id }}`);
                     this.cavalierApiResults = await res.json();
                     this.showNouveauResults = true;
                 },
