@@ -451,11 +451,17 @@ class ModificationController extends Controller
             'is_gn' => $request->boolean('is_gn'),
         ];
 
-        if ($modification->statut->value === 'fait') {
-            $updateData['statut'] = 'modifie';
+        // Ne marquer comme modifié que si type_compte ou numero_compte ont changé
+        $compteChanged = ($validated['type_compte'] ?? null) !== $modification->type_compte
+            || ($validated['numero_compte'] ?? null) !== $modification->numero_compte;
+
+        if ($compteChanged) {
+            if ($modification->statut->value === 'fait') {
+                $updateData['statut'] = 'modifie';
+            }
+            $updateData['modified_by'] = auth()->id();
         }
 
-        $updateData['modified_by'] = auth()->id();
         $modification->update($updateData);
 
         return redirect()->back()->with('success', 'Paiement mis à jour.');
