@@ -167,7 +167,7 @@
                                             {{ $paiements ? implode(', ', $paiements) : '-' }}
                                         </td>
                                         <td class="px-4 py-3 text-sm text-gray-500">
-                                            {{ $mod->jour_paiement ? $mod->jour_paiement->format('d/m/Y') : '-' }}
+                                            {{ $paiements && $mod->jour_paiement ? $mod->jour_paiement->format('d/m/Y') : '-' }}
                                         </td>
                                         <td class="px-4 py-3 text-sm">
                                             @if ($mod->facture && $mod->clientFacturation)
