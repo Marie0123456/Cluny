@@ -167,7 +167,12 @@
                                     @foreach ($vente->lignes as $index => $ligne)
                                         <tr class="{{ $index === 0 ? 'border-t-2 border-gray-300' : '' }}">
                                             @if ($index === 0)
-                                                <td class="px-4 py-3 text-sm font-medium text-gray-900" rowspan="{{ $ligneCount }}">{{ $vente->nom_client }}</td>
+                                                <td class="px-4 py-3 text-sm font-medium text-gray-900" rowspan="{{ $ligneCount }}">
+                                                    {{ $vente->nom_client }}
+                                                    @if ($vente->commentaire)
+                                                        <div class="text-xs font-normal text-amber-700 bg-amber-50 rounded px-2 py-1 mt-1">{{ $vente->commentaire }}</div>
+                                                    @endif
+                                                </td>
                                             @endif
                                             <td class="px-4 py-3 text-sm text-gray-900">{{ $ligne->produit->nom }}</td>
                                             <td class="px-4 py-3 text-sm text-gray-900 text-center">{{ $ligne->quantite }}</td>
