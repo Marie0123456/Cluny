@@ -427,6 +427,7 @@ class ModificationController extends Controller
             'telephone' => 'nullable|string|max:20',
             'email' => 'nullable|email|max:255',
             'adresse' => 'nullable|string',
+            'is_gn' => 'boolean',
         ]);
 
         $clientFacturationId = $this->resolveClientFacturation($validated, $request->boolean('facture'))
@@ -447,6 +448,7 @@ class ModificationController extends Controller
             'jour_paiement' => $validated['jour_paiement'] ?? null,
             'facture' => $request->boolean('facture'),
             'client_facturation_id' => $clientFacturationId,
+            'is_gn' => $request->boolean('is_gn'),
         ];
 
         if ($modification->statut->value === 'fait') {
