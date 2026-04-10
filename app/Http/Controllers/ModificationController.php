@@ -492,6 +492,17 @@ class ModificationController extends Controller
 
     public function destroy(Modification $modification)
     {
+        // Premier clic : marquer "à supprimer" sans rien annuler
+        if ($modification->statut->value !== 'a_supprimer') {
+            $modification->update([
+                'statut' => 'a_supprimer',
+                'modified_by' => auth()->id(),
+            ]);
+
+            return redirect()->back()->with('success', 'Modification marquée à supprimer.');
+        }
+
+        // Second clic : suppression définitive
         $modification->load('engagement');
 
         if ($modification->type->value === 'changement_cheval' && $modification->ancien_cheval_id) {
