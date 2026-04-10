@@ -996,6 +996,7 @@
                                 <option value="cree">Créé</option>
                                 <option value="fait">Fait</option>
                                 <option value="modifie">Modifié</option>
+                                <option value="a_supprimer">À supprimer</option>
                             </select>
                         </div>
                         <div>
@@ -1027,7 +1028,7 @@
                                 if ($mod->paiement_internet) $paiementValues[] = 'internet';
                                 if ($mod->paiement_virement) $paiementValues[] = 'virement';
                             @endphp
-                            <div class="p-4 {{ $mod->statut->value === 'fait' ? 'opacity-50' : '' }}"
+                            <div class="p-4 {{ $mod->statut->value === 'fait' ? 'opacity-50' : '' }} {{ $mod->statut->value === 'a_supprimer' ? 'bg-red-50' : '' }}"
                                 x-show="showRow({{ json_encode([
                                     'epreuve' => (string) ($mod->engagement->epreuve->numero ?? ''),
                                     'nom' => $mod->type === \App\Enums\ModificationType::CHANGEMENT_CAVALIER
@@ -1069,6 +1070,8 @@
                                         <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 cursor-help" title="Fait par {{ $mod->doneByUser->name ?? 'inconnu' }} le {{ $mod->done_at ? $mod->done_at->format('d/m/Y à H:i') : $mod->updated_at->format('d/m/Y à H:i') }}">Fait</span>
                                     @elseif ($mod->statut->value === 'modifie')
                                         <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 cursor-help" title="Modifié par {{ $mod->modifiedByUser->name ?? 'inconnu' }} le {{ $mod->updated_at->format('d/m/Y à H:i') }}">Modifié</span>
+                                    @elseif ($mod->statut->value === 'a_supprimer')
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 cursor-help" title="À supprimer par {{ $mod->modifiedByUser->name ?? 'inconnu' }} le {{ $mod->updated_at->format('d/m/Y à H:i') }}">À supprimer</span>
                                     @endif
                                 </div>
 
@@ -1128,7 +1131,7 @@
                                         </form>
                                     @endif
                                     <form method="POST" action="{{ route('modifications.destroy', $mod) }}"
-                                        onsubmit="return confirm('Supprimer cette modification ?')">
+                                        onsubmit="return confirm('{{ $mod->statut->value === 'a_supprimer' ? 'Confirmer la suppression définitive ?' : 'Marquer cette modification à supprimer ?' }}')">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="text-red-600 hover:text-red-800 text-sm font-medium py-1">Supprimer</button>
@@ -1311,7 +1314,7 @@
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200">
                                 @foreach ($visibleMods as $mod)
-                                    <tr class="{{ $mod->statut->value === 'fait' ? 'opacity-50' : '' }}"
+                                    <tr class="{{ $mod->statut->value === 'fait' ? 'opacity-50' : '' }} {{ $mod->statut->value === 'a_supprimer' ? 'bg-red-50' : '' }}"
                                         @php
                                         $paiementValues = [];
                                         if ($mod->paiement_cb) $paiementValues[] = 'cb';
@@ -1436,6 +1439,8 @@
                                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 cursor-help" title="Fait par {{ $mod->doneByUser->name ?? 'inconnu' }} le {{ $mod->done_at ? $mod->done_at->format('d/m/Y à H:i') : $mod->updated_at->format('d/m/Y à H:i') }}">Fait</span>
                                             @elseif ($mod->statut->value === 'modifie')
                                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 cursor-help" title="Modifié par {{ $mod->modifiedByUser->name ?? 'inconnu' }} le {{ $mod->updated_at->format('d/m/Y à H:i') }}">Modifié</span>
+                                            @elseif ($mod->statut->value === 'a_supprimer')
+                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 cursor-help" title="À supprimer par {{ $mod->modifiedByUser->name ?? 'inconnu' }} le {{ $mod->updated_at->format('d/m/Y à H:i') }}">À supprimer</span>
                                             @endif
                                         </td>
                                         <td class="px-4 py-2 text-sm text-right">
@@ -1451,7 +1456,7 @@
                                                     </form>
                                                 @endif
                                                 <form method="POST" action="{{ route('modifications.destroy', $mod) }}"
-                                                    onsubmit="return confirm('Supprimer cette modification ?')">
+                                                    onsubmit="return confirm('{{ $mod->statut->value === 'a_supprimer' ? 'Confirmer la suppression définitive ?' : 'Marquer cette modification à supprimer ?' }}')">
                                                     @csrf
                                                     @method('DELETE')
                                                     <button type="submit" class="text-red-600 hover:text-red-800 text-xs font-medium">Supprimer</button>
