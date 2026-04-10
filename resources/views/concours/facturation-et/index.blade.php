@@ -81,10 +81,13 @@
                                 <option value="">Tous</option>
                                 <option value="sans">Sans paiement</option>
                                 @php
-                                    $joursPaiement = $modifications->map(fn($m) => $m->jour_paiement?->format('Y-m-d'))
-                                        ->filter()
+                                    $joursPaiement = $modifications
+                                        ->filter(fn($m) => $m->jour_paiement !== null)
+                                        ->map(fn($m) => $m->jour_paiement->format('Y-m-d'))
                                         ->unique()
-                                        ->sortDesc();
+                                        ->values()
+                                        ->sortDesc()
+                                        ->values();
                                 @endphp
                                 @foreach ($joursPaiement as $jour)
                                     <option value="{{ $jour }}">{{ \Carbon\Carbon::parse($jour)->format('d/m/Y') }}</option>
@@ -125,11 +128,15 @@
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200" x-ref="tbody">
                                 @foreach ($modifications as $mod)
-                                    <tr x-show="showRow({{ json_encode([
-                                        'epreuve' => (string) ($mod->engagement->epreuve->numero ?? ''),
-                                        'cavalier' => trim(($mod->engagement->cavalier->prenom ?? '') . ' ' . ($mod->engagement->cavalier->nom ?? '')),
-                                        'jour_paiement' => $mod->jour_paiement?->format('Y-m-d') ?? '',
-                                    ]) }})"
+                                    @php
+                                        $rowEpreuve = (string) ($mod->engagement->epreuve->numero ?? '');
+                                        $rowCavalier = trim(($mod->engagement->cavalier->prenom ?? '') . ' ' . ($mod->engagement->cavalier->nom ?? ''));
+                                        $rowJourPaiement = $mod->jour_paiement ? $mod->jour_paiement->format('Y-m-d') : '';
+                                    @endphp
+                                    <tr x-show="showRow($el)"
+                                        data-filter-epreuve="{{ $rowEpreuve }}"
+                                        data-filter-cavalier="{{ $rowCavalier }}"
+                                        data-filter-jour-paiement="{{ $rowJourPaiement }}"
                                         data-sort-epreuve="{{ $mod->engagement->epreuve->numero ?? '0' }}"
                                         data-sort-cavalier="{{ mb_strtolower(trim(($mod->engagement->cavalier->nom ?? '') . ' ' . ($mod->engagement->cavalier->prenom ?? ''))) }}"
                                         data-row="data">
@@ -457,11 +464,14 @@
                     });
                 },
 
-                showRow(row) {
-                    if (this.filterEpreuve && row.epreuve !== this.filterEpreuve) return false;
-                    if (this.filterCavalier && !row.cavalier.toLowerCase().includes(this.filterCavalier.toLowerCase())) return false;
-                    if (this.filterJourPaiement === 'sans' && row.jour_paiement) return false;
-                    if (this.filterJourPaiement && this.filterJourPaiement !== 'sans' && row.jour_paiement !== this.filterJourPaiement) return false;
+                showRow(el) {
+                    const epreuve = el.dataset.filterEpreuve || '';
+                    const cavalier = el.dataset.filterCavalier || '';
+                    const jourPaiement = el.dataset.filterJourPaiement || '';
+                    if (this.filterEpreuve && epreuve !== this.filterEpreuve) return false;
+                    if (this.filterCavalier && !cavalier.toLowerCase().includes(this.filterCavalier.toLowerCase())) return false;
+                    if (this.filterJourPaiement === 'sans' && jourPaiement) return false;
+                    if (this.filterJourPaiement && this.filterJourPaiement !== 'sans' && jourPaiement !== this.filterJourPaiement) return false;
                     return true;
                 },
 
