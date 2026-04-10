@@ -55,7 +55,7 @@
                     </div>
                 @else
                     <!-- Filtres -->
-                    <div class="px-4 pt-4 pb-2 grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <div class="px-4 pt-4 pb-2 grid grid-cols-2 md:grid-cols-3 gap-3">
                         <div>
                             <label class="block text-xs font-medium text-gray-500 mb-1">Épreuve</label>
                             <select x-model="filterEpreuve"
@@ -75,21 +75,24 @@
                                 class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
                         </div>
                         <div>
-                            <label class="block text-xs font-medium text-gray-500 mb-1">Facturation</label>
-                            <select x-model="filterFacture"
+                            <label class="block text-xs font-medium text-gray-500 mb-1">Jour de paiement</label>
+                            <select x-model="filterJourPaiement"
                                 class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
                                 <option value="">Tous</option>
-                                <option value="oui">Avec facture</option>
-                                <option value="non">Sans facture</option>
+                                <option value="sans">Sans paiement</option>
+                                @php
+                                    $joursPaiement = $modifications->map(fn($m) => $m->jour_paiement?->format('Y-m-d'))
+                                        ->filter()
+                                        ->unique()
+                                        ->sortDesc();
+                                @endphp
+                                @foreach ($joursPaiement as $jour)
+                                    <option value="{{ $jour }}">{{ \Carbon\Carbon::parse($jour)->format('d/m/Y') }}</option>
+                                @endforeach
                             </select>
                         </div>
-                        <div>
-                            <label class="block text-xs font-medium text-gray-500 mb-1">Nom facturation</label>
-                            <input type="text" x-model="filterNomFacturation" placeholder="Nom de facturation..."
-                                class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
-                        </div>
                     </div>
-                    <div x-show="filterEpreuve || filterCavalier || filterFacture || filterNomFacturation" class="px-4 pb-2">
+                    <div x-show="filterEpreuve || filterCavalier || filterJourPaiement" class="px-4 pb-2">
                         <button @click="resetFilters()" type="button" class="text-xs text-indigo-600 hover:text-indigo-800 font-medium">Réinitialiser les filtres</button>
                     </div>
 
@@ -125,8 +128,7 @@
                                     <tr x-show="showRow({{ json_encode([
                                         'epreuve' => (string) ($mod->engagement->epreuve->numero ?? ''),
                                         'cavalier' => trim(($mod->engagement->cavalier->prenom ?? '') . ' ' . ($mod->engagement->cavalier->nom ?? '')),
-                                        'facture' => $mod->facture,
-                                        'nom_facturation' => $mod->clientFacturation->nom ?? '',
+                                        'jour_paiement' => $mod->jour_paiement?->format('Y-m-d') ?? '',
                                     ]) }})"
                                         data-sort-epreuve="{{ $mod->engagement->epreuve->numero ?? '0' }}"
                                         data-sort-cavalier="{{ mb_strtolower(trim(($mod->engagement->cavalier->nom ?? '') . ' ' . ($mod->engagement->cavalier->prenom ?? ''))) }}"
@@ -413,8 +415,7 @@
             return {
                 filterEpreuve: '',
                 filterCavalier: '',
-                filterFacture: '',
-                filterNomFacturation: '',
+                filterJourPaiement: '',
                 sortBy: '',
                 sortDir: 'asc',
 
@@ -459,17 +460,15 @@
                 showRow(row) {
                     if (this.filterEpreuve && row.epreuve !== this.filterEpreuve) return false;
                     if (this.filterCavalier && !row.cavalier.toLowerCase().includes(this.filterCavalier.toLowerCase())) return false;
-                    if (this.filterFacture === 'oui' && !row.facture) return false;
-                    if (this.filterFacture === 'non' && row.facture) return false;
-                    if (this.filterNomFacturation && !row.nom_facturation.toLowerCase().includes(this.filterNomFacturation.toLowerCase())) return false;
+                    if (this.filterJourPaiement === 'sans' && row.jour_paiement) return false;
+                    if (this.filterJourPaiement && this.filterJourPaiement !== 'sans' && row.jour_paiement !== this.filterJourPaiement) return false;
                     return true;
                 },
 
                 resetFilters() {
                     this.filterEpreuve = '';
                     this.filterCavalier = '';
-                    this.filterFacture = '';
-                    this.filterNomFacturation = '';
+                    this.filterJourPaiement = '';
                 }
             };
         }
