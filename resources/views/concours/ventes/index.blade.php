@@ -45,7 +45,7 @@
                     </div>
                 @else
                     <!-- Filtres -->
-                    <div class="px-4 pt-4 pb-2 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+                    <div class="px-4 pt-4 pb-2 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                         <div>
                             <label class="block text-xs font-medium text-gray-500 mb-1">Client</label>
                             <input type="text" x-model="filterClient" placeholder="Nom du client..."
@@ -65,21 +65,24 @@
                             </select>
                         </div>
                         <div>
-                            <label class="block text-xs font-medium text-gray-500 mb-1">Facturation</label>
-                            <select x-model="filterFacture"
+                            <label class="block text-xs font-medium text-gray-500 mb-1">Jour de paiement</label>
+                            <select x-model="filterJourPaiement"
                                 class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
                                 <option value="">Tous</option>
-                                <option value="oui">Avec facture</option>
-                                <option value="non">Sans facture</option>
+                                <option value="sans">Sans paiement</option>
+                                @php
+                                    $joursPaiement = $ventes->map(fn($v) => $v->jour_paiement?->format('Y-m-d'))
+                                        ->filter()
+                                        ->unique()
+                                        ->sortDesc();
+                                @endphp
+                                @foreach ($joursPaiement as $jour)
+                                    <option value="{{ $jour }}">{{ \Carbon\Carbon::parse($jour)->format('d/m/Y') }}</option>
+                                @endforeach
                             </select>
                         </div>
-                        <div>
-                            <label class="block text-xs font-medium text-gray-500 mb-1">Nom facturation</label>
-                            <input type="text" x-model="filterNomFacturation" placeholder="Nom de facturation..."
-                                class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
-                        </div>
                     </div>
-                    <div x-show="filterClient || filterProduit || filterFacture || filterNomFacturation" class="px-4 pb-2">
+                    <div x-show="filterClient || filterProduit || filterJourPaiement" class="px-4 pb-2">
                         <button @click="resetFilters()" type="button" class="text-xs text-indigo-600 hover:text-indigo-800 font-medium">Réinitialiser les filtres</button>
                     </div>
 
@@ -106,8 +109,7 @@
                                         <tr x-show="showRow({{ json_encode([
                                             'client' => $vente->nom_client,
                                             'produits' => $vente->lignes->pluck('produit.nom')->join(', '),
-                                            'facture' => $vente->facture,
-                                            'nom_facturation' => $vente->clientFacturation->nom ?? '',
+                                            'jour_paiement' => $vente->jour_paiement?->format('Y-m-d') ?? '',
                                         ]) }})" class="{{ $loop->first ? 'border-t-2 border-gray-300' : '' }}">
                                             @if ($loop->first)
                                                 <td class="px-4 py-3 text-sm font-medium text-gray-900" rowspan="{{ $ligneCount }}">
@@ -260,23 +262,20 @@
             return {
                 filterClient: '',
                 filterProduit: '',
-                filterFacture: '',
-                filterNomFacturation: '',
+                filterJourPaiement: '',
 
                 showRow(row) {
                     if (this.filterClient && !row.client.toLowerCase().includes(this.filterClient.toLowerCase())) return false;
                     if (this.filterProduit && !row.produits.toLowerCase().includes(this.filterProduit.toLowerCase())) return false;
-                    if (this.filterFacture === 'oui' && !row.facture) return false;
-                    if (this.filterFacture === 'non' && row.facture) return false;
-                    if (this.filterNomFacturation && !row.nom_facturation.toLowerCase().includes(this.filterNomFacturation.toLowerCase())) return false;
+                    if (this.filterJourPaiement === 'sans' && row.jour_paiement) return false;
+                    if (this.filterJourPaiement && this.filterJourPaiement !== 'sans' && row.jour_paiement !== this.filterJourPaiement) return false;
                     return true;
                 },
 
                 resetFilters() {
                     this.filterClient = '';
                     this.filterProduit = '';
-                    this.filterFacture = '';
-                    this.filterNomFacturation = '';
+                    this.filterJourPaiement = '';
                 }
             };
         }
