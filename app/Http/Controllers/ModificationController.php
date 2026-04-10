@@ -415,6 +415,7 @@ class ModificationController extends Controller
         $validated = $request->validate([
             'type_compte' => 'nullable|in:Licence,Compte,Club',
             'numero_compte' => 'nullable|string|max:255',
+            'cheval_id' => 'nullable|exists:chevaux,id',
             'paiement_cb' => 'boolean',
             'paiement_especes' => 'boolean',
             'paiement_cheque' => 'boolean',
@@ -451,11 +452,22 @@ class ModificationController extends Controller
             'is_gn' => $request->boolean('is_gn'),
         ];
 
-        // Ne marquer comme modifié que si type_compte ou numero_compte ont changé
+        // Changement de cheval (uniquement pour les invitations)
+        $chevalChanged = false;
+        if ($modification->type === ModificationType::AJOUT_ENGAGEMENT
+            && !empty($validated['cheval_id'])
+            && $modification->engagement
+            && (int) $modification->engagement->cheval_id !== (int) $validated['cheval_id']
+        ) {
+            $modification->engagement->update(['cheval_id' => $validated['cheval_id']]);
+            $chevalChanged = true;
+        }
+
+        // Ne marquer comme modifié que si type_compte, numero_compte ou cheval ont changé
         $compteChanged = ($validated['type_compte'] ?? null) !== $modification->type_compte
             || ($validated['numero_compte'] ?? null) !== $modification->numero_compte;
 
-        if ($compteChanged) {
+        if ($compteChanged || $chevalChanged) {
             if ($modification->statut->value === 'fait') {
                 $updateData['statut'] = 'modifie';
             }

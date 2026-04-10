@@ -1139,9 +1139,48 @@
                                 @if (in_array($mod->statut->value, ['cree', 'fait']) && $mod->type->isPaid())
                                     <div id="edit-card-{{ $mod->id }}" class="hidden mt-3 pt-3 border-t border-gray-200">
                                         <form method="POST" action="{{ route('modifications.update-paiement', $mod) }}" class="space-y-3"
-                                            x-data="{ paiementCheque: {{ $mod->paiement_cheque ? 'true' : 'false' }}, facture: '{{ $mod->facture ? '1' : '0' }}' }">
+                                            x-data="chevalEditor({
+                                                paiementCheque: {{ $mod->paiement_cheque ? 'true' : 'false' }},
+                                                facture: '{{ $mod->facture ? '1' : '0' }}',
+                                                chevalId: {{ $mod->engagement->cheval_id ?? 'null' }},
+                                                chevalNom: @js($mod->engagement->cheval->nom ?? ''),
+                                            })">
                                             @csrf
                                             @method('PATCH')
+
+                                            {{-- Changement de cheval (uniquement pour les invitations) --}}
+                                            @if ($mod->type === \App\Enums\ModificationType::AJOUT_ENGAGEMENT)
+                                                <div>
+                                                    <label class="block text-xs font-medium text-gray-500 mb-1">Cheval</label>
+                                                    <input type="hidden" name="cheval_id" :value="chevalId">
+                                                    <div x-show="selectedChevalNom" class="mb-2 flex items-center gap-2">
+                                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                                                            <span x-text="selectedChevalNom"></span>
+                                                        </span>
+                                                        <button type="button" @click="resetCheval()" class="text-gray-400 hover:text-red-500 text-sm">&times;</button>
+                                                    </div>
+                                                    <div class="relative">
+                                                        <input type="text" x-model="searchCheval"
+                                                            @input.debounce.150ms="searchChevaux()"
+                                                            @focus="showChevalResults = true"
+                                                            placeholder="Rechercher un cheval (min. 2 lettres)..."
+                                                            class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                                                        <ul x-show="showChevalResults && chevalResults.length > 0"
+                                                            @click.away="showChevalResults = false"
+                                                            class="absolute z-50 w-full bg-white border border-gray-300 rounded-lg shadow-xl mt-1 max-h-64 overflow-y-auto divide-y divide-gray-100">
+                                                            <template x-for="ch in chevalResults" :key="ch.id">
+                                                                <li @click="selectCheval(ch)" class="cursor-pointer hover:bg-indigo-50 px-4 py-2 transition-colors">
+                                                                    <div class="flex items-center justify-between">
+                                                                        <span class="font-semibold text-gray-900 text-sm" x-text="ch.nom"></span>
+                                                                        <span x-show="ch.num_sire" class="text-xs font-mono bg-gray-100 text-gray-600 px-2 py-0.5 rounded" x-text="`SIRE: ${ch.num_sire}`"></span>
+                                                                    </div>
+                                                                </li>
+                                                            </template>
+                                                        </ul>
+                                                    </div>
+                                                </div>
+                                            @endif
+
                                             <div class="grid grid-cols-1 gap-3">
                                                 <div>
                                                     <label class="block text-xs font-medium text-gray-500 mb-1">Type de compte</label>
@@ -1425,9 +1464,47 @@
                                         <tr id="edit-row-{{ $mod->id }}" class="hidden bg-gray-50">
                                             <td colspan="{{ $concours->grand_national ? 8 : 9 }}" class="px-4 py-4">
                                                 <form method="POST" action="{{ route('modifications.update-paiement', $mod) }}" class="space-y-4"
-                                                    x-data="{ paiementCheque: {{ $mod->paiement_cheque ? 'true' : 'false' }}, facture: '{{ $mod->facture ? '1' : '0' }}' }">
+                                                    x-data="chevalEditor({
+                                                        paiementCheque: {{ $mod->paiement_cheque ? 'true' : 'false' }},
+                                                        facture: '{{ $mod->facture ? '1' : '0' }}',
+                                                        chevalId: {{ $mod->engagement->cheval_id ?? 'null' }},
+                                                        chevalNom: @js($mod->engagement->cheval->nom ?? ''),
+                                                    })">
                                                     @csrf
                                                     @method('PATCH')
+
+                                                    {{-- Changement de cheval (uniquement pour les invitations) --}}
+                                                    @if ($mod->type === \App\Enums\ModificationType::AJOUT_ENGAGEMENT)
+                                                        <div class="mb-2">
+                                                            <label class="block text-xs font-medium text-gray-500 mb-1">Cheval</label>
+                                                            <input type="hidden" name="cheval_id" :value="chevalId">
+                                                            <div x-show="selectedChevalNom" class="mb-2 flex items-center gap-2">
+                                                                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                                                                    <span x-text="selectedChevalNom"></span>
+                                                                </span>
+                                                                <button type="button" @click="resetCheval()" class="text-gray-400 hover:text-red-500 text-sm">&times;</button>
+                                                            </div>
+                                                            <div class="relative">
+                                                                <input type="text" x-model="searchCheval"
+                                                                    @input.debounce.150ms="searchChevaux()"
+                                                                    @focus="showChevalResults = true"
+                                                                    placeholder="Rechercher un cheval (min. 2 lettres)..."
+                                                                    class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                                                                <ul x-show="showChevalResults && chevalResults.length > 0"
+                                                                    @click.away="showChevalResults = false"
+                                                                    class="absolute z-50 w-full bg-white border border-gray-300 rounded-lg shadow-xl mt-1 max-h-64 overflow-y-auto divide-y divide-gray-100">
+                                                                    <template x-for="ch in chevalResults" :key="ch.id">
+                                                                        <li @click="selectCheval(ch)" class="cursor-pointer hover:bg-indigo-50 px-4 py-2 transition-colors">
+                                                                            <div class="flex items-center justify-between">
+                                                                                <span class="font-semibold text-gray-900 text-sm" x-text="ch.nom"></span>
+                                                                                <span x-show="ch.num_sire" class="text-xs font-mono bg-gray-100 text-gray-600 px-2 py-0.5 rounded" x-text="`SIRE: ${ch.num_sire}`"></span>
+                                                                            </div>
+                                                                        </li>
+                                                                    </template>
+                                                                </ul>
+                                                            </div>
+                                                        </div>
+                                                    @endif
 
                                                     @if ($concours->grand_national)
                                                     <div class="mb-2">
@@ -1599,6 +1676,42 @@
                     this.filterStatut = '';
                     this.filterPaiement = '';
                 }
+            };
+        }
+
+        function chevalEditor(init = {}) {
+            return {
+                paiementCheque: init.paiementCheque || false,
+                facture: init.facture || '0',
+                chevalId: init.chevalId || null,
+                selectedChevalNom: init.chevalNom || '',
+                searchCheval: '',
+                chevalResults: [],
+                showChevalResults: false,
+
+                async searchChevaux() {
+                    if (this.searchCheval.length < 2) {
+                        this.chevalResults = [];
+                        return;
+                    }
+                    const res = await fetch(`/api/chevaux/search?q=${encodeURIComponent(this.searchCheval)}&concours_id={{ $concours->getKey() }}`);
+                    this.chevalResults = await res.json();
+                    this.showChevalResults = true;
+                },
+
+                selectCheval(ch) {
+                    this.chevalId = ch.id;
+                    this.selectedChevalNom = ch.nom;
+                    this.searchCheval = '';
+                    this.chevalResults = [];
+                    this.showChevalResults = false;
+                },
+
+                resetCheval() {
+                    this.chevalId = null;
+                    this.selectedChevalNom = '';
+                    this.searchCheval = '';
+                },
             };
         }
 
