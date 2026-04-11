@@ -35,7 +35,8 @@ class FacturationEtController extends Controller
         $totalPf = $modifications->sum('pf');
 
         $nonRegles = $modifications->filter(fn ($m) =>
-            !$m->paiement_cb && !$m->paiement_especes && !$m->paiement_cheque && !$m->paiement_internet && !$m->paiement_virement
+            (float) $m->prix > 0
+            && !$m->paiement_cb && !$m->paiement_especes && !$m->paiement_cheque && !$m->paiement_internet && !$m->paiement_virement
         )->count();
 
         $caisseData = $modifications->map(fn ($m) => [
