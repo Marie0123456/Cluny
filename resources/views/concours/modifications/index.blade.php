@@ -1659,6 +1659,37 @@
                 filterStatut: '',
                 filterPaiement: '',
 
+                init() {
+                    const key = 'modificationsFilters_' + window.location.pathname;
+                    try {
+                        const stored = sessionStorage.getItem(key);
+                        if (stored) {
+                            const data = JSON.parse(stored);
+                            this.filterEpreuve = data.filterEpreuve || '';
+                            this.filterNom = data.filterNom || '';
+                            this.filterJour = data.filterJour || '';
+                            this.filterStatut = data.filterStatut || '';
+                            this.filterPaiement = data.filterPaiement || '';
+                        }
+                    } catch (e) {}
+                    ['filterEpreuve', 'filterNom', 'filterJour', 'filterStatut', 'filterPaiement'].forEach(k => {
+                        this.$watch(k, () => this.saveFilters());
+                    });
+                },
+
+                saveFilters() {
+                    const key = 'modificationsFilters_' + window.location.pathname;
+                    try {
+                        sessionStorage.setItem(key, JSON.stringify({
+                            filterEpreuve: this.filterEpreuve,
+                            filterNom: this.filterNom,
+                            filterJour: this.filterJour,
+                            filterStatut: this.filterStatut,
+                            filterPaiement: this.filterPaiement,
+                        }));
+                    } catch (e) {}
+                },
+
                 showRow(row) {
                     if (this.filterEpreuve && row.epreuve !== this.filterEpreuve) return false;
                     if (this.filterNom && !row.nom.toLowerCase().includes(this.filterNom.toLowerCase())) return false;
