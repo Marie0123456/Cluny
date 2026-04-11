@@ -132,11 +132,14 @@
                                         $rowEpreuve = (string) ($mod->engagement->epreuve->numero ?? '');
                                         $rowCavalier = trim(($mod->engagement->cavalier->prenom ?? '') . ' ' . ($mod->engagement->cavalier->nom ?? ''));
                                         $rowJourPaiement = $mod->jour_paiement ? $mod->jour_paiement->format('Y-m-d') : '';
+                                        $hasPaiement = $mod->paiement_cb || $mod->paiement_especes || $mod->paiement_cheque || $mod->paiement_internet || $mod->paiement_virement;
+                                        $rowRegle = ($hasPaiement || (float) $mod->prix <= 0) ? '1' : '0';
                                     @endphp
                                     <tr x-show="showRow($el)"
                                         data-filter-epreuve="{{ $rowEpreuve }}"
                                         data-filter-cavalier="{{ $rowCavalier }}"
                                         data-filter-jour-paiement="{{ $rowJourPaiement }}"
+                                        data-filter-regle="{{ $rowRegle }}"
                                         data-sort-epreuve="{{ $mod->engagement->epreuve->numero ?? '0' }}"
                                         data-sort-cavalier="{{ mb_strtolower(trim(($mod->engagement->cavalier->nom ?? '') . ' ' . ($mod->engagement->cavalier->prenom ?? ''))) }}"
                                         data-row="data">
@@ -495,9 +498,10 @@
                     const epreuve = el.dataset.filterEpreuve || '';
                     const cavalier = el.dataset.filterCavalier || '';
                     const jourPaiement = el.dataset.filterJourPaiement || '';
+                    const regle = el.dataset.filterRegle || '0';
                     if (this.filterEpreuve && epreuve !== this.filterEpreuve) return false;
                     if (this.filterCavalier && !cavalier.toLowerCase().includes(this.filterCavalier.toLowerCase())) return false;
-                    if (this.filterJourPaiement === 'sans' && jourPaiement) return false;
+                    if (this.filterJourPaiement === 'sans' && regle === '1') return false;
                     if (this.filterJourPaiement && this.filterJourPaiement !== 'sans' && jourPaiement !== this.filterJourPaiement) return false;
                     return true;
                 },
