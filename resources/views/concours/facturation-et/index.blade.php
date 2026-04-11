@@ -426,6 +426,33 @@
                 sortBy: '',
                 sortDir: 'asc',
 
+                init() {
+                    const key = 'facturationEtFilters_' + window.location.pathname;
+                    try {
+                        const stored = sessionStorage.getItem(key);
+                        if (stored) {
+                            const data = JSON.parse(stored);
+                            this.filterEpreuve = data.filterEpreuve || '';
+                            this.filterCavalier = data.filterCavalier || '';
+                            this.filterJourPaiement = data.filterJourPaiement || '';
+                        }
+                    } catch (e) {}
+                    ['filterEpreuve', 'filterCavalier', 'filterJourPaiement'].forEach(k => {
+                        this.$watch(k, () => this.saveFilters());
+                    });
+                },
+
+                saveFilters() {
+                    const key = 'facturationEtFilters_' + window.location.pathname;
+                    try {
+                        sessionStorage.setItem(key, JSON.stringify({
+                            filterEpreuve: this.filterEpreuve,
+                            filterCavalier: this.filterCavalier,
+                            filterJourPaiement: this.filterJourPaiement,
+                        }));
+                    } catch (e) {}
+                },
+
                 toggleSort(column) {
                     if (this.sortBy === column) {
                         this.sortDir = this.sortDir === 'asc' ? 'desc' : 'asc';
