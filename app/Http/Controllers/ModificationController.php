@@ -452,13 +452,20 @@ class ModificationController extends Controller
             'is_gn' => $request->boolean('is_gn'),
         ];
 
-        // Changement de cheval (uniquement pour les invitations)
+        // Changement de cheval (invitations et changements de cheval)
         $chevalChanged = false;
-        if ($modification->type === ModificationType::AJOUT_ENGAGEMENT
+        if (in_array($modification->type, [ModificationType::AJOUT_ENGAGEMENT, ModificationType::CHANGEMENT_CHEVAL])
             && !empty($validated['cheval_id'])
             && $modification->engagement
             && (int) $modification->engagement->cheval_id !== (int) $validated['cheval_id']
         ) {
+            // Pour CHANGEMENT_CHEVAL, mettre à jour aussi nouveau_cheval_id et la description
+            if ($modification->type === ModificationType::CHANGEMENT_CHEVAL) {
+                $nouveauCheval = \App\Models\Cheval::find($validated['cheval_id']);
+                $ancienCheval = $modification->ancienCheval;
+                $updateData['nouveau_cheval_id'] = $validated['cheval_id'];
+                $updateData['description'] = "Changement: " . ($ancienCheval->nom ?? '?') . " → " . ($nouveauCheval->nom ?? '?');
+            }
             $modification->engagement->update(['cheval_id' => $validated['cheval_id']]);
             $chevalChanged = true;
         }
@@ -468,7 +475,7 @@ class ModificationController extends Controller
             || ($validated['numero_compte'] ?? null) !== $modification->numero_compte;
 
         if ($compteChanged || $chevalChanged) {
-            if ($modification->statut->value === 'fait') {
+            if (in_array($modification->statut->value, ['fait', 'cree'])) {
                 $updateData['statut'] = 'modifie';
             }
             $updateData['modified_by'] = auth()->id();

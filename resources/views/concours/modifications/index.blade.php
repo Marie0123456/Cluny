@@ -1120,7 +1120,7 @@
 
                                 {{-- Actions --}}
                                 <div class="flex items-center gap-4 pt-2 border-t border-gray-100">
-                                    @if (in_array($mod->statut->value, ['cree', 'fait']) && $mod->type->isPaid())
+                                    @if (in_array($mod->statut->value, ['cree', 'fait', 'modifie']) && $mod->type->isEditable())
                                         <button type="button" onclick="toggleEditCard({{ $mod->id }})" class="text-indigo-600 hover:text-indigo-800 text-sm font-medium py-1">Editer</button>
                                     @endif
                                     @if (in_array($mod->statut->value, ['cree', 'modifie']))
@@ -1139,7 +1139,7 @@
                                 </div>
 
                                 {{-- Inline edit (mobile) --}}
-                                @if (in_array($mod->statut->value, ['cree', 'fait']) && $mod->type->isPaid())
+                                @if (in_array($mod->statut->value, ['cree', 'fait', 'modifie']) && $mod->type->isEditable())
                                     <div id="edit-card-{{ $mod->id }}" class="hidden mt-3 pt-3 border-t border-gray-200">
                                         <form method="POST" action="{{ route('modifications.update-paiement', $mod) }}" class="space-y-3"
                                             x-data="chevalEditor({
@@ -1151,8 +1151,8 @@
                                             @csrf
                                             @method('PATCH')
 
-                                            {{-- Changement de cheval (uniquement pour les invitations) --}}
-                                            @if ($mod->type === \App\Enums\ModificationType::AJOUT_ENGAGEMENT)
+                                            {{-- Changement de cheval --}}
+                                            @if ($mod->type->hasCheval())
                                                 <div>
                                                     <label class="block text-xs font-medium text-gray-500 mb-1">Cheval</label>
                                                     <input type="hidden" name="cheval_id" :value="chevalId">
@@ -1445,7 +1445,7 @@
                                         </td>
                                         <td class="px-4 py-2 text-sm text-right">
                                             <div class="flex justify-end space-x-2">
-                                                @if (in_array($mod->statut->value, ['cree', 'fait']) && $mod->type->isPaid())
+                                                @if (in_array($mod->statut->value, ['cree', 'fait', 'modifie']) && $mod->type->isEditable())
                                                     <button type="button" onclick="toggleEditRow({{ $mod->id }})" class="text-indigo-600 hover:text-indigo-800 text-xs font-medium">Editer</button>
                                                 @endif
                                                 @if (in_array($mod->statut->value, ['cree', 'modifie']))
@@ -1465,7 +1465,7 @@
                                         </td>
                                     </tr>
                                     {{-- Inline edit row --}}
-                                    @if (in_array($mod->statut->value, ['cree', 'fait']) && $mod->type->isPaid())
+                                    @if (in_array($mod->statut->value, ['cree', 'fait', 'modifie']) && $mod->type->isEditable())
                                         <tr id="edit-row-{{ $mod->id }}" class="hidden bg-gray-50">
                                             <td colspan="{{ $concours->grand_national ? 8 : 9 }}" class="px-4 py-4">
                                                 <form method="POST" action="{{ route('modifications.update-paiement', $mod) }}" class="space-y-4"
@@ -1478,8 +1478,8 @@
                                                     @csrf
                                                     @method('PATCH')
 
-                                                    {{-- Changement de cheval (uniquement pour les invitations) --}}
-                                                    @if ($mod->type === \App\Enums\ModificationType::AJOUT_ENGAGEMENT)
+                                                    {{-- Changement de cheval --}}
+                                                    @if ($mod->type->hasCheval())
                                                         <div class="mb-2">
                                                             <label class="block text-xs font-medium text-gray-500 mb-1">Cheval</label>
                                                             <input type="hidden" name="cheval_id" :value="chevalId">
