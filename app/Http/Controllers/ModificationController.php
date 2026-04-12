@@ -486,13 +486,17 @@ class ModificationController extends Controller
         return redirect()->back()->with('success', 'Paiement mis à jour.');
     }
 
-    public function marquerFait(Modification $modification)
+    public function marquerFait(Request $request, Modification $modification)
     {
         $modification->update([
             'statut' => 'fait',
             'done_by' => auth()->id(),
             'done_at' => now(),
         ]);
+
+        if ($request->expectsJson()) {
+            return response()->json(['success' => true]);
+        }
 
         return redirect()->back()->with('success', 'Modification marquée comme faite.');
     }
