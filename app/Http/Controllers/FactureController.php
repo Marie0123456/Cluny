@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\ClientFacturation;
 use App\Models\Concours;
+use App\Models\FactureCommentaire;
 use App\Models\Modification;
 use App\Models\Vente;
 use Illuminate\Http\Request;
@@ -61,7 +62,11 @@ class FactureController extends Controller
     {
         [$ventes, $modifications, $totalVentes, $totalModifications] = $this->getClientData($concours, $client);
 
-        return view('concours.factures.show', compact('concours', 'client', 'ventes', 'modifications', 'totalVentes', 'totalModifications'));
+        $commentaire = FactureCommentaire::where('concours_id', $concours->id)
+            ->where('client_facturation_id', $client->id)
+            ->first();
+
+        return view('concours.factures.show', compact('concours', 'client', 'ventes', 'modifications', 'totalVentes', 'totalModifications', 'commentaire'));
     }
 
     public function updateClient(Request $request, Concours $concours, ClientFacturation $client)
@@ -77,6 +82,27 @@ class FactureController extends Controller
 
         return redirect()->route('concours.factures.show', [$concours, $client])
             ->with('success', 'Informations client mises à jour.');
+    }
+
+    public function updateCommentaire(Request $request, Concours $concours, ClientFacturation $client)
+    {
+        $validated = $request->validate([
+            'commentaire' => 'nullable|string|max:2000',
+        ]);
+
+        if (!empty($validated['commentaire'])) {
+            FactureCommentaire::updateOrCreate(
+                ['concours_id' => $concours->id, 'client_facturation_id' => $client->id],
+                ['commentaire' => $validated['commentaire']],
+            );
+        } else {
+            FactureCommentaire::where('concours_id', $concours->id)
+                ->where('client_facturation_id', $client->id)
+                ->delete();
+        }
+
+        return redirect()->route('concours.factures.show', [$concours, $client])
+            ->with('success', 'Commentaire mis à jour.');
     }
 
     public function updatePaiementGlobal(Request $request, Concours $concours, ClientFacturation $client)
@@ -153,6 +179,9 @@ class FactureController extends Controller
                 echo '=== ' . $client->nom . " ===\n";
                 if ($client->telephone) echo 'Tel: ' . $client->telephone . "\n";
                 if ($client->email) echo 'Email: ' . $client->email . "\n";
+                $commentaire = FactureCommentaire::where('concours_id', $concours->id)
+                    ->where('client_facturation_id', $client->id)->first();
+                if ($commentaire) echo 'Note: ' . $commentaire->commentaire . "\n";
 
                 // Ventes
                 if ($ventes->isNotEmpty()) {

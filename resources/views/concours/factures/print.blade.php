@@ -62,6 +62,12 @@
             @if ($client->email) Email : {{ $client->email }} &nbsp;|&nbsp; @endif
             @if ($client->adresse) Adresse : {{ $client->adresse }} @endif
         </div>
+        @php $commentaireFacture = \App\Models\FactureCommentaire::where('concours_id', $concours->id)->where('client_facturation_id', $client->id)->first(); @endphp
+        @if ($commentaireFacture)
+            <div style="font-size: 11px; color: #92400e; background: #fffbeb; padding: 4px 8px; border-radius: 3px; margin-bottom: 8px;">
+                {{ $commentaireFacture->commentaire }}
+            </div>
+        @endif
 
         @if ($ventes->isNotEmpty())
             <h3>Ventes</h3>
