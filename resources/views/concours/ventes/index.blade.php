@@ -106,10 +106,14 @@
                                 @foreach ($ventes as $vente)
                                     @php $ligneCount = $vente->lignes->count() ?: 1; @endphp
                                     @foreach ($vente->lignes as $ligne)
+                                        @php
+                                            $venteHasPaiement = $vente->paiement_cb || $vente->paiement_especes || $vente->paiement_cheque || $vente->paiement_internet || $vente->paiement_virement;
+                                        @endphp
                                         <tr x-show="showRow({{ json_encode([
                                             'client' => $vente->nom_client,
                                             'produits' => $vente->lignes->pluck('produit.nom')->join(', '),
                                             'jour_paiement' => $vente->jour_paiement?->format('Y-m-d') ?? '',
+                                            'regle' => $venteHasPaiement ? '1' : '0',
                                         ]) }})" class="{{ $loop->first ? 'border-t-2 border-gray-300' : '' }}">
                                             @if ($loop->first)
                                                 <td class="px-4 py-3 text-sm font-medium text-gray-900" rowspan="{{ $ligneCount }}">
@@ -267,7 +271,7 @@
                 showRow(row) {
                     if (this.filterClient && !row.client.toLowerCase().includes(this.filterClient.toLowerCase())) return false;
                     if (this.filterProduit && !row.produits.toLowerCase().includes(this.filterProduit.toLowerCase())) return false;
-                    if (this.filterJourPaiement === 'sans' && row.jour_paiement) return false;
+                    if (this.filterJourPaiement === 'sans' && row.regle === '1') return false;
                     if (this.filterJourPaiement && this.filterJourPaiement !== 'sans' && row.jour_paiement !== this.filterJourPaiement) return false;
                     return true;
                 },
