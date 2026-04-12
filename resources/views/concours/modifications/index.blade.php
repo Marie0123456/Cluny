@@ -1124,11 +1124,7 @@
                                         <button type="button" onclick="toggleEditCard({{ $mod->id }})" class="text-indigo-600 hover:text-indigo-800 text-sm font-medium py-1">Editer</button>
                                     @endif
                                     @if (in_array($mod->statut->value, ['cree', 'modifie']))
-                                        <form method="POST" action="{{ route('modifications.fait', $mod) }}">
-                                            @csrf
-                                            @method('PATCH')
-                                            <button type="submit" class="text-green-600 hover:text-green-800 text-sm font-medium py-1">Fait</button>
-                                        </form>
+                                        <button type="button" onclick="marquerFait({{ $mod->id }}, this)" class="text-green-600 hover:text-green-800 text-sm font-medium py-1">Fait</button>
                                     @endif
                                     <form method="POST" action="{{ route('modifications.destroy', $mod) }}"
                                         onsubmit="return confirm('{{ $mod->statut->value === 'a_supprimer' ? 'Confirmer la suppression définitive ?' : 'Marquer cette modification à supprimer ?' }}')">
@@ -1449,11 +1445,7 @@
                                                     <button type="button" onclick="toggleEditRow({{ $mod->id }})" class="text-indigo-600 hover:text-indigo-800 text-xs font-medium">Editer</button>
                                                 @endif
                                                 @if (in_array($mod->statut->value, ['cree', 'modifie']))
-                                                    <form method="POST" action="{{ route('modifications.fait', $mod) }}">
-                                                        @csrf
-                                                        @method('PATCH')
-                                                        <button type="submit" class="text-green-600 hover:text-green-800 text-xs font-medium">Fait</button>
-                                                    </form>
+                                                    <button type="button" onclick="marquerFait({{ $mod->id }}, this)" class="text-green-600 hover:text-green-800 text-xs font-medium">Fait</button>
                                                 @endif
                                                 <form method="POST" action="{{ route('modifications.destroy', $mod) }}"
                                                     onsubmit="return confirm('{{ $mod->statut->value === 'a_supprimer' ? 'Confirmer la suppression définitive ?' : 'Marquer cette modification à supprimer ?' }}')">
@@ -1650,6 +1642,54 @@
         const __isGrandNational = @json($concours->grand_national);
         const __isSif = @json($concours->type_ffe_sif);
         const __allCavaliersConcours = @json($allCavaliersJson);
+
+        function marquerFait(modId, btn) {
+            btn.disabled = true;
+            btn.textContent = '...';
+            fetch('/modifications/' + modId + '/fait', {
+                method: 'PATCH',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'Accept': 'application/json',
+                },
+            }).then(r => {
+                if (!r.ok) throw new Error(r.status);
+                return r.json();
+            }).then(() => {
+                // Update card (mobile)
+                const card = document.getElementById('edit-card-' + modId);
+                if (card) {
+                    const wrapper = card.closest('[class*="p-4"]');
+                    if (wrapper) {
+                        wrapper.classList.add('opacity-50');
+                        // Update status badge
+                        const badge = wrapper.querySelector('[class*="bg-blue-100"], [class*="bg-yellow-100"]');
+                        if (badge) {
+                            badge.className = badge.className.replace(/bg-\w+-100 text-\w+-800/, 'bg-green-100 text-green-800');
+                            badge.textContent = 'Fait';
+                        }
+                    }
+                }
+                // Update table row (desktop)
+                const editRow = document.getElementById('edit-row-' + modId);
+                if (editRow) {
+                    const dataRow = editRow.previousElementSibling;
+                    if (dataRow) {
+                        dataRow.classList.add('opacity-50');
+                        const badge = dataRow.querySelector('[class*="bg-blue-100"], [class*="bg-yellow-100"]');
+                        if (badge) {
+                            badge.className = badge.className.replace(/bg-\w+-100 text-\w+-800/, 'bg-green-100 text-green-800');
+                            badge.textContent = 'Fait';
+                        }
+                    }
+                }
+                btn.remove();
+            }).catch(() => {
+                btn.disabled = false;
+                btn.textContent = 'Fait';
+                alert('Erreur lors de la mise à jour.');
+            });
+        }
 
         function modificationsFilter() {
             return {
