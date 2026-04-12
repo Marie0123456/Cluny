@@ -36,4 +36,14 @@ enum ModificationType: string
     {
         return in_array($this, [self::AJOUT_ENGAGEMENT, self::CHANGEMENT_EPREUVE]);
     }
+
+    public function isEditable(): bool
+    {
+        return in_array($this, [self::AJOUT_ENGAGEMENT, self::CHANGEMENT_EPREUVE, self::CHANGEMENT_CHEVAL]);
+    }
+
+    public function hasCheval(): bool
+    {
+        return in_array($this, [self::AJOUT_ENGAGEMENT, self::CHANGEMENT_CHEVAL]);
+    }
 }
