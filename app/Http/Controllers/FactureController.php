@@ -64,6 +64,21 @@ class FactureController extends Controller
         return view('concours.factures.show', compact('concours', 'client', 'ventes', 'modifications', 'totalVentes', 'totalModifications'));
     }
 
+    public function updateClient(Request $request, Concours $concours, ClientFacturation $client)
+    {
+        $validated = $request->validate([
+            'nom' => 'required|string|max:255',
+            'telephone' => 'nullable|string|max:50',
+            'email' => 'nullable|email|max:255',
+            'adresse' => 'nullable|string|max:500',
+        ]);
+
+        $client->update($validated);
+
+        return redirect()->route('concours.factures.show', [$concours, $client])
+            ->with('success', 'Informations client mises à jour.');
+    }
+
     public function updatePaiementGlobal(Request $request, Concours $concours, ClientFacturation $client)
     {
         $validated = $request->validate([
