@@ -17,9 +17,17 @@
             </div>
 
             <!-- Infos client -->
-            <div class="bg-white shadow-sm sm:rounded-lg p-6 mb-6">
-                <h3 class="text-lg font-medium text-gray-900 mb-3">{{ $client->nom }}</h3>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+            <div class="bg-white shadow-sm sm:rounded-lg p-6 mb-6" x-data="{ editClient: false }">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3">
+                    <h3 class="text-lg font-medium text-gray-900">{{ $client->nom }}</h3>
+                    <button type="button" @click="editClient = !editClient"
+                        class="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                        <span x-text="editClient ? 'Fermer' : 'Modifier les infos'"></span>
+                    </button>
+                </div>
+
+                <!-- Affichage lecture -->
+                <div x-show="!editClient" class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                     <div>
                         <span class="text-gray-500">Téléphone :</span>
                         <span class="text-gray-900 ml-1">{{ $client->telephone ?? '-' }}</span>
@@ -33,6 +41,44 @@
                         <span class="text-gray-900 ml-1">{{ $client->adresse ?? '-' }}</span>
                     </div>
                 </div>
+
+                <!-- Formulaire édition -->
+                <form x-show="editClient" x-cloak method="POST"
+                    action="{{ route('concours.factures.update-client', [$concours, $client]) }}"
+                    class="border-t pt-4">
+                    @csrf
+                    @method('PATCH')
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="client_nom" class="block text-sm font-medium text-gray-700 mb-1">Nom</label>
+                            <input type="text" name="nom" id="client_nom" value="{{ old('nom', $client->nom) }}" required
+                                class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                        </div>
+                        <div>
+                            <label for="client_telephone" class="block text-sm font-medium text-gray-700 mb-1">Téléphone</label>
+                            <input type="text" name="telephone" id="client_telephone" value="{{ old('telephone', $client->telephone) }}"
+                                class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                        </div>
+                        <div>
+                            <label for="client_email" class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                            <input type="email" name="email" id="client_email" value="{{ old('email', $client->email) }}"
+                                class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                        </div>
+                        <div>
+                            <label for="client_adresse" class="block text-sm font-medium text-gray-700 mb-1">Adresse</label>
+                            <input type="text" name="adresse" id="client_adresse" value="{{ old('adresse', $client->adresse) }}"
+                                class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                        </div>
+                    </div>
+
+                    <div class="mt-4">
+                        <button type="submit"
+                            class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 focus:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                            Enregistrer
+                        </button>
+                    </div>
+                </form>
             </div>
 
             <!-- Totaux -->
