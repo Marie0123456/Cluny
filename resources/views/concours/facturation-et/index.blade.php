@@ -502,7 +502,7 @@
                     if (this.filterEpreuve && epreuve !== this.filterEpreuve) return false;
                     if (this.filterCavalier && !cavalier.toLowerCase().includes(this.filterCavalier.toLowerCase())) return false;
                     if (this.filterJourPaiement === 'sans' && regle === '1') return false;
-                    if (this.filterJourPaiement && this.filterJourPaiement !== 'sans' && jourPaiement !== this.filterJourPaiement) return false;
+                    if (this.filterJourPaiement && this.filterJourPaiement !== 'sans' && (regle !== '1' || jourPaiement !== this.filterJourPaiement)) return false;
                     return true;
                 },
 

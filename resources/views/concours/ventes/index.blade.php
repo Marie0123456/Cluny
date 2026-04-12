@@ -272,7 +272,7 @@
                     if (this.filterClient && !row.client.toLowerCase().includes(this.filterClient.toLowerCase())) return false;
                     if (this.filterProduit && !row.produits.toLowerCase().includes(this.filterProduit.toLowerCase())) return false;
                     if (this.filterJourPaiement === 'sans' && row.regle === '1') return false;
-                    if (this.filterJourPaiement && this.filterJourPaiement !== 'sans' && row.jour_paiement !== this.filterJourPaiement) return false;
+                    if (this.filterJourPaiement && this.filterJourPaiement !== 'sans' && (row.regle !== '1' || row.jour_paiement !== this.filterJourPaiement)) return false;
                     return true;
                 },
 
