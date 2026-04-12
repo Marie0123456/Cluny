@@ -81,6 +81,42 @@
                 </form>
             </div>
 
+            <!-- Commentaire facture (spécifique à ce concours) -->
+            <div class="bg-white shadow-sm sm:rounded-lg p-6 mb-6" x-data="{ editComment: {{ $commentaire ? 'false' : 'true' }} }">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-2">
+                    <h3 class="text-sm font-medium text-gray-700">Commentaire facture</h3>
+                    @if ($commentaire)
+                        <button type="button" @click="editComment = !editComment"
+                            class="inline-flex items-center px-2 py-1 border border-gray-300 shadow-sm text-xs font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                            <span x-text="editComment ? 'Fermer' : 'Modifier'"></span>
+                        </button>
+                    @endif
+                </div>
+
+                @if ($commentaire)
+                    <div x-show="!editComment" class="text-sm text-amber-800 bg-amber-50 rounded-md px-3 py-2">
+                        {{ $commentaire->commentaire }}
+                    </div>
+                @endif
+
+                <form x-show="editComment" x-cloak method="POST"
+                    action="{{ route('concours.factures.update-commentaire', [$concours, $client]) }}">
+                    @csrf
+                    @method('PATCH')
+                    <textarea name="commentaire" rows="2" placeholder="Ajouter un commentaire pour cette facture..."
+                        class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">{{ old('commentaire', $commentaire->commentaire ?? '') }}</textarea>
+                    <div class="mt-2 flex items-center gap-2">
+                        <button type="submit"
+                            class="inline-flex items-center px-3 py-1.5 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 transition">
+                            Enregistrer
+                        </button>
+                        @if ($commentaire)
+                            <button type="button" @click="editComment = false" class="text-xs text-gray-500 hover:text-gray-700">Annuler</button>
+                        @endif
+                    </div>
+                </form>
+            </div>
+
             <!-- Totaux -->
             <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-4">
