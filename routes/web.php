@@ -122,7 +122,9 @@ Route::middleware(['auth'])->group(function () {
     Route::prefix('concours/{concours}')->name('concours.')->middleware(['concours.access', 'role:admin,vendeur'])->group(function () {
         Route::get('/commande-retraits', [CommandeRetraitController::class, 'index'])->name('commande-retraits.index');
         Route::post('/commande-retraits/import', [CommandeRetraitController::class, 'import'])->name('commande-retraits.import');
-        Route::patch('/commande-retraits/{commandeRetrait}/toggle-retire', [CommandeRetraitController::class, 'toggleRetire'])->name('commande-retraits.toggle-retire');
+        Route::patch('/commande-retraits/{commandeRetrait}/set-quantite', [CommandeRetraitController::class, 'setQuantiteRetiree'])->name('commande-retraits.set-quantite');
+        Route::patch('/commande-retraits/{commandeRetrait}', [CommandeRetraitController::class, 'update'])->name('commande-retraits.update');
+        Route::delete('/commande-retraits/{commandeRetrait}', [CommandeRetraitController::class, 'destroy'])->name('commande-retraits.destroy');
     });
 
     // Modification actions

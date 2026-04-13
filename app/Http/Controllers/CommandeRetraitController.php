@@ -84,9 +84,10 @@ class CommandeRetraitController extends Controller
                 continue;
             }
 
-            // Skip if already imported (same numero_commande + produit)
+            // Skip if already imported (same numero_commande + produit), including soft-deleted ones
             $produit = trim($row[$indexes['produit']] ?? '');
-            $exists = CommandeRetrait::where('concours_id', $concours->id)
+            $exists = CommandeRetrait::withTrashed()
+                ->where('concours_id', $concours->id)
                 ->where('numero_commande', $numeroCommande)
                 ->where('produit', $produit)
                 ->exists();
@@ -131,16 +132,80 @@ class CommandeRetraitController extends Controller
         return back()->with('success', $message);
     }
 
-    public function toggleRetire(Concours $concours, CommandeRetrait $commandeRetrait)
+    public function update(Request $request, Concours $concours, CommandeRetrait $commandeRetrait)
     {
-        $newState = !$commandeRetrait->retire;
-
-        $commandeRetrait->update([
-            'retire' => $newState,
-            'retired_by' => $newState ? auth()->id() : null,
-            'retired_at' => $newState ? now() : null,
+        $validated = $request->validate([
+            'prenom' => 'nullable|string|max:255',
+            'nom' => 'nullable|string|max:255',
+            'produit' => 'required|string|max:255',
+            'quantite' => 'required|integer|min:1',
+            'emplacement_boxes' => 'nullable|string|max:255',
+            'note_client' => 'nullable|string|max:1000',
         ]);
 
-        return back()->with('success', $newState ? 'Commande marquée comme retirée.' : 'Commande marquée comme non retirée.');
+        // Clamp quantite_retiree if new quantite is lower
+        if ($commandeRetrait->quantite_retiree > $validated['quantite']) {
+            $validated['quantite_retiree'] = $validated['quantite'];
+        }
+
+        $commandeRetrait->update($validated);
+
+        // Sync retire flag + retired_by/at with quantite_retiree
+        $this->syncRetireState($commandeRetrait->fresh());
+
+        if ($request->expectsJson()) {
+            return response()->json(['success' => true]);
+        }
+
+        return back()->with('success', 'Commande modifiée.');
+    }
+
+    public function destroy(Request $request, Concours $concours, CommandeRetrait $commandeRetrait)
+    {
+        $commandeRetrait->delete();
+
+        if ($request->expectsJson()) {
+            return response()->json(['success' => true]);
+        }
+
+        return back()->with('success', 'Commande supprimée.');
+    }
+
+    public function setQuantiteRetiree(Request $request, Concours $concours, CommandeRetrait $commandeRetrait)
+    {
+        $validated = $request->validate([
+            'quantite_retiree' => 'required|integer|min:0|max:' . $commandeRetrait->quantite,
+        ]);
+
+        $qty = (int) $validated['quantite_retiree'];
+        $isComplete = $qty >= $commandeRetrait->quantite;
+
+        $commandeRetrait->update([
+            'quantite_retiree' => $qty,
+            'retire' => $isComplete,
+            'retired_by' => $qty > 0 ? auth()->id() : null,
+            'retired_at' => $qty > 0 ? now() : null,
+        ]);
+
+        if ($request->expectsJson()) {
+            $commandeRetrait->load('retiredByUser:id,name');
+            return response()->json([
+                'success' => true,
+                'quantite_retiree' => $commandeRetrait->quantite_retiree,
+                'statut' => $commandeRetrait->statut_retrait,
+                'retired_by_name' => $commandeRetrait->retiredByUser?->name,
+                'retired_at' => $commandeRetrait->retired_at?->format('d/m/Y à H:i'),
+            ]);
+        }
+
+        return back()->with('success', 'Quantité retirée mise à jour.');
+    }
+
+    private function syncRetireState(CommandeRetrait $commande): void
+    {
+        $isComplete = $commande->quantite_retiree >= $commande->quantite && $commande->quantite_retiree > 0;
+        $commande->update([
+            'retire' => $isComplete,
+        ]);
     }
 }
