@@ -297,7 +297,8 @@ class VenteController extends Controller
             ], ';');
 
             foreach ($ventes as $vente) {
-                $paiementStr = $this->getPaiementLabel($vente);
+                $paiementStr = $this->getPaiementLabel($vente, '');
+                $datePaiement = $paiementStr && $vente->jour_paiement ? $vente->jour_paiement->format('d/m/Y') : '';
 
                 foreach ($vente->lignes as $index => $ligne) {
                     $tva = (float) $ligne->produit->tva;
@@ -307,7 +308,7 @@ class VenteController extends Controller
 
                     $row = [
                         $index === 0 ? $vente->nom_client : '',
-                        $index === 0 ? ($vente->jour_paiement ? $vente->jour_paiement->format('d/m/Y') : '') : '',
+                        $index === 0 ? $datePaiement : '',
                         $ligne->produit->nom,
                         $ligne->quantite,
                         number_format($puHt, 2, ',', ''),
