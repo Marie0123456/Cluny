@@ -6,7 +6,7 @@ use App\Models\ClientFacturation;
 
 trait HandlesPaiement
 {
-    protected function getPaiementLabel($item): string
+    protected function getPaiementLabel($item, string $empty = 'Non renseigné'): string
     {
         $paiements = [];
         if ($item->paiement_cb) $paiements[] = 'CB';
@@ -14,7 +14,7 @@ trait HandlesPaiement
         if ($item->paiement_cheque) $paiements[] = 'Chèque';
         if ($item->paiement_internet) $paiements[] = 'Internet';
         if ($item->paiement_virement) $paiements[] = 'Virement';
-        return $paiements ? implode(', ', $paiements) : 'Non renseigné';
+        return $paiements ? implode(', ', $paiements) : $empty;
     }
 
     protected function resolveClientFacturation(array $validated, bool $facture): ?int

@@ -80,6 +80,7 @@ class FacturationEtController extends Controller
                 $prix = (float) $mod->prix;
                 $pf = (float) $mod->pf;
                 $puHt = $prix > 0 ? $this->calculateModificationHt($prix, $pf) : 0;
+                $paiementLabel = $this->getPaiementLabel($mod, '');
 
                 fputcsv($handle, [
                     $mod->engagement->epreuve->numero ?? '-',
@@ -91,9 +92,9 @@ class FacturationEtController extends Controller
                     $mod->pf ? number_format((float) $mod->pf, 2, ',', '') : '',
                     $puHt > 0 ? number_format($puHt, 2, ',', '') : '',
                     $prix > 0 ? number_format($prix, 2, ',', '') : '',
-                    $this->getPaiementLabel($mod),
+                    $paiementLabel,
                     $mod->numero_cheque ?? '',
-                    $mod->jour_paiement ? $mod->jour_paiement->format('d/m/Y') : '',
+                    $paiementLabel && $mod->jour_paiement ? $mod->jour_paiement->format('d/m/Y') : '',
                     $mod->facture ? 'Oui' : 'Non',
                     $mod->clientFacturation->nom ?? '',
                     $mod->clientFacturation->telephone ?? '',
