@@ -70,7 +70,7 @@ class FacturationEtController extends Controller
             fwrite($handle, "\xEF\xBB\xBF");
 
             fputcsv($handle, [
-                'N. Épreuve', 'Nom Épreuve', 'Cavalier', 'Cheval', 'Type de modif',
+                'N. Épreuve', 'Nom Épreuve', 'Cavalier', 'GN', 'Cheval', 'Type de modif',
                 'PF', 'PU HT', 'Prix TTC',
                 'Paiement', 'N° Cheque', 'Jour paiement',
                 'Facture', 'Nom facturation', 'Telephone', 'Email', 'Adresse',
@@ -85,6 +85,7 @@ class FacturationEtController extends Controller
                     $mod->engagement->epreuve->numero ?? '-',
                     $mod->engagement->epreuve->nom ?? '-',
                     trim(($mod->engagement->cavalier->prenom ?? '') . ' ' . ($mod->engagement->cavalier->nom ?? '')),
+                    $mod->is_gn ? 'Oui' : '',
                     $mod->engagement->cheval->nom ?? '-',
                     $mod->type->label(),
                     $mod->pf ? number_format((float) $mod->pf, 2, ',', '') : '',
