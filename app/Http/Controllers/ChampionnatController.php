@@ -828,7 +828,7 @@ class ChampionnatController extends Controller
             fwrite($handle, "\xEF\xBB\xBF");
 
             fputcsv($handle, [
-                'Numero', 'Depart epreuve 2', 'Cavalier', 'Club', 'Cheval',
+                'Numero Depart', 'Numero FFE', 'Cavalier', 'Club', 'Cheval',
                 'Classement epreuve 1', 'Participation Championnat',
             ], ';');
 
