@@ -4,9 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class CommandeRetrait extends Model
 {
+    use SoftDeletes;
+
     protected $table = 'commande_retraits';
 
     protected $fillable = [
@@ -18,6 +21,7 @@ class CommandeRetrait extends Model
         'nom',
         'produit',
         'quantite',
+        'quantite_retiree',
         'emplacement_boxes',
         'note_client',
         'retire',
@@ -30,9 +34,21 @@ class CommandeRetrait extends Model
         return [
             'date_commande' => 'date',
             'quantite' => 'integer',
+            'quantite_retiree' => 'integer',
             'retire' => 'boolean',
             'retired_at' => 'datetime',
         ];
+    }
+
+    public function getStatutRetraitAttribute(): string
+    {
+        if ($this->quantite_retiree <= 0) {
+            return 'aucun';
+        }
+        if ($this->quantite_retiree >= $this->quantite) {
+            return 'complet';
+        }
+        return 'partiel';
     }
 
     public function concours(): BelongsTo
