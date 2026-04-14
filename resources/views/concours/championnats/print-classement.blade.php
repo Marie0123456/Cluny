@@ -7,9 +7,9 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: Arial, sans-serif; color: #111; padding: 24px; }
         .header { text-align: center; margin-bottom: 20px; border-bottom: 3px solid #111; padding-bottom: 14px; }
-        h1 { font-size: 42px; letter-spacing: 1px; }
-        h2 { font-size: 22px; margin-top: 6px; font-weight: 500; color: #444; }
-        .subtitle { margin-top: 4px; font-size: 14px; color: #666; }
+        .region { font-size: 16px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; color: #333; }
+        h1 { font-size: 20px; margin-top: 6px; font-weight: 600; color: #444; letter-spacing: 0.5px; }
+        h2 { font-size: 42px; margin-top: 8px; letter-spacing: 1px; }
         table { width: 100%; border-collapse: collapse; margin-top: 10px; }
         th { background: #f0f0f0; text-align: left; padding: 8px 10px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid #111; }
         td { padding: 10px; border-bottom: 1px solid #ddd; font-size: 16px; }
@@ -33,17 +33,9 @@
 </head>
 <body>
     <div class="header">
-        <h1>{{ mb_strtoupper($championnat->discipline->value) }}</h1>
+        <div class="region">Championnat Régional BOURGOGNE FRANCHE-COMTE</div>
         <h2>{{ $championnat->nom }}</h2>
-        <div class="subtitle">
-            @if ($championnat->epreuve2)
-                Épreuves {{ $championnat->epreuve1->numero }} & {{ $championnat->epreuve2->numero }}
-            @else
-                Épreuve {{ $championnat->epreuve1->numero }} - {{ $championnat->epreuve1->nom }}
-            @endif
-            &nbsp;&middot;&nbsp; {{ $concours->nom }}
-            &nbsp;&middot;&nbsp; {{ $concours->date_debut->format('d/m/Y') }}@if ($concours->date_fin != $concours->date_debut) - {{ $concours->date_fin->format('d/m/Y') }}@endif
-        </div>
+        <h1>{{ mb_strtoupper($championnat->discipline->value) }}</h1>
     </div>
 
     @if ($classement->isEmpty())

@@ -68,6 +68,10 @@
                         </div>
                         <div class="flex items-center gap-2 flex-shrink-0">
                             <span class="text-xs text-gray-500" x-show="saving">Enregistrement...</span>
+                            <a href="{{ route('concours.championnats.export-resultats', [$concours, $championnat]) }}"
+                                class="inline-flex items-center px-3 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 transition whitespace-nowrap">
+                                Exporter CSV
+                            </a>
                             <a href="{{ route('concours.championnats.print-classement', [$concours, $championnat]) }}" target="_blank"
                                 class="inline-flex items-center px-3 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 transition whitespace-nowrap">
                                 Export PDF

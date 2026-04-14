@@ -576,6 +576,38 @@ class ChampionnatController extends Controller
         return $classement;
     }
 
+    private function exportResultatsManuel(Concours $concours, Championnat $championnat, $exclusionKeys)
+    {
+        $participants = $championnat->participants();
+        $classement = $this->calculerClassementManuel($championnat, $participants, $exclusionKeys)
+            ->filter(fn ($e) => !$e['is_excluded'] && $e['position'] > 0)
+            ->values();
+
+        $filename = 'classement_' . str_replace(' ', '_', $championnat->nom) . '.csv';
+
+        $headers = [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => "attachment; filename=\"$filename\"",
+        ];
+
+        $callback = function () use ($classement) {
+            $handle = fopen('php://output', 'w');
+            fwrite($handle, "\xEF\xBB\xBF");
+            fputcsv($handle, ['Classement', 'Cavalier', 'Club', 'Cheval'], ';');
+            foreach ($classement as $entry) {
+                fputcsv($handle, [
+                    $entry['position'],
+                    trim(($entry['cavalier_prenom'] ?? '') . ' ' . ($entry['cavalier_nom'] ?? '')),
+                    $entry['club'] ?? '',
+                    $entry['cheval_nom'],
+                ], ';');
+            }
+            fclose($handle);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
     public function exportResultats(Concours $concours, Championnat $championnat)
     {
         $championnat->load(['epreuve1', 'epreuve2']);
@@ -583,6 +615,11 @@ class ChampionnatController extends Controller
         $exclusionKeys = $championnat->exclusions
             ->map(fn ($e) => $e->cavalier_id . '-' . $e->cheval_id)
             ->flip();
+
+        // Classement manuel: export CSV simplifie (rang/cavalier/cheval/club)
+        if ($championnat->discipline->isManualRanking()) {
+            return $this->exportResultatsManuel($concours, $championnat, $exclusionKeys);
+        }
 
         $hasE2 = $championnat->epreuve2_id !== null;
 
