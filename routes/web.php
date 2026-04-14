@@ -113,6 +113,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/championnats/{championnat}/import-resultats', [ChampionnatController::class, 'importResultats'])->name('championnats.import-resultats');
         Route::delete('/championnats/{championnat}/delete-resultats', [ChampionnatController::class, 'deleteResultats'])->name('championnats.delete-resultats');
         Route::get('/championnats/{championnat}/export-resultats', [ChampionnatController::class, 'exportResultats'])->name('championnats.export-resultats');
+        Route::get('/championnats/{championnat}/print-classement', [ChampionnatController::class, 'printClassement'])->name('championnats.print-classement');
         Route::get('/championnats/{championnat}/export-ldp', [ChampionnatController::class, 'exportLDP'])->name('championnats.export-ldp');
         Route::post('/championnats/{championnat}/toggle-libre', [ChampionnatController::class, 'toggleLibre'])->name('championnats.toggle-libre');
         Route::patch('/championnats/{championnat}/update-position', [ChampionnatController::class, 'updatePosition'])->name('championnats.update-position');

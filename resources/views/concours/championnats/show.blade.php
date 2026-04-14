@@ -58,7 +58,7 @@
                 {{-- Classement manuel (Equifeel / Equifun / Endurance) --}}
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 mb-6"
                      x-data="classementManuel({{ Js::from($classementManuel) }}, {{ Js::from($concours->id) }}, {{ Js::from($championnat->id) }})" x-cloak>
-                    <div class="flex justify-between items-start mb-4">
+                    <div class="flex justify-between items-start mb-4 gap-3">
                         <div>
                             <h4 class="text-md font-medium text-gray-900">Classement manuel</h4>
                             <p class="text-xs text-gray-500 mt-1">
@@ -66,7 +66,13 @@
                                 Les couples en <span class="inline-block px-1 bg-amber-100 text-amber-800 rounded">orange</span> sont exclus via la gestion des multi-championnats.
                             </p>
                         </div>
-                        <span class="text-xs text-gray-500" x-show="saving">Enregistrement...</span>
+                        <div class="flex items-center gap-2 flex-shrink-0">
+                            <span class="text-xs text-gray-500" x-show="saving">Enregistrement...</span>
+                            <a href="{{ route('concours.championnats.print-classement', [$concours, $championnat]) }}" target="_blank"
+                                class="inline-flex items-center px-3 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 transition whitespace-nowrap">
+                                Export PDF (speaker)
+                            </a>
+                        </div>
                     </div>
 
                     @if ($classementManuel->isEmpty())
@@ -267,10 +273,16 @@
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
                     <div class="p-6 pb-0 flex items-center justify-between">
                         <h4 class="text-md font-medium text-gray-900">Classement Général - {{ $championnat->nom }}</h4>
-                        <a href="{{ route('concours.championnats.export-resultats', [$concours, $championnat]) }}"
-                            class="inline-flex items-center px-3 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 transition">
-                            Exporter CSV
-                        </a>
+                        <div class="flex items-center gap-2">
+                            <a href="{{ route('concours.championnats.export-resultats', [$concours, $championnat]) }}"
+                                class="inline-flex items-center px-3 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 transition">
+                                Exporter CSV
+                            </a>
+                            <a href="{{ route('concours.championnats.print-classement', [$concours, $championnat]) }}" target="_blank"
+                                class="inline-flex items-center px-3 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 transition">
+                                Export PDF (speaker)
+                            </a>
+                        </div>
                     </div>
                     <div class="overflow-x-auto">
                         <table class="min-w-full divide-y divide-gray-200">

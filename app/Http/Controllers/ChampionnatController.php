@@ -162,6 +162,53 @@ class ChampionnatController extends Controller
     }
 
     /**
+     * Vue imprimable (speaker) du classement general du championnat.
+     * L'utilisateur imprime ou enregistre en PDF via le navigateur.
+     */
+    public function printClassement(Concours $concours, Championnat $championnat)
+    {
+        $championnat->load(['epreuve1', 'epreuve2']);
+
+        $exclusionKeys = $championnat->exclusions
+            ->map(fn ($e) => $e->cavalier_id . '-' . $e->cheval_id)
+            ->flip();
+
+        if ($championnat->discipline->isManualRanking()) {
+            $participants = $championnat->participants();
+            $classement = $this->calculerClassementManuel($championnat, $participants, $exclusionKeys)
+                ->filter(fn ($e) => !$e['is_excluded'] && $e['position'] > 0)
+                ->map(fn ($e) => [
+                    'rang' => $e['position'],
+                    'cavalier_prenom' => $e['cavalier_prenom'],
+                    'cavalier_nom' => $e['cavalier_nom'],
+                    'cheval_nom' => $e['cheval_nom'],
+                    'club' => $e['club'],
+                ])
+                ->values();
+        } else {
+            $allResultats = $championnat->resultats()->with(['cavalier', 'cheval'])->get();
+            $raw = $championnat->epreuve2_id
+                ? $this->calculerClassement($championnat, $exclusionKeys, $allResultats)
+                : $this->calculerClassementSimple($championnat, $exclusionKeys, $allResultats);
+
+            $classement = $raw
+                ->filter(fn ($e) => !($e['is_excluded'] ?? false))
+                ->values()
+                ->map(fn ($e, $i) => [
+                    'rang' => $i + 1,
+                    'cavalier_prenom' => $e['cavalier_prenom'],
+                    'cavalier_nom' => $e['cavalier_nom'],
+                    'cheval_nom' => $e['cheval_nom'],
+                    'club' => $e['club'],
+                ]);
+        }
+
+        return view('concours.championnats.print-classement', compact(
+            'concours', 'championnat', 'classement'
+        ));
+    }
+
+    /**
      * Enregistre la position manuelle d'un couple (Equifeel/Equifun/Endurance).
      */
     public function updatePosition(Request $request, Concours $concours, Championnat $championnat)
