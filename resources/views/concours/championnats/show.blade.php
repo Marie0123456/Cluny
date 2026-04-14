@@ -38,6 +38,9 @@
                         {{ $championnat->discipline === \App\Enums\DisciplineChampionnat::CSO ? 'bg-blue-100 text-blue-800' : '' }}
                         {{ $championnat->discipline === \App\Enums\DisciplineChampionnat::HUNTER ? 'bg-green-100 text-green-800' : '' }}
                         {{ $championnat->discipline === \App\Enums\DisciplineChampionnat::DRESSAGE ? 'bg-purple-100 text-purple-800' : '' }}
+                        {{ $championnat->discipline === \App\Enums\DisciplineChampionnat::EQUIFEEL ? 'bg-pink-100 text-pink-800' : '' }}
+                        {{ $championnat->discipline === \App\Enums\DisciplineChampionnat::EQUIFUN ? 'bg-yellow-100 text-yellow-800' : '' }}
+                        {{ $championnat->discipline === \App\Enums\DisciplineChampionnat::ENDURANCE ? 'bg-teal-100 text-teal-800' : '' }}
                     ">{{ $championnat->discipline->value }}</span>
                 </div>
                 <div class="mt-2 flex flex-wrap gap-4 text-sm text-gray-500">
@@ -51,6 +54,125 @@
                 </div>
             </div>
 
+            @if ($championnat->discipline->isManualRanking())
+                {{-- Classement manuel (Equifeel / Equifun / Endurance) --}}
+                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 mb-6"
+                     x-data="classementManuel({{ Js::from($classementManuel) }}, {{ Js::from($concours->id) }}, {{ Js::from($championnat->id) }})" x-cloak>
+                    <div class="flex justify-between items-start mb-4 gap-3">
+                        <div>
+                            <h4 class="text-md font-medium text-gray-900">Classement manuel</h4>
+                            <p class="text-xs text-gray-500 mt-1">
+                                Saisis la position (1, 2, 3...) pour chaque couple. <strong>0</strong> = non classé (non-partant, éliminé, hors région).
+                                Les couples en <span class="inline-block px-1 bg-amber-100 text-amber-800 rounded">orange</span> sont exclus via la gestion des multi-championnats.
+                            </p>
+                        </div>
+                        <div class="flex items-center gap-2 flex-shrink-0">
+                            <span class="text-xs text-gray-500" x-show="saving">Enregistrement...</span>
+                            <a href="{{ route('concours.championnats.print-classement', [$concours, $championnat]) }}" target="_blank"
+                                class="inline-flex items-center px-3 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 transition whitespace-nowrap">
+                                Export PDF
+                            </a>
+                        </div>
+                    </div>
+
+                    @if ($classementManuel->isEmpty())
+                        <p class="text-sm text-gray-500 italic">Aucun engagé sur l'épreuve {{ $championnat->epreuve1->numero }}.</p>
+                    @else
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase w-20">Position</th>
+                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Cavalier</th>
+                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Club</th>
+                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Cheval</th>
+                                        <th class="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase">Statut</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200">
+                                    <template x-for="(entry, idx) in sorted" :key="entry.cavalier_id + '-' + entry.cheval_id">
+                                        <tr :class="rowBg(entry)">
+                                            <td class="px-4 py-2">
+                                                <input type="number" min="0" max="999"
+                                                    :value="entry.position"
+                                                    @change="save(entry, $event.target.value)"
+                                                    class="w-16 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                                            </td>
+                                            <td class="px-4 py-2 text-sm text-gray-900" x-text="(entry.cavalier_prenom + ' ' + entry.cavalier_nom).trim()"></td>
+                                            <td class="px-4 py-2 text-sm text-gray-500" x-text="entry.club ?? ''"></td>
+                                            <td class="px-4 py-2 text-sm text-gray-900" x-text="entry.cheval_nom"></td>
+                                            <td class="px-4 py-2 text-center text-xs">
+                                                <template x-if="entry.is_excluded">
+                                                    <span class="px-2 py-0.5 rounded bg-amber-100 text-amber-800 font-medium">Exclu (multi)</span>
+                                                </template>
+                                                <template x-if="!entry.is_excluded && entry.position > 0">
+                                                    <span class="px-2 py-0.5 rounded bg-green-100 text-green-800 font-medium" x-text="entry.position + 'e'"></span>
+                                                </template>
+                                                <template x-if="!entry.is_excluded && entry.position <= 0">
+                                                    <span class="text-gray-400">Non classé</span>
+                                                </template>
+                                            </td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
+                    @endif
+                </div>
+
+                <script>
+                    function classementManuel(initial, concoursId, championnatId) {
+                        return {
+                            entries: initial,
+                            concoursId,
+                            championnatId,
+                            saving: false,
+                            get sorted() {
+                                return [...this.entries].sort((a, b) => {
+                                    const ap = a.position > 0 ? 0 : 1;
+                                    const bp = b.position > 0 ? 0 : 1;
+                                    if (ap !== bp) return ap - bp;
+                                    if (a.position !== b.position) return a.position - b.position;
+                                    return (a.cavalier_nom || '').localeCompare(b.cavalier_nom || '');
+                                });
+                            },
+                            rowBg(e) {
+                                if (e.is_excluded) return 'bg-amber-50';
+                                if (e.position > 0) return '';
+                                return 'text-gray-400';
+                            },
+                            async save(entry, newValue) {
+                                const pos = Math.max(0, Math.min(999, parseInt(newValue) || 0));
+                                if (pos === entry.position) return;
+                                const prev = entry.position;
+                                entry.position = pos;
+                                this.saving = true;
+                                try {
+                                    const res = await fetch(`/concours/${this.concoursId}/championnats/${this.championnatId}/update-position`, {
+                                        method: 'PATCH',
+                                        headers: {
+                                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                                            'Accept': 'application/json',
+                                            'Content-Type': 'application/json',
+                                        },
+                                        body: JSON.stringify({
+                                            cavalier_id: entry.cavalier_id,
+                                            cheval_id: entry.cheval_id,
+                                            position: pos,
+                                        }),
+                                    });
+                                    if (!res.ok) throw new Error(res.status);
+                                } catch (e) {
+                                    entry.position = prev;
+                                    alert('Erreur lors de l\'enregistrement.');
+                                } finally {
+                                    this.saving = false;
+                                }
+                            },
+                        };
+                    }
+                </script>
+            @else
             {{-- Import CSV resultats --}}
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 mb-6">
                 <h4 class="text-md font-medium text-gray-900 mb-3">Importer les résultats (CSV)</h4>
@@ -151,10 +273,16 @@
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
                     <div class="p-6 pb-0 flex items-center justify-between">
                         <h4 class="text-md font-medium text-gray-900">Classement Général - {{ $championnat->nom }}</h4>
-                        <a href="{{ route('concours.championnats.export-resultats', [$concours, $championnat]) }}"
-                            class="inline-flex items-center px-3 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 transition">
-                            Exporter CSV
-                        </a>
+                        <div class="flex items-center gap-2">
+                            <a href="{{ route('concours.championnats.export-resultats', [$concours, $championnat]) }}"
+                                class="inline-flex items-center px-3 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 transition">
+                                Exporter CSV
+                            </a>
+                            <a href="{{ route('concours.championnats.print-classement', [$concours, $championnat]) }}" target="_blank"
+                                class="inline-flex items-center px-3 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 transition">
+                                Export PDF
+                            </a>
+                        </div>
                     </div>
                     <div class="overflow-x-auto">
                         <table class="min-w-full divide-y divide-gray-200">
@@ -430,6 +558,7 @@
                     </table>
                 </div>
             @endif
+            @endif {{-- Fin discipline manualRanking --}}
         </div>
     </div>
 </x-app-layout>

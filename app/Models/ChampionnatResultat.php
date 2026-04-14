@@ -18,6 +18,7 @@ class ChampionnatResultat extends Model
         'points',
         'temps',
         'statut',
+        'position',
         'libre',
     ];
 
@@ -26,6 +27,7 @@ class ChampionnatResultat extends Model
         return [
             'points' => 'decimal:2',
             'temps' => 'decimal:2',
+            'position' => 'integer',
             'libre' => 'boolean',
         ];
     }
