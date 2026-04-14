@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\Discipline;
 use App\Enums\DisciplineChampionnat;
 use App\Models\Championnat;
 use App\Models\ChampionnatExclusion;
@@ -30,9 +31,15 @@ class ChampionnatController extends Controller
         $disc = DisciplineChampionnat::tryFrom($request->input('discipline'));
         $needsE2 = $disc && $disc->hasTwoEpreuves();
 
+        // Equifeel/Equifun/Endurance: uniquement pour concours Open
+        $isOpen = $concours->discipline === Discipline::OPEN;
+        $allowedDisciplines = $isOpen
+            ? 'CSO,Hunter,Dressage,Equifeel,Equifun,Endurance'
+            : 'CSO,Hunter,Dressage';
+
         $validated = $request->validate([
             'nom' => 'required|string|max:255',
-            'discipline' => 'required|in:CSO,Hunter,Dressage',
+            'discipline' => 'required|in:' . $allowedDisciplines,
             'epreuve1_id' => 'required|exists:epreuves,id',
             'epreuve2_id' => [
                 $needsE2 ? 'required' : 'nullable',
@@ -41,7 +48,7 @@ class ChampionnatController extends Controller
             ],
         ]);
 
-        // Dressage: toujours une seule epreuve
+        // Une seule epreuve pour Dressage/Equifeel/Equifun/Endurance
         if (!$needsE2) {
             $validated['epreuve2_id'] = null;
         }
@@ -62,6 +69,22 @@ class ChampionnatController extends Controller
         $exclusionKeys = $championnat->exclusions
             ->map(fn ($e) => $e->cavalier_id . '-' . $e->cheval_id)
             ->flip();
+
+        // Classement manuel (Equifeel/Equifun/Endurance): un seul flow special
+        if ($championnat->discipline->isManualRanking()) {
+            $classementManuel = $this->calculerClassementManuel($championnat, $participants, $exclusionKeys);
+
+            return view('concours.championnats.show', [
+                'concours' => $concours,
+                'championnat' => $championnat,
+                'participants' => $participants,
+                'exclusionKeys' => $exclusionKeys,
+                'classementManuel' => $classementManuel,
+                'resultatsEpreuve1' => collect(),
+                'resultatsEpreuve2' => collect(),
+                'classementGeneral' => collect(),
+            ]);
+        }
 
         // Load all resultats in a single query, then split by epreuve
         $allResultats = $championnat->resultats()
@@ -101,6 +124,77 @@ class ChampionnatController extends Controller
             'concours', 'championnat', 'participants', 'exclusionKeys',
             'resultatsEpreuve1', 'resultatsEpreuve2', 'classementGeneral'
         ));
+    }
+
+    /**
+     * Classement manuel: pour Equifeel/Equifun/Endurance, la position est saisie
+     * directement par l'utilisateur. 0 = non classe (NP/elimine/hors region).
+     */
+    private function calculerClassementManuel(Championnat $championnat, $participants, $exclusionKeys): \Illuminate\Support\Collection
+    {
+        // Charger les resultats existants (position manuelle) pour ce championnat
+        $resultats = $championnat->resultats()
+            ->where('epreuve_id', $championnat->epreuve1_id)
+            ->get()
+            ->keyBy(fn ($r) => $r->cavalier_id . '-' . $r->cheval_id);
+
+        $classement = $participants->map(function ($p) use ($resultats, $exclusionKeys) {
+            $key = $p->cavalier_id . '-' . $p->cheval_id;
+            $r = $resultats->get($key);
+            return [
+                'cavalier_id' => $p->cavalier_id,
+                'cheval_id' => $p->cheval_id,
+                'cavalier_nom' => $p->cavalier_nom,
+                'cavalier_prenom' => $p->cavalier_prenom,
+                'cheval_nom' => $p->cheval_nom,
+                'club' => $p->club,
+                'position' => $r?->position ?? 0,
+                'is_excluded' => $exclusionKeys->has($key),
+            ];
+        });
+
+        // Tri: positions classees (>=1) d'abord par ordre croissant, puis non-classees (0) a la fin
+        return $classement->sortBy([
+            fn ($a, $b) => ($a['position'] > 0 ? 0 : 1) <=> ($b['position'] > 0 ? 0 : 1),
+            fn ($a, $b) => $a['position'] <=> $b['position'],
+            fn ($a, $b) => strcasecmp($a['cavalier_nom'] ?? '', $b['cavalier_nom'] ?? ''),
+        ])->values();
+    }
+
+    /**
+     * Enregistre la position manuelle d'un couple (Equifeel/Equifun/Endurance).
+     */
+    public function updatePosition(Request $request, Concours $concours, Championnat $championnat)
+    {
+        if (!$championnat->discipline->isManualRanking()) {
+            return response()->json(['error' => 'Ce championnat n\'utilise pas de classement manuel.'], 422);
+        }
+
+        $validated = $request->validate([
+            'cavalier_id' => 'required|integer|exists:cavaliers,id',
+            'cheval_id' => 'required|integer|exists:chevaux,id',
+            'position' => 'required|integer|min:0|max:999',
+        ]);
+
+        ChampionnatResultat::updateOrCreate(
+            [
+                'championnat_id' => $championnat->id,
+                'epreuve_id' => $championnat->epreuve1_id,
+                'cavalier_id' => $validated['cavalier_id'],
+                'cheval_id' => $validated['cheval_id'],
+            ],
+            [
+                'position' => $validated['position'],
+                'points' => 0,
+                'statut' => $validated['position'] > 0 ? 'normal' : 'non_partant',
+            ]
+        );
+
+        if ($request->expectsJson()) {
+            return response()->json(['success' => true]);
+        }
+
+        return back()->with('success', 'Position enregistrée.');
     }
 
     public function importResultats(Request $request, Concours $concours, Championnat $championnat)

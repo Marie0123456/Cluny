@@ -45,9 +45,11 @@
                             <select name="discipline" id="discipline" required
                                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
                                 @foreach (\App\Enums\DisciplineChampionnat::cases() as $disc)
-                                    <option value="{{ $disc->value }}" {{ old('discipline', 'CSO') == $disc->value ? 'selected' : '' }}>
-                                        {{ $disc->value }}
-                                    </option>
+                                    @if (!$disc->requiresOpenConcours() || $concours->discipline === \App\Enums\Discipline::OPEN)
+                                        <option value="{{ $disc->value }}" {{ old('discipline', 'CSO') == $disc->value ? 'selected' : '' }}>
+                                            {{ $disc->value }}
+                                        </option>
+                                    @endif
                                 @endforeach
                             </select>
                             @error('discipline')
@@ -138,6 +140,9 @@
                                             {{ $championnat->discipline === \App\Enums\DisciplineChampionnat::CSO ? 'bg-blue-100 text-blue-800' : '' }}
                                             {{ $championnat->discipline === \App\Enums\DisciplineChampionnat::HUNTER ? 'bg-green-100 text-green-800' : '' }}
                                             {{ $championnat->discipline === \App\Enums\DisciplineChampionnat::DRESSAGE ? 'bg-purple-100 text-purple-800' : '' }}
+                                            {{ $championnat->discipline === \App\Enums\DisciplineChampionnat::EQUIFEEL ? 'bg-pink-100 text-pink-800' : '' }}
+                                            {{ $championnat->discipline === \App\Enums\DisciplineChampionnat::EQUIFUN ? 'bg-yellow-100 text-yellow-800' : '' }}
+                                            {{ $championnat->discipline === \App\Enums\DisciplineChampionnat::ENDURANCE ? 'bg-teal-100 text-teal-800' : '' }}
                                         ">{{ $championnat->discipline->value }}</span>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -179,12 +184,26 @@
             // Store all epreuves for filtering
             const allEpreuves = @json($epreuves->map(fn ($e) => ['id' => $e->id, 'label' => $e->numero . ' - ' . $e->nom, 'nom' => $e->nom]));
 
-            function filterEpreuves() {
-                const disc = disciplineSelect.value.toLowerCase();
+            // Mots-cles de detection par discipline (insensible a la casse et aux accents).
+            // Endurance: matche aussi la faute "endurence".
+            const DISCIPLINE_KEYWORDS = {
+                'Equifeel': ['equifeel'],
+                'Equifun': ['equifun'],
+                'Endurance': ['endurance', 'endurence'],
+            };
 
-                // Filter epreuves whose name starts with the discipline
+            function normalize(s) {
+                return (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+            }
+
+            function filterEpreuves() {
+                const disc = disciplineSelect.value;
+                const keywords = DISCIPLINE_KEYWORDS[disc] || [disc.toLowerCase()];
+
+                // Filter epreuves whose name contains any discipline keyword
                 const filtered = allEpreuves.filter(function (ep) {
-                    return ep.nom.toLowerCase().startsWith(disc);
+                    const n = normalize(ep.nom);
+                    return keywords.some(function (kw) { return n.includes(kw); });
                 });
 
                 // If no epreuves match, show all (fallback)
@@ -215,8 +234,9 @@
 
             function toggleEpreuve2() {
                 const disc = disciplineSelect.value;
-                if (disc === 'Dressage') {
-                    // Dressage: pas de seconde épreuve
+                const oneEpreuveDisciplines = ['Dressage', 'Equifeel', 'Equifun', 'Endurance'];
+                if (oneEpreuveDisciplines.includes(disc)) {
+                    // Une seule epreuve
                     epreuve2Wrapper.style.display = 'none';
                     epreuve2Select.value = '';
                     epreuve2Select.removeAttribute('required');
