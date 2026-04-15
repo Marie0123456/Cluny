@@ -1068,6 +1068,117 @@ class ChampionnatController extends Controller
     }
 
     /**
+     * Genere une start list PDF pour le speaker/jury d'un championnat CSO,
+     * avec en plus les infos de resultat de l'epreuve 1 (classement, points, temps).
+     */
+    public function generateSpeakerStartList(Request $request, Concours $concours, Championnat $championnat)
+    {
+        if ($championnat->discipline !== \App\Enums\DisciplineChampionnat::CSO) {
+            abort(404);
+        }
+
+        $validated = $request->validate([
+            'csv_file' => 'required|file|mimes:csv,txt',
+            'titre' => 'required|string|max:255',
+            'date' => 'required|date',
+        ]);
+
+        $file = $request->file('csv_file');
+        $content = file_get_contents($file->getRealPath());
+
+        $encoding = mb_detect_encoding($content, ['UTF-8', 'ISO-8859-1', 'Windows-1252'], true);
+        if ($encoding && $encoding !== 'UTF-8') {
+            $content = mb_convert_encoding($content, 'UTF-8', $encoding);
+        }
+
+        $lines = explode("\n", $content);
+        $headerLine = trim($lines[0] ?? '');
+        $separator = $this->detectCsvSeparator($headerLine);
+
+        $headerCols = array_map(fn ($c) => trim($c), str_getcsv($headerLine, $separator));
+        $colMap = $this->detectStartListColumns($headerCols);
+
+        // Charger les resultats epreuve 1 (avec cavalier + cheval pour le matching)
+        $allResultats = $championnat->resultats()
+            ->where('epreuve_id', $championnat->epreuve1_id)
+            ->with(['cavalier', 'cheval'])
+            ->get();
+
+        // Classement CSO : points asc, temps asc ; uniquement statut = normal
+        $sortedNormal = $allResultats
+            ->where('statut', 'normal')
+            ->sortBy([['points', 'asc'], ['temps', 'asc']])
+            ->values();
+
+        $lookup = [];
+        foreach ($sortedNormal as $i => $r) {
+            $entry = [
+                'rang' => $i + 1,
+                'points' => $r->points,
+                'temps' => $r->temps,
+                'statut' => $r->statut,
+            ];
+            $chevalN = $this->normalizeForMatch($r->cheval->nom ?? '');
+            $cavN = $this->normalizeForMatch(($r->cavalier->nom ?? '') . ' ' . ($r->cavalier->prenom ?? ''));
+            $cavN2 = $this->normalizeForMatch(($r->cavalier->prenom ?? '') . ' ' . ($r->cavalier->nom ?? ''));
+            $lookup[$chevalN . '|' . $cavN] = $entry;
+            $lookup[$chevalN . '|' . $cavN2] = $entry;
+        }
+        // Statuts non-normaux (eliminé/NP/abandon) : pas de rang mais on remonte le statut
+        foreach ($allResultats->where('statut', '!=', 'normal') as $r) {
+            $entry = [
+                'rang' => null,
+                'points' => null,
+                'temps' => null,
+                'statut' => $r->statut,
+            ];
+            $chevalN = $this->normalizeForMatch($r->cheval->nom ?? '');
+            $cavN = $this->normalizeForMatch(($r->cavalier->nom ?? '') . ' ' . ($r->cavalier->prenom ?? ''));
+            $cavN2 = $this->normalizeForMatch(($r->cavalier->prenom ?? '') . ' ' . ($r->cavalier->nom ?? ''));
+            $lookup[$chevalN . '|' . $cavN] = $entry;
+            $lookup[$chevalN . '|' . $cavN2] = $entry;
+        }
+
+        $rows = [];
+        foreach ($lines as $lineIndex => $line) {
+            if ($lineIndex === 0) continue;
+            $line = trim($line);
+            if ($line === '') continue;
+
+            $cols = str_getcsv($line, $separator);
+            $numero = $colMap['numero'] !== null ? trim($cols[$colMap['numero']] ?? '') : '';
+            $numeroFfe = $colMap['numero_ffe'] !== null ? trim($cols[$colMap['numero_ffe']] ?? '') : '';
+            $cavalier = $colMap['cavalier'] !== null ? trim($cols[$colMap['cavalier']] ?? '') : '';
+            $club = $colMap['club'] !== null ? trim($cols[$colMap['club']] ?? '') : '';
+            $cheval = $colMap['cheval'] !== null ? trim($cols[$colMap['cheval']] ?? '') : '';
+
+            if ($cavalier === '' && $cheval === '') continue;
+
+            $matchKey = $this->normalizeForMatch($cheval) . '|' . $this->normalizeForMatch($cavalier);
+            $res = $lookup[$matchKey] ?? null;
+
+            $rows[] = [
+                'numero' => $numero,
+                'numero_ffe' => $numeroFfe,
+                'cavalier' => $cavalier,
+                'club' => $club,
+                'cheval' => $cheval,
+                'rang_e1' => $res['rang'] ?? null,
+                'points_e1' => $res['points'] ?? null,
+                'temps_e1' => $res['temps'] ?? null,
+                'statut_e1' => $res['statut'] ?? null,
+            ];
+        }
+
+        $titre = $validated['titre'];
+        $date = \Carbon\Carbon::parse($validated['date']);
+
+        return view('concours.championnats.print-speaker-startlist', compact(
+            'concours', 'championnat', 'rows', 'titre', 'date'
+        ));
+    }
+
+    /**
      * Detecte les index des colonnes dans un CSV de start list (format LDP export):
      * Numero Depart, Numero FFE, Cavalier, Club, Cheval.
      * Tolere variations de casse/accents/ordre.

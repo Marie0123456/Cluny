@@ -272,6 +272,45 @@
                 </div>
             @endif
 
+            {{-- Start list speaker/jury (CSO uniquement, avec résultats E1) --}}
+            @if ($championnat->discipline === \App\Enums\DisciplineChampionnat::CSO && $resultatsEpreuve1->isNotEmpty())
+                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 mb-6">
+                    <h4 class="text-md font-medium text-gray-900 mb-1">Générer start list speaker (PDF)</h4>
+                    <p class="text-sm text-gray-500 mb-4">
+                        À partir de la LDP exportée (CSV) de l'épreuve 2, génère un PDF destiné au speaker/jury avec en plus
+                        le classement, les points et le temps de l'épreuve 1 pour chaque couple.
+                    </p>
+                    <form action="{{ route('concours.championnats.speaker-startlist', [$concours, $championnat]) }}"
+                          method="POST" enctype="multipart/form-data" target="_blank"
+                          class="grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
+                        @csrf
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Titre</label>
+                            <input type="text" name="titre" required maxlength="255"
+                                value="{{ $championnat->nom }}"
+                                class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                            <input type="date" name="date" required
+                                value="{{ now()->format('Y-m-d') }}"
+                                class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Fichier CSV (LDP)</label>
+                            <input type="file" name="csv_file" accept=".csv,.txt" required
+                                class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
+                        </div>
+                        <div>
+                            <button type="submit"
+                                class="inline-flex items-center px-4 py-2 bg-purple-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-purple-700 transition">
+                                Générer PDF speaker
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            @endif
+
             {{-- Classement Général du Championnat --}}
             @if ($classementGeneral->isNotEmpty())
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
