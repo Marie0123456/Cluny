@@ -47,6 +47,10 @@
             width: 70px; text-align: center;
             font-weight: bold; font-size: 17px; color: #111;
         }
+        td.num-ffe {
+            width: 90px; text-align: center;
+            font-size: 13px; color: #555; font-family: 'Courier New', monospace;
+        }
         td.cavalier { font-weight: 600; }
         td.cheval { color: #333; font-style: italic; }
         td.club { color: #666; font-size: 13px; }
@@ -111,7 +115,8 @@
         <table>
             <thead>
                 <tr>
-                    <th style="width: 70px; text-align: center;">N°</th>
+                    <th style="width: 70px; text-align: center;">N° depart</th>
+                    <th style="width: 90px; text-align: center;">N° FFE</th>
                     <th>Cavalier</th>
                     <th>Cheval</th>
                     <th>Club</th>
@@ -121,6 +126,7 @@
                 @foreach ($rows as $r)
                     <tr>
                         <td class="num">{{ $r['numero'] ?: ($loop->index + 1) }}</td>
+                        <td class="num-ffe">{{ $r['numero_ffe'] }}</td>
                         <td class="cavalier">{{ $r['cavalier'] }}</td>
                         <td class="cheval">{{ $r['cheval'] }}</td>
                         <td class="club">{{ $r['club'] }}</td>

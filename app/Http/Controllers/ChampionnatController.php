@@ -1042,6 +1042,7 @@ class ChampionnatController extends Controller
 
             $cols = str_getcsv($line, $separator);
             $numero = $colMap['numero'] !== null ? trim($cols[$colMap['numero']] ?? '') : '';
+            $numeroFfe = $colMap['numero_ffe'] !== null ? trim($cols[$colMap['numero_ffe']] ?? '') : '';
             $cavalier = $colMap['cavalier'] !== null ? trim($cols[$colMap['cavalier']] ?? '') : '';
             $club = $colMap['club'] !== null ? trim($cols[$colMap['club']] ?? '') : '';
             $cheval = $colMap['cheval'] !== null ? trim($cols[$colMap['cheval']] ?? '') : '';
@@ -1051,6 +1052,7 @@ class ChampionnatController extends Controller
 
             $rows[] = [
                 'numero' => $numero,
+                'numero_ffe' => $numeroFfe,
                 'cavalier' => $cavalier,
                 'club' => $club,
                 'cheval' => $cheval,
@@ -1072,14 +1074,16 @@ class ChampionnatController extends Controller
      */
     private function detectStartListColumns(array $headerCols): array
     {
-        $map = ['numero' => null, 'cavalier' => null, 'club' => null, 'cheval' => null];
+        $map = ['numero' => null, 'numero_ffe' => null, 'cavalier' => null, 'club' => null, 'cheval' => null];
 
         foreach ($headerCols as $i => $col) {
             $clean = preg_replace('/[^a-z0-9]/', '', mb_strtolower(trim(
                 @iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $col) ?: $col
             )));
 
-            if ($map['numero'] === null && (str_contains($clean, 'numerodepart') || $clean === 'numero' || $clean === 'no' || $clean === 'rang' || $clean === 'ordre')) {
+            if ($map['numero_ffe'] === null && (str_contains($clean, 'numeroffe') || str_contains($clean, 'numffe') || $clean === 'ffe')) {
+                $map['numero_ffe'] = $i;
+            } elseif ($map['numero'] === null && (str_contains($clean, 'numerodepart') || $clean === 'numero' || $clean === 'no' || $clean === 'rang' || $clean === 'ordre')) {
                 $map['numero'] = $i;
             } elseif ($map['cheval'] === null && str_contains($clean, 'cheval')) {
                 $map['cheval'] = $i;
@@ -1093,6 +1097,7 @@ class ChampionnatController extends Controller
         // Fallback aux positions du format LDP export:
         // 0: Numero Depart, 1: Numero FFE, 2: Cavalier, 3: Club, 4: Cheval
         if ($map['numero'] === null) $map['numero'] = 0;
+        if ($map['numero_ffe'] === null) $map['numero_ffe'] = 1;
         if ($map['cavalier'] === null) $map['cavalier'] = 2;
         if ($map['club'] === null) $map['club'] = 3;
         if ($map['cheval'] === null) $map['cheval'] = 4;
