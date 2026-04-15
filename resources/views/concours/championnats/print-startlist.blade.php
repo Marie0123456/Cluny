@@ -5,7 +5,7 @@
     <title>Start List - {{ $titre }}</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: Arial, sans-serif; color: #111; padding: 20px 24px; }
+        body { font-family: Arial, sans-serif; color: #111; padding: 12px 14px; }
 
         /* En-tete */
         .entete-banner { width: 100%; margin-bottom: 18px; }
@@ -34,23 +34,25 @@
         table { width: 100%; border-collapse: collapse; }
         thead th {
             background: #111; color: #fff; text-align: left;
-            padding: 10px 12px; font-size: 12px;
+            padding: 7px 8px; font-size: 11px;
             text-transform: uppercase; letter-spacing: 0.5px;
+            white-space: nowrap;
         }
         tbody td {
-            padding: 10px 12px; border-bottom: 1px solid #e5e7eb;
-            font-size: 14px;
+            padding: 7px 8px; border-bottom: 1px solid #e5e7eb;
+            font-size: 13.5px;
         }
         tbody tr:nth-child(even) { background: #f9fafb; }
 
         td.num {
-            width: 70px; text-align: center;
-            font-weight: bold; font-size: 17px; color: #111;
+            width: 48px; text-align: center;
+            font-weight: bold; font-size: 16px; color: #111;
         }
         td.num-ffe {
-            width: 90px; text-align: center;
-            font-size: 13px; color: #555; font-family: 'Courier New', monospace;
+            width: 55px; text-align: center;
+            font-size: 12px; color: #555; font-family: 'Courier New', monospace;
         }
+        td.cavalier, td.cheval, td.club { white-space: nowrap; }
         td.cavalier { font-weight: 600; }
         td.cheval { color: #333; font-style: italic; }
         td.club { color: #666; font-size: 13px; }
@@ -77,7 +79,7 @@
 
         @media print {
             .no-print { display: none; }
-            body { padding: 10mm; }
+            body { padding: 6mm 7mm; }
             tbody tr { break-inside: avoid; }
             thead { display: table-header-group; } /* repete l'entete sur chaque page */
         }
@@ -117,8 +119,8 @@
         <table>
             <thead>
                 <tr>
-                    <th style="width: 70px; text-align: center;">N° depart</th>
-                    <th style="width: 90px; text-align: center;">N° FFE</th>
+                    <th style="width: 48px; text-align: center;">N° depart</th>
+                    <th style="width: 55px; text-align: center;">N° FFE</th>
                     <th>Cavalier</th>
                     <th>Cheval</th>
                     <th>Club</th>
