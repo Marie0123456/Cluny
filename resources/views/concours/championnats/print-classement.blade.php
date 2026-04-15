@@ -29,21 +29,17 @@
         }
         .header .titles { flex: 1; min-width: 0; }
         .header .title-group { display: inline-block; }
-        .header .titre-cursif {
-            font-family: 'Kaushan Script', 'Brush Script MT', cursive;
-            font-size: 54px; line-height: 1.1; color: #F97316;
-            letter-spacing: 0.5px;
+        .header .region {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 20px; font-weight: 700; color: #F97316;
+            letter-spacing: 2px; text-transform: uppercase;
+            line-height: 1.2;
         }
         .header .titre {
             font-family: 'Montserrat', sans-serif;
-            font-size: 24px; font-weight: 700; color: #111;
-            margin-top: 6px; letter-spacing: 0.5px;
+            font-size: 28px; font-weight: 700; color: #111;
+            margin-top: 8px; letter-spacing: 0.5px;
             text-align: center;
-        }
-        .header .discipline {
-            font-size: 14px; color: #666; margin-top: 2px;
-            text-align: center; letter-spacing: 2px; text-transform: uppercase;
-            font-weight: 600;
         }
         .header .logo { flex: 0 0 auto; }
         .header .logo img { max-height: 110px; max-width: 200px; display: block; }
@@ -128,9 +124,8 @@
     <div class="header">
         <div class="titles">
             <div class="title-group">
-                <div class="titre-cursif">Classement</div>
+                <div class="region">Championnat Régional Bourgogne Franche-Comté</div>
                 <div class="titre">{{ $championnat->nom }}</div>
-                <div class="discipline">{{ $championnat->discipline->value }}</div>
             </div>
         </div>
         <div class="logo">
