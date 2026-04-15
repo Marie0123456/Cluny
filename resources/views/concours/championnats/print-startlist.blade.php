@@ -81,7 +81,9 @@
             tbody tr { break-inside: avoid; }
             thead { display: table-header-group; } /* repete l'entete sur chaque page */
         }
-        @page { margin: 10mm; size: A4; }
+        /* margin: 0 supprime les en-tetes/pieds de page du navigateur
+           (URL, titre, date, numero de page). Le padding du body compense. */
+        @page { margin: 0; size: A4; }
     </style>
 </head>
 <body>
@@ -137,7 +139,7 @@
     @endif
 
     <div class="footer">
-        {{ count($rows) }} partant{{ count($rows) > 1 ? 's' : '' }} &middot; {{ $concours->nom }}
+        {{ count($rows) }} partant{{ count($rows) > 1 ? 's' : '' }}
     </div>
 
     <div class="no-print">
