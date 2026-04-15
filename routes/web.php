@@ -68,6 +68,10 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/import/template-sif', [ImportController::class, 'templateSif'])->name('import.template-sif');
     Route::get('/import/template-compet', [ImportController::class, 'templateCompet'])->name('import.template-compet');
 
+    // Apercu des polices cursives pour la start list
+    Route::get('/startlist-fonts-preview', fn () => view('concours.championnats.fonts-preview'))
+        ->name('startlist.fonts-preview');
+
     // Concours sub-pages (admin seulement)
     Route::prefix('concours/{concours}')->name('concours.')->middleware(['concours.access', 'role:admin'])->group(function () {
         Route::post('/import', [ImportController::class, 'store'])->name('import.store');
