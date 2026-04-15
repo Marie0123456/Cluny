@@ -28,6 +28,7 @@
             gap: 20px; margin-bottom: 18px; padding-bottom: 10px;
         }
         .header .titles { flex: 1; min-width: 0; }
+        .header .title-group { display: inline-block; }
         .header .titre-cursif {
             font-family: 'Great Vibes', 'Brush Script MT', cursive;
             font-size: 64px; line-height: 1; color: #F97316;
@@ -37,9 +38,11 @@
             font-family: 'Montserrat', sans-serif;
             font-size: 24px; font-weight: 700; color: #111;
             margin-top: 6px; letter-spacing: 0.5px;
+            text-align: center;
         }
         .header .date {
             font-size: 14px; color: #666; margin-top: 2px; font-style: italic;
+            text-align: center;
         }
         .header .logo { flex: 0 0 auto; }
         .header .logo img { max-height: 110px; max-width: 200px; display: block; }
@@ -129,9 +132,11 @@
     {{-- Header: titre cursif + titre + date a gauche ; logo Equivallee a droite --}}
     <div class="header">
         <div class="titles">
-            <div class="titre-cursif">Liste de départ</div>
-            <div class="titre">{{ $titre }}</div>
-            <div class="date">{{ $date->locale('fr')->isoFormat('dddd D MMMM YYYY') }}</div>
+            <div class="title-group">
+                <div class="titre-cursif">Liste de départ</div>
+                <div class="titre">{{ $titre }}</div>
+                <div class="date">{{ $date->locale('fr')->isoFormat('dddd D MMMM YYYY') }}</div>
+            </div>
         </div>
         <div class="logo">
             <img src="{{ asset('logo-equivallee-grand-format.png') }}" alt="Equivallee">
