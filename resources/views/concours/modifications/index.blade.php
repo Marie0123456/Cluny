@@ -956,6 +956,13 @@
             <div class="bg-white shadow-sm sm:rounded-lg" x-data="modificationsFilter()" x-cloak>
                 @php
                     $visibleMods = $modifications->filter(fn($m) => $m->statut->value !== 'supprime');
+                    // Pour les concours FFE SIF (mais pas FFE Compet), afficher le nom de l'epreuve
+                    // plutot que son numero (sur ces concours le numero n'est pas significatif).
+                    $useNomEpreuve = $concours->type_ffe_sif && !$concours->type_ffe_compet;
+                    $epreuveLabel = function ($epreuve, string $fallback = '-') use ($useNomEpreuve) {
+                        if (!$epreuve) return $fallback;
+                        return $useNomEpreuve ? $epreuve->nom : $epreuve->numero;
+                    };
                 @endphp
 
                 @if ($visibleMods->isEmpty())
@@ -1047,11 +1054,11 @@
                                         <span class="text-sm text-gray-500">
                                             Ep.
                                             @if ($mod->type === \App\Enums\ModificationType::CHANGEMENT_EPREUVE && $mod->linkedModification)
-                                                <span class="text-gray-400">{{ $mod->linkedModification->engagement->epreuve->numero ?? '?' }}</span>
+                                                <span class="text-gray-400">{{ $epreuveLabel($mod->linkedModification->engagement->epreuve ?? null, '?') }}</span>
                                                 &rarr;
-                                                <span class="font-medium text-gray-900">{{ $mod->engagement->epreuve->numero ?? '-' }}</span>
+                                                <span class="font-medium text-gray-900">{{ $epreuveLabel($mod->engagement->epreuve ?? null) }}</span>
                                             @else
-                                                {{ $mod->engagement->epreuve->numero ?? '-' }}
+                                                {{ $epreuveLabel($mod->engagement->epreuve ?? null) }}
                                             @endif
                                         </span>
                                         @if ($mod->engagement->numero_depart)
@@ -1335,11 +1342,11 @@
                                         {{-- Epreuve --}}
                                         <td class="px-4 py-2 text-sm text-gray-900">
                                             @if ($mod->type === \App\Enums\ModificationType::CHANGEMENT_EPREUVE && $mod->linkedModification)
-                                                <span class="text-gray-400">{{ $mod->linkedModification->engagement->epreuve->numero ?? '?' }}</span>
+                                                <span class="text-gray-400">{{ $epreuveLabel($mod->linkedModification->engagement->epreuve ?? null, '?') }}</span>
                                                 <span class="mx-1">&rarr;</span>
-                                                <span class="font-medium">{{ $mod->engagement->epreuve->numero ?? '-' }}</span>
+                                                <span class="font-medium">{{ $epreuveLabel($mod->engagement->epreuve ?? null) }}</span>
                                             @else
-                                                {{ $mod->engagement->epreuve->numero ?? '-' }}
+                                                {{ $epreuveLabel($mod->engagement->epreuve ?? null) }}
                                             @endif
                                         </td>
                                         {{-- Depart --}}
