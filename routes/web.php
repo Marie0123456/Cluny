@@ -112,6 +112,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/championnats', [ChampionnatController::class, 'index'])->name('championnats.index');
         Route::post('/championnats', [ChampionnatController::class, 'store'])->name('championnats.store');
         Route::post('/championnats/generate-startlist', [ChampionnatController::class, 'generateStartList'])->name('championnats.generate-startlist');
+        Route::post('/championnats/{championnat}/speaker-startlist', [ChampionnatController::class, 'generateSpeakerStartList'])->name('championnats.speaker-startlist');
         Route::get('/championnats/doublons', [ChampionnatController::class, 'doublons'])->name('championnats.doublons');
         Route::post('/championnats/doublons', [ChampionnatController::class, 'storeDoublons'])->name('championnats.doublons.store');
         Route::get('/championnats/{championnat}', [ChampionnatController::class, 'show'])->name('championnats.show');
