@@ -1206,7 +1206,13 @@
                                                 </div>
                                                 <div>
                                                     <label class="block text-xs font-medium text-gray-500 mb-1">Jour de paiement</label>
-                                                    <input type="date" name="jour_paiement" value="{{ $mod->jour_paiement?->format('Y-m-d') }}"
+                                                    @php
+                                                        $hasPaiement = $mod->paiement_cb || $mod->paiement_especes || $mod->paiement_cheque || $mod->paiement_internet || $mod->paiement_virement;
+                                                        $defaultJourPaiement = $hasPaiement && $mod->jour_paiement
+                                                            ? $mod->jour_paiement->format('Y-m-d')
+                                                            : now()->format('Y-m-d');
+                                                    @endphp
+                                                    <input type="date" name="jour_paiement" value="{{ $defaultJourPaiement }}"
                                                         class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
                                                 </div>
                                                 <div>
@@ -1542,7 +1548,13 @@
                                                         {{-- Jour de paiement --}}
                                                         <div>
                                                             <label class="block text-xs font-medium text-gray-500 mb-1">Jour de paiement</label>
-                                                            <input type="date" name="jour_paiement" value="{{ $mod->jour_paiement?->format('Y-m-d') }}"
+                                                            @php
+                                                                $hasPaiement = $mod->paiement_cb || $mod->paiement_especes || $mod->paiement_cheque || $mod->paiement_internet || $mod->paiement_virement;
+                                                                $defaultJourPaiement = $hasPaiement && $mod->jour_paiement
+                                                                    ? $mod->jour_paiement->format('Y-m-d')
+                                                                    : now()->format('Y-m-d');
+                                                            @endphp
+                                                            <input type="date" name="jour_paiement" value="{{ $defaultJourPaiement }}"
                                                                 class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
                                                         </div>
                                                         {{-- Moyen de paiement --}}
