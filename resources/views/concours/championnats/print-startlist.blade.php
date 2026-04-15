@@ -8,6 +8,13 @@
     <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
+        /* Force l'impression des couleurs de fond (sinon les entetes orange
+           apparaissent en noir lors de l'export PDF). */
+        html, body, table, thead, tr, th, td, .accent-bar {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+            color-adjust: exact !important;
+        }
         body {
             font-family: 'Montserrat', Arial, sans-serif; color: #111;
             padding: 12px 14px;
