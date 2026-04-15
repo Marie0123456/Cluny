@@ -1006,6 +1006,7 @@
                                 <option value="a_supprimer">À supprimer</option>
                             </select>
                         </div>
+                        @unless ($concours->type_ffe_sif)
                         <div>
                             <label class="block text-xs font-medium text-gray-500 mb-1">Paiement</label>
                             <select x-model="filterPaiement"
@@ -1019,6 +1020,7 @@
                                 <option value="sans">Sans paiement</option>
                             </select>
                         </div>
+                        @endunless
                     </div>
                     <div x-show="filterEpreuve || filterNom || filterJour || filterStatut || filterPaiement" class="px-4 pb-2">
                         <button @click="resetFilters()" type="button" class="text-xs text-indigo-600 hover:text-indigo-800 font-medium">Réinitialiser les filtres</button>
@@ -1108,7 +1110,7 @@
                                 </div>
 
                                 {{-- Prix / Paiement --}}
-                                @if (!$concours->grand_national && $mod->type->isPaid())
+                                @if (!$concours->grand_national && !$concours->type_ffe_sif && $mod->type->isPaid())
                                     <div class="flex items-center gap-3 text-sm text-gray-600 mb-2">
                                         <span class="font-medium">{{ number_format((float) $mod->prix, 2, ',', ' ') }} &euro;</span>
                                         @php
@@ -1307,7 +1309,7 @@
                                     <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Cheval</th>
                                     @if ($concours->grand_national)
                                         <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Compte</th>
-                                    @else
+                                    @elseif (!$concours->type_ffe_sif)
                                         <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Prix</th>
                                         <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Paiement</th>
                                     @endif
@@ -1408,7 +1410,7 @@
                                                     -
                                                 @endif
                                             </td>
-                                        @else
+                                        @elseif (!$concours->type_ffe_sif)
                                             {{-- Prix --}}
                                             <td class="px-4 py-2 text-sm text-gray-900">
                                                 @if ($mod->type->isPaid())
@@ -1466,7 +1468,7 @@
                                     {{-- Inline edit row --}}
                                     @if (in_array($mod->statut->value, ['cree', 'fait', 'modifie']) && $mod->type->isEditable())
                                         <tr id="edit-row-{{ $mod->id }}" class="hidden bg-gray-50">
-                                            <td colspan="{{ $concours->grand_national ? 8 : 9 }}" class="px-4 py-4">
+                                            <td colspan="{{ $concours->grand_national ? 8 : ($concours->type_ffe_sif ? 7 : 9) }}" class="px-4 py-4">
                                                 <form method="POST" action="{{ route('modifications.update-paiement', $mod) }}" class="space-y-4"
                                                     x-data="chevalEditor({
                                                         paiementCheque: {{ $mod->paiement_cheque ? 'true' : 'false' }},
