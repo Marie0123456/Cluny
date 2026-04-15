@@ -22,6 +22,10 @@
             font-size: 14px; font-weight: 600; letter-spacing: 1px;
             text-transform: uppercase; color: #333;
         }
+        .header .subtitle {
+            font-size: 18px; font-weight: 600; color: #4f46e5;
+            letter-spacing: 2px; text-transform: uppercase; margin-top: 4px;
+        }
         .header .titre {
             font-size: 30px; margin-top: 4px; font-weight: 700;
             letter-spacing: 0.5px; color: #111;
@@ -107,6 +111,7 @@
         </div>
         <div class="titles">
             <div class="region">Championnat Régional BOURGOGNE FRANCHE-COMTE</div>
+            <div class="subtitle">Start List</div>
             <div class="titre">{{ $titre }}</div>
             <div class="date">{{ $date->locale('fr')->isoFormat('dddd D MMMM YYYY') }}</div>
         </div>
