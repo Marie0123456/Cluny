@@ -1004,4 +1004,104 @@ class ChampionnatController extends Controller
         return redirect()->route('concours.championnats.index', $concours)
             ->with('success', 'Championnat supprime.');
     }
+
+    /**
+     * Genere un PDF imprimable (start list) a partir d'un CSV uploade
+     * au format LDP export (Numero Depart, Numero FFE, Cavalier, Club, Cheval, ...).
+     * L'utilisateur imprime / enregistre en PDF via le navigateur.
+     */
+    public function generateStartList(Request $request, Concours $concours)
+    {
+        $validated = $request->validate([
+            'csv_file' => 'required|file|mimes:csv,txt',
+            'titre' => 'required|string|max:255',
+            'date' => 'required|date',
+        ]);
+
+        $file = $request->file('csv_file');
+        $content = file_get_contents($file->getRealPath());
+
+        // Detect encoding and convert to UTF-8
+        $encoding = mb_detect_encoding($content, ['UTF-8', 'ISO-8859-1', 'Windows-1252'], true);
+        if ($encoding && $encoding !== 'UTF-8') {
+            $content = mb_convert_encoding($content, 'UTF-8', $encoding);
+        }
+
+        $lines = explode("\n", $content);
+        $headerLine = trim($lines[0] ?? '');
+        $separator = $this->detectCsvSeparator($headerLine);
+
+        $headerCols = array_map(fn ($c) => trim($c), str_getcsv($headerLine, $separator));
+        $colMap = $this->detectStartListColumns($headerCols);
+
+        $rows = [];
+        foreach ($lines as $lineIndex => $line) {
+            if ($lineIndex === 0) continue;
+            $line = trim($line);
+            if ($line === '') continue;
+
+            $cols = str_getcsv($line, $separator);
+            $numero = $colMap['numero'] !== null ? trim($cols[$colMap['numero']] ?? '') : '';
+            $numeroFfe = $colMap['numero_ffe'] !== null ? trim($cols[$colMap['numero_ffe']] ?? '') : '';
+            $cavalier = $colMap['cavalier'] !== null ? trim($cols[$colMap['cavalier']] ?? '') : '';
+            $club = $colMap['club'] !== null ? trim($cols[$colMap['club']] ?? '') : '';
+            $cheval = $colMap['cheval'] !== null ? trim($cols[$colMap['cheval']] ?? '') : '';
+
+            // Skip lignes vides (pas de cavalier ni cheval)
+            if ($cavalier === '' && $cheval === '') continue;
+
+            $rows[] = [
+                'numero' => $numero,
+                'numero_ffe' => $numeroFfe,
+                'cavalier' => $cavalier,
+                'club' => $club,
+                'cheval' => $cheval,
+            ];
+        }
+
+        $titre = $validated['titre'];
+        $date = \Carbon\Carbon::parse($validated['date']);
+
+        return view('concours.championnats.print-startlist', compact(
+            'concours', 'rows', 'titre', 'date'
+        ));
+    }
+
+    /**
+     * Detecte les index des colonnes dans un CSV de start list (format LDP export):
+     * Numero Depart, Numero FFE, Cavalier, Club, Cheval.
+     * Tolere variations de casse/accents/ordre.
+     */
+    private function detectStartListColumns(array $headerCols): array
+    {
+        $map = ['numero' => null, 'numero_ffe' => null, 'cavalier' => null, 'club' => null, 'cheval' => null];
+
+        foreach ($headerCols as $i => $col) {
+            $clean = preg_replace('/[^a-z0-9]/', '', mb_strtolower(trim(
+                @iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $col) ?: $col
+            )));
+
+            if ($map['numero_ffe'] === null && (str_contains($clean, 'numeroffe') || str_contains($clean, 'numffe') || $clean === 'ffe')) {
+                $map['numero_ffe'] = $i;
+            } elseif ($map['numero'] === null && (str_contains($clean, 'numerodepart') || $clean === 'numero' || $clean === 'no' || $clean === 'rang' || $clean === 'ordre')) {
+                $map['numero'] = $i;
+            } elseif ($map['cheval'] === null && str_contains($clean, 'cheval')) {
+                $map['cheval'] = $i;
+            } elseif ($map['cavalier'] === null && str_contains($clean, 'cavalier')) {
+                $map['cavalier'] = $i;
+            } elseif ($map['club'] === null && str_contains($clean, 'club')) {
+                $map['club'] = $i;
+            }
+        }
+
+        // Fallback aux positions du format LDP export:
+        // 0: Numero Depart, 1: Numero FFE, 2: Cavalier, 3: Club, 4: Cheval
+        if ($map['numero'] === null) $map['numero'] = 0;
+        if ($map['numero_ffe'] === null) $map['numero_ffe'] = 1;
+        if ($map['cavalier'] === null) $map['cavalier'] = 2;
+        if ($map['club'] === null) $map['club'] = 3;
+        if ($map['cheval'] === null) $map['cheval'] = 4;
+
+        return $map;
+    }
 }

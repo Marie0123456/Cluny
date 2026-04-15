@@ -107,6 +107,7 @@ Route::middleware(['auth'])->group(function () {
         // Championnats (FFE SIF Open)
         Route::get('/championnats', [ChampionnatController::class, 'index'])->name('championnats.index');
         Route::post('/championnats', [ChampionnatController::class, 'store'])->name('championnats.store');
+        Route::post('/championnats/generate-startlist', [ChampionnatController::class, 'generateStartList'])->name('championnats.generate-startlist');
         Route::get('/championnats/doublons', [ChampionnatController::class, 'doublons'])->name('championnats.doublons');
         Route::post('/championnats/doublons', [ChampionnatController::class, 'storeDoublons'])->name('championnats.doublons.store');
         Route::get('/championnats/{championnat}', [ChampionnatController::class, 'show'])->name('championnats.show');
