@@ -5,7 +5,7 @@
     <title>Liste de depart - {{ $titre }}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Kaushan+Script&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         /* Force l'impression des couleurs de fond (sinon les entetes orange
@@ -30,9 +30,9 @@
         .header .titles { flex: 1; min-width: 0; }
         .header .title-group { display: inline-block; }
         .header .titre-cursif {
-            font-family: 'Great Vibes', 'Brush Script MT', cursive;
-            font-size: 64px; line-height: 1; color: #F97316;
-            letter-spacing: 1px;
+            font-family: 'Kaushan Script', 'Brush Script MT', cursive;
+            font-size: 54px; line-height: 1.1; color: #F97316;
+            letter-spacing: 0.5px;
         }
         .header .titre {
             font-family: 'Montserrat', sans-serif;
