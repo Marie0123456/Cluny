@@ -5,7 +5,7 @@
     <title>Start list speaker - {{ $titre }}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Kaushan+Script&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Pinyon+Script&family=Cormorant+Garamond:ital,wght@1,500;1,700&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html, body, table, thead, tr, th, td, .accent-bar, .badge {
@@ -27,13 +27,14 @@
         .header .titles { flex: 1; min-width: 0; }
         .header .title-group { display: inline-block; }
         .header .titre-cursif {
-            font-family: 'Kaushan Script', 'Brush Script MT', cursive;
-            font-size: 54px; line-height: 1.1; color: #F97316;
+            font-family: 'Pinyon Script', 'Brush Script MT', cursive;
+            font-size: 72px; line-height: 1.1; color: #F97316;
             letter-spacing: 0.5px;
         }
         .header .titre {
-            font-family: 'Montserrat', sans-serif;
-            font-size: 24px; font-weight: 700; color: #111;
+            font-family: 'Cormorant Garamond', serif;
+            font-style: italic; font-weight: 700;
+            font-size: 28px; color: #111;
             margin-top: 6px; letter-spacing: 0.5px;
             text-align: center;
         }

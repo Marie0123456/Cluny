@@ -5,7 +5,7 @@
     <title>{{ $championnat->discipline->value }} - {{ $championnat->nom }}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Kaushan+Script&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Pinyon+Script&family=Cormorant+Garamond:ital,wght@1,500;1,700&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         /* Force l'impression des couleurs de fond (sinon les entetes orange
@@ -30,14 +30,15 @@
         .header .titles { flex: 1; min-width: 0; }
         .header .title-group { display: inline-block; }
         .header .region {
-            font-family: 'Montserrat', sans-serif;
-            font-size: 20px; font-weight: 700; color: #F97316;
-            letter-spacing: 2px; text-transform: uppercase;
-            line-height: 1.2;
+            font-family: 'Pinyon Script', 'Brush Script MT', cursive;
+            font-size: 56px; color: #F97316;
+            letter-spacing: 0.5px;
+            line-height: 1.1;
         }
         .header .titre {
-            font-family: 'Montserrat', sans-serif;
-            font-size: 28px; font-weight: 700; color: #111;
+            font-family: 'Cormorant Garamond', serif;
+            font-style: italic; font-weight: 700;
+            font-size: 28px; color: #111;
             margin-top: 8px; letter-spacing: 0.5px;
             text-align: center;
         }
