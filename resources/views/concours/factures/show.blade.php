@@ -295,6 +295,15 @@
 
             <!-- Modifications -->
             @if ($modifications->isNotEmpty())
+                @php
+                    // Pour les concours FFE SIF (mais pas FFE Compet), afficher le nom de l'epreuve
+                    // plutot que son numero (sur ces concours le numero n'est pas significatif).
+                    $useNomEpreuve = $concours->type_ffe_sif && !$concours->type_ffe_compet;
+                    $epreuveLabel = function ($epreuve) use ($useNomEpreuve) {
+                        if (!$epreuve) return '-';
+                        return $useNomEpreuve ? $epreuve->nom : $epreuve->numero;
+                    };
+                @endphp
                 <div class="bg-white shadow-sm sm:rounded-lg">
                     <div class="px-4 pt-4">
                         <h3 class="text-lg font-medium text-gray-900">Modifications payantes</h3>
@@ -303,7 +312,7 @@
                         <table class="min-w-full divide-y divide-gray-200">
                             <thead class="bg-gray-50">
                                 <tr>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">N° Épreuve</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{{ $useNomEpreuve ? 'Épreuve' : 'N° Épreuve' }}</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cavalier</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cheval</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
@@ -317,7 +326,7 @@
                             <tbody class="bg-white divide-y divide-gray-200">
                                 @foreach ($modifications as $mod)
                                     <tr>
-                                        <td class="px-4 py-3 text-sm text-gray-900 font-medium">{{ $mod->engagement->epreuve->numero ?? '-' }}</td>
+                                        <td class="px-4 py-3 text-sm text-gray-900 font-medium">{{ $epreuveLabel($mod->engagement->epreuve ?? null) }}</td>
                                         <td class="px-4 py-3 text-sm text-gray-900">
                                             {{ $mod->engagement->cavalier->prenom ?? '' }} {{ $mod->engagement->cavalier->nom ?? '' }}
                                         </td>
