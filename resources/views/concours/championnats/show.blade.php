@@ -272,15 +272,16 @@
                 </div>
             @endif
 
-            {{-- Start list speaker/jury (CSO uniquement, avec résultats E1) --}}
+            {{-- Generation des start list PDF (uniquement CSO avec resultats E1) --}}
             @if ($championnat->discipline === \App\Enums\DisciplineChampionnat::CSO && $resultatsEpreuve1->isNotEmpty())
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 mb-6">
-                    <h4 class="text-md font-medium text-gray-900 mb-1">Générer start list speaker (PDF)</h4>
+                    <h4 class="text-md font-medium text-gray-900 mb-1">Générer une start list (PDF)</h4>
                     <p class="text-sm text-gray-500 mb-4">
-                        À partir de la LDP exportée (CSV) de l'épreuve 2, génère un PDF destiné au speaker/jury avec en plus
-                        le classement, les points et le temps de l'épreuve 1 pour chaque couple.
+                        À partir d'un CSV au format LDP (Numero Depart, Numero FFE, Cavalier, Club, Cheval),
+                        produit une liste de départ imprimable / exportable en PDF.
+                        La version « speaker » ajoute le classement, les points et le temps de l'épreuve 1.
                     </p>
-                    <form action="{{ route('concours.championnats.speaker-startlist', [$concours, $championnat]) }}"
+                    <form action="{{ route('concours.championnats.generate-startlist', $concours) }}"
                           method="POST" enctype="multipart/form-data" target="_blank"
                           class="grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
                         @csrf
@@ -301,9 +302,14 @@
                             <input type="file" name="csv_file" accept=".csv,.txt" required
                                 class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
                         </div>
-                        <div>
+                        <div class="flex flex-col gap-2">
                             <button type="submit"
-                                class="inline-flex items-center px-4 py-2 bg-purple-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-purple-700 transition">
+                                class="inline-flex justify-center items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 transition">
+                                Générer PDF
+                            </button>
+                            <button type="submit"
+                                formaction="{{ route('concours.championnats.speaker-startlist', [$concours, $championnat]) }}"
+                                class="inline-flex justify-center items-center px-4 py-2 bg-purple-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-purple-700 transition">
                                 Générer PDF speaker
                             </button>
                         </div>
