@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\EpreuveController as ApiEpreuveController;
 use App\Http\Controllers\BackupController;
 use App\Http\Controllers\ChampionnatController;
 use App\Http\Controllers\CommandeRetraitController;
+use App\Http\Controllers\CommandeRetraitRepasController;
 use App\Http\Controllers\ConcoursAccessRequestController;
 use App\Http\Controllers\ConcoursController;
 use App\Http\Controllers\EngageController;
@@ -126,13 +127,19 @@ Route::middleware(['auth'])->group(function () {
         Route::delete('/championnats/{championnat}', [ChampionnatController::class, 'destroy'])->name('championnats.destroy');
     });
 
-    // Retrait Commandes (admin + vendeur)
+    // Retrait Commandes + Retrait Repas (admin + vendeur)
     Route::prefix('concours/{concours}')->name('concours.')->middleware(['concours.access', 'role:admin,vendeur'])->group(function () {
         Route::get('/commande-retraits', [CommandeRetraitController::class, 'index'])->name('commande-retraits.index');
         Route::post('/commande-retraits/import', [CommandeRetraitController::class, 'import'])->name('commande-retraits.import');
         Route::patch('/commande-retraits/{commandeRetrait}/set-quantite', [CommandeRetraitController::class, 'setQuantiteRetiree'])->name('commande-retraits.set-quantite');
         Route::patch('/commande-retraits/{commandeRetrait}', [CommandeRetraitController::class, 'update'])->name('commande-retraits.update');
         Route::delete('/commande-retraits/{commandeRetrait}', [CommandeRetraitController::class, 'destroy'])->name('commande-retraits.destroy');
+
+        Route::get('/commande-retrait-repas', [CommandeRetraitRepasController::class, 'index'])->name('commande-retrait-repas.index');
+        Route::post('/commande-retrait-repas/import', [CommandeRetraitRepasController::class, 'import'])->name('commande-retrait-repas.import');
+        Route::patch('/commande-retrait-repas/{commandeRetraitRepas}/set-quantite', [CommandeRetraitRepasController::class, 'setQuantiteRetiree'])->name('commande-retrait-repas.set-quantite');
+        Route::patch('/commande-retrait-repas/{commandeRetraitRepas}', [CommandeRetraitRepasController::class, 'update'])->name('commande-retrait-repas.update');
+        Route::delete('/commande-retrait-repas/{commandeRetraitRepas}', [CommandeRetraitRepasController::class, 'destroy'])->name('commande-retrait-repas.destroy');
     });
 
     // Modification actions

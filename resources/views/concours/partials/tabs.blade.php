@@ -41,6 +41,12 @@
                 class="px-3 sm:px-6 py-3 text-xs sm:text-sm font-medium whitespace-nowrap border-b-2 {{ ($active ?? '') === 'commande-retraits' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
                 Retraits
             </a>
+            @if ($concours->type_ffe_sif)
+                <a href="{{ route('concours.commande-retrait-repas.index', $concours) }}"
+                    class="px-3 sm:px-6 py-3 text-xs sm:text-sm font-medium whitespace-nowrap border-b-2 {{ ($active ?? '') === 'commande-retrait-repas' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
+                    Retrait Repas
+                </a>
+            @endif
         @endcan
     </nav>
 </div>
