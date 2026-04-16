@@ -172,54 +172,6 @@
                 </div>
             @endif
 
-            {{-- Generation de start list PDF a partir d'un CSV --}}
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 mt-6">
-                <h3 class="text-lg font-medium text-gray-900 mb-1">Generer une start list PDF</h3>
-                <p class="text-sm text-gray-500 mb-4">
-                    Importe un CSV au format LDP (colonnes : Numero Depart, Numero FFE, Cavalier, Club, Cheval)
-                    pour produire une liste de depart imprimable / exportable en PDF.
-                </p>
-
-                <form action="{{ route('concours.championnats.generate-startlist', $concours) }}"
-                      method="POST" enctype="multipart/form-data" target="_blank"
-                      class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    @csrf
-
-                    <div class="md:col-span-2">
-                        <label for="startlist_titre" class="block text-sm font-medium text-gray-700 mb-1">
-                            Titre <span class="text-red-500">*</span>
-                        </label>
-                        <input type="text" name="titre" id="startlist_titre" required maxlength="255"
-                               placeholder="Ex: Championnat CSO Amateur 1 - Manche 2"
-                               class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
-                    </div>
-
-                    <div>
-                        <label for="startlist_date" class="block text-sm font-medium text-gray-700 mb-1">
-                            Date <span class="text-red-500">*</span>
-                        </label>
-                        <input type="date" name="date" id="startlist_date" required
-                               value="{{ now()->format('Y-m-d') }}"
-                               class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
-                    </div>
-
-                    <div>
-                        <label for="startlist_csv" class="block text-sm font-medium text-gray-700 mb-1">
-                            Fichier CSV <span class="text-red-500">*</span>
-                        </label>
-                        <input type="file" name="csv_file" id="startlist_csv" required
-                               accept=".csv,text/csv"
-                               class="w-full text-sm text-gray-700 file:mr-3 file:py-2 file:px-3 file:rounded file:border-0 file:text-sm file:font-medium file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
-                    </div>
-
-                    <div class="md:col-span-4 flex justify-end">
-                        <button type="submit"
-                                class="px-5 py-2 bg-indigo-600 text-white rounded-md text-sm font-medium hover:bg-indigo-700">
-                            Generer le PDF
-                        </button>
-                    </div>
-                </form>
-            </div>
         </div>
     </div>
 
