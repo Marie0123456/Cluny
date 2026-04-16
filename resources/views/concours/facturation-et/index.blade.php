@@ -54,6 +54,15 @@
                         Aucune modification payante pour le moment.
                     </div>
                 @else
+                    @php
+                        // Pour les concours FFE SIF (mais pas FFE Compet), afficher le nom de l'epreuve
+                        // plutot que son numero (sur ces concours le numero n'est pas significatif).
+                        $useNomEpreuve = $concours->type_ffe_sif && !$concours->type_ffe_compet;
+                        $epreuveLabel = function ($epreuve) use ($useNomEpreuve) {
+                            if (!$epreuve) return '-';
+                            return $useNomEpreuve ? $epreuve->nom : $epreuve->numero;
+                        };
+                    @endphp
                     <!-- Filtres -->
                     <div class="px-4 pt-4 pb-2 grid grid-cols-2 md:grid-cols-3 gap-3">
                         <div>
@@ -62,10 +71,13 @@
                                 class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
                                 <option value="">Toutes</option>
                                 @php
-                                    $epreuveNums = $modifications->map(fn($m) => $m->engagement->epreuve)->filter()->unique('id')->sortBy('numero');
+                                    $epreuves = $modifications->map(fn($m) => $m->engagement->epreuve)->filter()->unique('id');
+                                    $epreuves = $useNomEpreuve
+                                        ? $epreuves->sortBy('nom')
+                                        : $epreuves->sortBy('numero');
                                 @endphp
-                                @foreach ($epreuveNums as $ep)
-                                    <option value="{{ $ep->numero }}">{{ $ep->numero }} - {{ $ep->nom }}</option>
+                                @foreach ($epreuves as $ep)
+                                    <option value="{{ $ep->id }}">{{ $useNomEpreuve ? $ep->nom : $ep->numero . ' - ' . $ep->nom }}</option>
                                 @endforeach
                             </select>
                         </div>
@@ -104,7 +116,7 @@
                             <thead class="bg-gray-50">
                                 <tr>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer select-none hover:text-gray-700" @click="toggleSort('epreuve')">
-                                        N° Épreuve
+                                        {{ $useNomEpreuve ? 'Épreuve' : 'N° Épreuve' }}
                                         <span x-show="sortBy === 'epreuve' && sortDir === 'asc'" class="ml-0.5">&uarr;</span>
                                         <span x-show="sortBy === 'epreuve' && sortDir === 'desc'" class="ml-0.5">&darr;</span>
                                         <span x-show="sortBy !== 'epreuve'" class="ml-0.5 text-gray-300">&updownarrow;</span>
@@ -129,22 +141,25 @@
                             <tbody class="bg-white divide-y divide-gray-200" x-ref="tbody">
                                 @foreach ($modifications as $mod)
                                     @php
-                                        $rowEpreuve = (string) ($mod->engagement->epreuve->numero ?? '');
+                                        $rowEpreuveId = (string) ($mod->engagement->epreuve->id ?? '');
+                                        $rowSortEpreuve = $useNomEpreuve
+                                            ? mb_strtolower($mod->engagement->epreuve->nom ?? '')
+                                            : ($mod->engagement->epreuve->numero ?? '0');
                                         $rowCavalier = trim(($mod->engagement->cavalier->prenom ?? '') . ' ' . ($mod->engagement->cavalier->nom ?? ''));
                                         $rowJourPaiement = $mod->jour_paiement ? $mod->jour_paiement->format('Y-m-d') : '';
                                         $hasPaiement = $mod->paiement_cb || $mod->paiement_especes || $mod->paiement_cheque || $mod->paiement_internet || $mod->paiement_virement;
                                         $rowRegle = ($hasPaiement || (float) $mod->prix <= 0) ? '1' : '0';
                                     @endphp
                                     <tr x-show="showRow($el)"
-                                        data-filter-epreuve="{{ $rowEpreuve }}"
+                                        data-filter-epreuve="{{ $rowEpreuveId }}"
                                         data-filter-cavalier="{{ $rowCavalier }}"
                                         data-filter-jour-paiement="{{ $rowJourPaiement }}"
                                         data-filter-regle="{{ $rowRegle }}"
-                                        data-sort-epreuve="{{ $mod->engagement->epreuve->numero ?? '0' }}"
+                                        data-sort-epreuve="{{ $rowSortEpreuve }}"
                                         data-sort-cavalier="{{ mb_strtolower(trim(($mod->engagement->cavalier->nom ?? '') . ' ' . ($mod->engagement->cavalier->prenom ?? ''))) }}"
                                         data-row="data">
                                         <td class="px-4 py-3 text-sm text-gray-900 font-medium">
-                                            {{ $mod->engagement->epreuve->numero ?? '-' }}
+                                            {{ $epreuveLabel($mod->engagement->epreuve ?? null) }}
                                         </td>
                                         <td class="px-4 py-3 text-sm text-gray-900">
                                             {{ $mod->engagement->cavalier->prenom ?? '' }} {{ $mod->engagement->cavalier->nom ?? '' }}
@@ -476,7 +491,16 @@
                     dataRows.sort((a, b) => {
                         let cmp;
                         if (sortBy === 'epreuve') {
-                            cmp = (parseInt(a.dataset.sortEpreuve) || 0) - (parseInt(b.dataset.sortEpreuve) || 0);
+                            const va = a.dataset.sortEpreuve || '';
+                            const vb = b.dataset.sortEpreuve || '';
+                            const na = parseInt(va, 10);
+                            const nb = parseInt(vb, 10);
+                            // Tri numerique si les deux valeurs sont numeriques, sinon tri alphabetique
+                            if (!isNaN(na) && !isNaN(nb) && String(na) === va && String(nb) === vb) {
+                                cmp = na - nb;
+                            } else {
+                                cmp = va < vb ? -1 : va > vb ? 1 : 0;
+                            }
                         } else {
                             const va = a.dataset.sortCavalier;
                             const vb = b.dataset.sortCavalier;
