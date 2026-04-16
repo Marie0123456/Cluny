@@ -381,16 +381,26 @@ class FactureController extends Controller
             ->sortBy('produit')
             ->values();
 
+        // Pour les concours FFE SIF (hors FFE Compet), utiliser le nom de l'epreuve
+        // plutot que son numero (pas significatif sur ces concours).
+        $useNomEpreuve = $concours->type_ffe_sif && !$concours->type_ffe_compet;
+        $epreuveLabel = function ($epreuve) use ($useNomEpreuve) {
+            if (!$epreuve) return '?';
+            return $useNomEpreuve ? ($epreuve->nom ?: '?') : ($epreuve->numero ?: '?');
+        };
+
         // Grouper les modifications par type + épreuve + mode de paiement + PF
-        $modificationsGrouped = $caisseModifications->groupBy(function ($mod) {
+        $modificationsGrouped = $caisseModifications->groupBy(function ($mod) use ($epreuveLabel) {
             $paiement = $this->getPaiementLabel($mod);
-            $epreuveNum = $mod->engagement->epreuve->numero ?? '?';
+            $epreuveKey = $epreuveLabel($mod->engagement->epreuve ?? null);
             $pf = $mod->pf !== null ? number_format($mod->pf, 2) : 'null';
-            return $mod->type->value . '|' . $epreuveNum . '|' . $paiement . '|' . $pf;
-        })->map(function ($items, $key) {
+            return $mod->type->value . '|' . $epreuveKey . '|' . $paiement . '|' . $pf;
+        })->map(function ($items, $key) use ($epreuveLabel, $useNomEpreuve) {
             $first = $items->first();
-            $epreuveNum = $first->engagement->epreuve->numero ?? '?';
-            $label = $first->type->label() . ' Ep.' . $epreuveNum;
+            $epreuveKey = $epreuveLabel($first->engagement->epreuve ?? null);
+            $label = $useNomEpreuve
+                ? $first->type->label() . ' - ' . $epreuveKey
+                : $first->type->label() . ' Ep.' . $epreuveKey;
             $paiement = $this->getPaiementLabel($first);
             $pf = $first->pf;
             $totalTtc = $items->sum('prix');
@@ -398,7 +408,7 @@ class FactureController extends Controller
             return [
                 'label' => $label,
                 'type' => $first->type->value,
-                'epreuve_numero' => $epreuveNum,
+                'epreuve_numero' => $epreuveKey,
                 'paiement' => $paiement,
                 'quantite' => $items->count(),
                 'total' => $totalTtc,
