@@ -124,11 +124,19 @@
         @endif
 
         @if ($modifications->isNotEmpty())
+            @php
+                // Pour les concours FFE SIF (mais pas FFE Compet), afficher le nom de l'epreuve.
+                $useNomEpreuve = $concours->type_ffe_sif && !$concours->type_ffe_compet;
+                $epreuveLabel = function ($epreuve) use ($useNomEpreuve) {
+                    if (!$epreuve) return '-';
+                    return $useNomEpreuve ? $epreuve->nom : $epreuve->numero;
+                };
+            @endphp
             <h3>Modifications</h3>
             <table>
                 <thead>
                     <tr>
-                        <th>N. Epr.</th>
+                        <th>{{ $useNomEpreuve ? 'Épreuve' : 'N. Epr.' }}</th>
                         <th>Cavalier</th>
                         <th>Cheval</th>
                         <th>Type</th>
@@ -142,7 +150,7 @@
                 <tbody>
                     @foreach ($modifications as $mod)
                         <tr>
-                            <td class="font-bold">{{ $mod->engagement->epreuve->numero ?? '-' }}</td>
+                            <td class="font-bold">{{ $epreuveLabel($mod->engagement->epreuve ?? null) }}</td>
                             <td>{{ $mod->engagement->cavalier->prenom ?? '' }} {{ $mod->engagement->cavalier->nom ?? '' }}</td>
                             <td>{{ $mod->engagement->cheval->nom ?? '-' }}</td>
                             <td>{{ $mod->type->label() }}</td>
