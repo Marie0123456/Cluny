@@ -125,7 +125,7 @@
     <div class="header">
         <div class="titles">
             <div class="title-group">
-                <div class="region">Championnat Régional Bourgogne Franche-Comté</div>
+                <div class="region">Championnat Régional BFC</div>
                 <div class="titre">{{ $championnat->nom }}</div>
             </div>
         </div>
