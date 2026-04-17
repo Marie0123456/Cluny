@@ -248,6 +248,7 @@ class ChampionnatController extends Controller
     {
         $columns = match ($championnat->discipline) {
             DisciplineChampionnat::HUNTER => ['Cl.', 'Numero Depart', '', 'Cheval', '', 'Cavalier', 'Points'],
+            DisciplineChampionnat::DRESSAGE => ['Cl.', 'Cheval', '', '', 'Cavalier', '%'],
             DisciplineChampionnat::CSO => ['Cl', 'Cheval', 'Cavalier', 'Points', 'Temps'],
             default => ['Cl', 'Cheval', 'Cavalier', $championnat->discipline->usesPercentage() ? '%' : 'Points'],
         };
