@@ -34,6 +34,14 @@
             font-size: 56px; color: #F97316;
             letter-spacing: 0.5px;
             line-height: 1.1;
+            text-align: center;
+        }
+        .header .region-sub {
+            font-family: 'Pinyon Script', 'Brush Script MT', cursive;
+            font-size: 48px; color: #F97316;
+            text-align: center;
+            line-height: 1;
+            margin-top: -4px;
         }
         .header .titre {
             font-family: 'Cormorant Garamond', serif;
@@ -125,7 +133,8 @@
     <div class="header">
         <div class="titles">
             <div class="title-group">
-                <div class="region">Championnat Régional BFC</div>
+                <div class="region">Championnat Régional</div>
+                <div class="region-sub">BFC</div>
                 <div class="titre">{{ $championnat->nom }}</div>
             </div>
         </div>
