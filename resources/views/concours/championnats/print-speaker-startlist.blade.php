@@ -117,7 +117,7 @@
             margin-top: auto; padding-top: 20px;
         }
         .footer-logos img {
-            width: 100%; max-height: 130px;
+            width: 100%; max-height: 100px;
             object-fit: contain; display: block;
         }
 
@@ -134,9 +134,16 @@
 
         @media print {
             .no-print { display: none; }
-            body { padding: 6mm 8mm; }
+            body { padding: 6mm 8mm 30mm 8mm; }
             tbody tr { break-inside: avoid; }
             thead { display: table-header-group; }
+            .footer-logos {
+                position: fixed;
+                bottom: 0; left: 0; right: 0;
+                padding: 4mm 8mm;
+                margin: 0;
+                background: #fff;
+            }
         }
         @page { margin: 0; size: A4; }
     </style>
