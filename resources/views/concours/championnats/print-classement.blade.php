@@ -98,10 +98,11 @@
         }
 
         /* Footer bandeau logos partenaires */
-        .footer-logos-cell { padding: 10px 0 0 0; }
-        .footer-logos-cell img {
-            width: 100%; max-height: 100px;
-            object-fit: contain; display: block;
+        .footer-fixed {
+            display: none;
+        }
+        .footer-spacer-cell {
+            height: 110px; border: none !important; padding: 0;
         }
 
         /* Boutons a l'ecran (caches a l'impression) */
@@ -122,6 +123,17 @@
             tbody tr { break-inside: avoid; }
             thead { display: table-header-group; }
             tfoot { display: table-footer-group; }
+            .footer-fixed {
+                display: block;
+                position: fixed;
+                bottom: 0; left: 0; right: 0;
+                padding: 4mm 8mm;
+                background: #fff;
+            }
+            .footer-fixed img {
+                width: 100%; max-height: 100px;
+                object-fit: contain; display: block;
+            }
         }
         @page { margin: 0; size: A4; }
     </style>
@@ -156,9 +168,7 @@
             <table>
                 @if ($footerLogosExists)
                     <tfoot>
-                        <tr><td colspan="{{ $colCount }}" class="footer-logos-cell" style="border: none;">
-                            <img src="{{ asset('startlist-footer-logos.png') }}" alt="Partenaires">
-                        </td></tr>
+                        <tr><td colspan="{{ $colCount }}" class="footer-spacer-cell"></td></tr>
                     </tfoot>
                 @endif
                 <thead>
@@ -182,6 +192,12 @@
             </table>
         @endif
     </div>
+
+    @if ($footerLogosExists)
+        <div class="footer-fixed">
+            <img src="{{ asset('startlist-footer-logos.png') }}" alt="Partenaires">
+        </div>
+    @endif
 
     <div class="no-print">
         <button onclick="window.print()">Imprimer / Enregistrer en PDF</button>
