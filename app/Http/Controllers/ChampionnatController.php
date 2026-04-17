@@ -246,11 +246,11 @@ class ChampionnatController extends Controller
 
     public function templateResultats(Concours $concours, Championnat $championnat)
     {
-        $usePct = $championnat->discipline->usesPercentage();
-        $columns = ['Cl', 'Cheval', 'Cavalier', $usePct ? '%' : 'Points'];
-        if (!$usePct) {
-            $columns[] = 'Temps';
-        }
+        $columns = match ($championnat->discipline) {
+            DisciplineChampionnat::HUNTER => ['Cl.', 'Numero Depart', '', 'Cheval', '', 'Cavalier', 'Points'],
+            DisciplineChampionnat::CSO => ['Cl', 'Cheval', 'Cavalier', 'Points', 'Temps'],
+            default => ['Cl', 'Cheval', 'Cavalier', $championnat->discipline->usesPercentage() ? '%' : 'Points'],
+        };
 
         $filename = 'template_resultats_' . strtolower($championnat->discipline->value) . '.csv';
 
