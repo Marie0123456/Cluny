@@ -508,6 +508,7 @@ class ChampionnatController extends Controller
                 'total_points' => $totalPoints,
                 'total_temps' => $totalTemps,
                 'is_excluded' => $isExcluded,
+                'exclusion_reason' => $isExcluded ? 'Multi' : null,
             ]);
         }
 
@@ -527,6 +528,7 @@ class ChampionnatController extends Controller
             }
             if (isset($bestCavalierSeen[$cavId])) {
                 $entry['is_excluded'] = true;
+                $entry['exclusion_reason'] = 'Doub.';
             } else {
                 $bestCavalierSeen[$cavId] = true;
             }
@@ -566,6 +568,7 @@ class ChampionnatController extends Controller
                 'total_points' => $totalPoints,
                 'total_temps' => $r1->temps ?? 0,
                 'is_excluded' => $isExcluded,
+                'exclusion_reason' => $isExcluded ? 'Multi' : null,
             ]);
         }
 
@@ -576,7 +579,7 @@ class ChampionnatController extends Controller
             $classement = $classement->sortBy([['total_points', 'asc'], ['total_temps', 'asc']])->values();
         }
 
-        // Mark non-best results per cavalier as excluded
+        // Mark non-best results per cavalier as excluded (doublon)
         $bestCavalierSeen = [];
         $classement = $classement->map(function ($entry) use (&$bestCavalierSeen) {
             $cavId = $entry['cavalier_id'];
@@ -585,6 +588,7 @@ class ChampionnatController extends Controller
             }
             if (isset($bestCavalierSeen[$cavId])) {
                 $entry['is_excluded'] = true;
+                $entry['exclusion_reason'] = 'Doub.';
             } else {
                 $bestCavalierSeen[$cavId] = true;
             }

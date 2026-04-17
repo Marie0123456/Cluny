@@ -404,8 +404,8 @@
                                             }"
                                         @endif
                                     >
-                                        <td class="px-4 py-3 whitespace-nowrap text-sm {{ $entry['is_excluded'] ? 'text-orange-400' : 'text-gray-900 font-bold' }}">
-                                            {{ $entry['is_excluded'] ? '-' : $rang }}
+                                        <td class="px-4 py-3 whitespace-nowrap text-sm {{ $entry['is_excluded'] ? 'text-orange-400 italic' : 'text-gray-900 font-bold' }}">
+                                            {{ $entry['is_excluded'] ? ($entry['exclusion_reason'] ?? '-') : $rang }}
                                         </td>
                                         <td class="px-4 py-3 whitespace-nowrap text-sm font-medium {{ $entry['is_excluded'] ? 'text-orange-500' : 'text-gray-900' }}">
                                             {{ $entry['cavalier_prenom'] }} {{ $entry['cavalier_nom'] }}
