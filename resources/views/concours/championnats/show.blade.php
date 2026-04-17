@@ -184,7 +184,12 @@
                     L'en-tête du CSV doit contenir les colonnes :
                     <code class="text-xs bg-gray-100 px-1.5 py-0.5 rounded">Cl;...;Cheval;...;Cavalier;...;{{ $usePct ? '% (ou Note, Score)' : 'Points (ou Pts, Pen)' }}{{ !$usePct ? ';...;Temps' : '' }}</code>
                 </p>
-                <p class="text-xs text-gray-400 mb-4">Les colonnes sont détectées automatiquement par leur nom. Séparateur : point-virgule, tabulation ou virgule.</p>
+                <p class="text-xs text-gray-400 mb-1">Les colonnes sont détectées automatiquement par leur nom. Séparateur : point-virgule, tabulation ou virgule.</p>
+                <a href="{{ route('concours.championnats.template-resultats', [$concours, $championnat]) }}"
+                    class="inline-flex items-center px-3 py-1.5 mb-4 bg-gray-100 border border-gray-300 rounded-md text-xs font-medium text-gray-700 hover:bg-gray-200 transition">
+                    <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                    Télécharger template CSV vide
+                </a>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {{-- Import Épreuve 1 --}}
                     <div>
