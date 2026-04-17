@@ -244,6 +244,23 @@ class ChampionnatController extends Controller
         return back()->with('success', 'Position enregistrée.');
     }
 
+    public function templateResultats(Concours $concours, Championnat $championnat)
+    {
+        $usePct = $championnat->discipline->usesPercentage();
+        $columns = ['Cl', 'Cheval', 'Cavalier', $usePct ? '%' : 'Points'];
+        if (!$usePct) {
+            $columns[] = 'Temps';
+        }
+
+        $filename = 'template_resultats_' . strtolower($championnat->discipline->value) . '.csv';
+
+        return response()->streamDownload(function () use ($columns) {
+            echo implode(';', $columns) . "\n";
+        }, $filename, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+        ]);
+    }
+
     public function importResultats(Request $request, Concours $concours, Championnat $championnat)
     {
         $allowedEpreuves = $championnat->epreuve2_id ? '1,2' : '1';
