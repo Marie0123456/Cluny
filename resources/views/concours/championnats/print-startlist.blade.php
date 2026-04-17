@@ -121,7 +121,7 @@
 
         @media print {
             .no-print { display: none; }
-            body { padding: 6mm 8mm 50mm 8mm; }
+            body { padding: 6mm 8mm 0 8mm; }
             tbody tr { break-inside: avoid; }
             thead { display: table-header-group; }
             .footer-logos {
@@ -132,8 +132,7 @@
                 background: #fff;
             }
         }
-        /* Supprime les entetes/pieds du navigateur */
-        @page { margin: 0; size: A4; }
+        @page { margin: 0 0 32mm 0; size: A4; }
     </style>
 </head>
 <body>
