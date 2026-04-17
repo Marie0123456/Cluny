@@ -13,6 +13,7 @@
         $usePct = $championnat->discipline->usesPercentage();
         $valLabel = $usePct ? '%' : 'Pts';
         $hasE2 = $championnat->epreuve2 !== null;
+        $ptsDec = $championnat->discipline === \App\Enums\DisciplineChampionnat::DRESSAGE ? 3 : 2;
     @endphp
 
     <div class="py-6">
@@ -419,7 +420,7 @@
                                             @if ($entry['statut_e1'] === 'elimine') EL
                                             @elseif ($entry['statut_e1'] === 'non_partant') NP
                                             @elseif ($entry['statut_e1'] === 'abandon') AB
-                                            @else {{ number_format($entry['points_e1'], 2, ',', '') }}
+                                            @else {{ number_format($entry['points_e1'], $ptsDec, ',', '') }}
                                             @endif
                                         </td>
                                         @if (!$usePct)
@@ -435,8 +436,8 @@
                                                 </button>
                                             </td>
                                             <td class="px-4 py-3 whitespace-nowrap text-sm text-center font-bold {{ $entry['is_excluded'] ? 'text-orange-400' : 'text-gray-900' }}"
-                                                x-text="total.toFixed(2).replace('.', ',')">
-                                                {{ number_format($entry['total_points'], 2, ',', '') }}
+                                                x-text="total.toFixed({{ $ptsDec }}).replace('.', ',')">
+                                                {{ number_format($entry['total_points'], $ptsDec, ',', '') }}
                                             </td>
                                         @endif
                                         @if ($hasE2)
@@ -444,7 +445,7 @@
                                                 @if ($entry['statut_e2'] === 'elimine') EL
                                                 @elseif ($entry['statut_e2'] === 'non_partant') NP
                                                 @elseif ($entry['statut_e2'] === 'abandon') AB
-                                                @else {{ number_format($entry['points_e2'], 2, ',', '') }}
+                                                @else {{ number_format($entry['points_e2'], $ptsDec, ',', '') }}
                                                 @endif
                                             </td>
                                             @if (!$usePct)
@@ -453,7 +454,7 @@
                                                 </td>
                                             @endif
                                             <td class="px-4 py-3 whitespace-nowrap text-sm text-center font-bold {{ $entry['is_excluded'] ? 'text-orange-400' : 'text-gray-900' }}">
-                                                {{ number_format($entry['total_points'], 2, ',', '') }}
+                                                {{ number_format($entry['total_points'], $ptsDec, ',', '') }}
                                             </td>
                                             @if (!$usePct)
                                                 <td class="px-4 py-3 whitespace-nowrap text-sm text-center font-bold {{ $entry['is_excluded'] ? 'text-orange-400' : 'text-gray-900' }}">
@@ -501,7 +502,7 @@
                                                     @if ($r->statut === 'elimine') EL
                                                     @elseif ($r->statut === 'non_partant') NP
                                                     @elseif ($r->statut === 'abandon') AB
-                                                    @else {{ number_format($r->points, 2, ',', '') }}
+                                                    @else {{ number_format($r->points, $ptsDec, ',', '') }}
                                                     @endif
                                                 </td>
                                                 @if (!$usePct)
@@ -546,7 +547,7 @@
                                                     @if ($r->statut === 'elimine') EL
                                                     @elseif ($r->statut === 'non_partant') NP
                                                     @elseif ($r->statut === 'abandon') AB
-                                                    @else {{ number_format($r->points, 2, ',', '') }}
+                                                    @else {{ number_format($r->points, $ptsDec, ',', '') }}
                                                     @endif
                                                 </td>
                                                 @if (!$usePct)

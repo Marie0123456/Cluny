@@ -647,6 +647,7 @@ class ChampionnatController extends Controller
 
         // Filter: only non-excluded entries (one per cavalier, best result)
         $exported = $classement->filter(fn ($e) => !$e['is_excluded'])->values();
+        $ptsDec = $championnat->discipline === DisciplineChampionnat::DRESSAGE ? 3 : 2;
 
         $filename = 'classement_' . str_replace(' ', '_', $championnat->nom) . '.csv';
 
@@ -696,7 +697,7 @@ class ChampionnatController extends Controller
                     'elimine' => 'EL',
                     'non_partant' => 'NP',
                     'abandon' => 'AB',
-                    default => number_format($entry['points_e1'], 2, ',', ''),
+                    default => number_format($entry['points_e1'], $ptsDec, ',', ''),
                 };
 
                 $row = [
@@ -712,7 +713,7 @@ class ChampionnatController extends Controller
 
                 if ($championnat->discipline === DisciplineChampionnat::DRESSAGE) {
                     $row[] = ($entry['libre'] ?? false) ? 'Oui' : 'Non';
-                    $row[] = number_format($entry['total_points'], 2, ',', '');
+                    $row[] = number_format($entry['total_points'], $ptsDec, ',', '');
                 }
 
                 if ($hasE2) {
@@ -720,13 +721,13 @@ class ChampionnatController extends Controller
                         'elimine' => 'EL',
                         'non_partant' => 'NP',
                         'abandon' => 'AB',
-                        default => number_format($entry['points_e2'], 2, ',', ''),
+                        default => number_format($entry['points_e2'], $ptsDec, ',', ''),
                     };
                     $row[] = $ptsE2;
                     if (!$usePct) {
                         $row[] = $entry['temps_e2'] ? number_format($entry['temps_e2'], 2, ',', '') : '';
                     }
-                    $row[] = number_format($entry['total_points'], 2, ',', '');
+                    $row[] = number_format($entry['total_points'], $ptsDec, ',', '');
                     if (!$usePct) {
                         $row[] = number_format($entry['total_temps'], 2, ',', '');
                     }
