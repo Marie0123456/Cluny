@@ -98,10 +98,8 @@
         }
 
         /* Footer bandeau logos partenaires */
-        .footer-logos {
-            margin-top: auto; padding-top: 20px;
-        }
-        .footer-logos img {
+        .footer-logos-cell { padding: 10px 0 0 0; }
+        .footer-logos-cell img {
             width: 100%; max-height: 100px;
             object-fit: contain; display: block;
         }
@@ -120,18 +118,12 @@
 
         @media print {
             .no-print { display: none; }
-            body { padding: 6mm 8mm 0 8mm; }
+            body { padding: 6mm 8mm; }
             tbody tr { break-inside: avoid; }
             thead { display: table-header-group; }
-            .footer-logos {
-                position: fixed;
-                bottom: 0; left: 0; right: 0;
-                padding: 4mm 8mm;
-                margin: 0;
-                background: #fff;
-            }
+            tfoot { display: table-footer-group; }
         }
-        @page { margin: 0 0 32mm 0; size: A4; }
+        @page { margin: 0; size: A4; }
     </style>
 </head>
 <body>
@@ -151,11 +143,24 @@
 
     <div class="accent-bar"></div>
 
+    @php
+        $footerLogos = public_path('startlist-footer-logos.png');
+        $footerLogosExists = file_exists($footerLogos);
+        $colCount = 4;
+    @endphp
+
     <div class="table-wrap">
         @if ($classement->isEmpty())
             <div class="empty">Aucun résultat classé pour ce championnat.</div>
         @else
             <table>
+                @if ($footerLogosExists)
+                    <tfoot>
+                        <tr><td colspan="{{ $colCount }}" class="footer-logos-cell" style="border: none;">
+                            <img src="{{ asset('startlist-footer-logos.png') }}" alt="Partenaires">
+                        </td></tr>
+                    </tfoot>
+                @endif
                 <thead>
                     <tr>
                         <th style="width: 60px; text-align: center;">Rang</th>
@@ -177,17 +182,6 @@
             </table>
         @endif
     </div>
-
-    {{-- Bandeau logos partenaires en bas de page (si image deposee par l'utilisateur) --}}
-    @php
-        $footerLogos = public_path('startlist-footer-logos.png');
-        $footerLogosExists = file_exists($footerLogos);
-    @endphp
-    @if ($footerLogosExists)
-        <div class="footer-logos">
-            <img src="{{ asset('startlist-footer-logos.png') }}" alt="Partenaires">
-        </div>
-    @endif
 
     <div class="no-print">
         <button onclick="window.print()">Imprimer / Enregistrer en PDF</button>
