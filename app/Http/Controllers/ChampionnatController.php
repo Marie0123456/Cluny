@@ -850,12 +850,33 @@ class ChampionnatController extends Controller
             $handle = fopen('php://output', 'w');
             fwrite($handle, "\xEF\xBB\xBF");
 
+            // Detect doublons: chevaux and cavaliers appearing more than once
+            $chevalCounts = $rows->countBy(fn ($r) => mb_strtolower($r['cheval_nom']));
+            $cavalierCounts = $rows->countBy(fn ($r) => mb_strtolower($r['cavalier_prenom'] . ' ' . $r['cavalier_nom']));
+
+            $chevalDuplicates = $chevalCounts->filter(fn ($c) => $c > 1)->keys();
+            $cavalierDuplicates = $cavalierCounts->filter(fn ($c) => $c > 1)->keys();
+
+            $chevalLetters = $chevalDuplicates->values()->mapWithKeys(fn ($name, $i) => [$name => chr(65 + $i)]);
+            $cavalierLetters = $cavalierDuplicates->values()->mapWithKeys(fn ($name, $i) => [$name => chr(65 + $i)]);
+
             fputcsv($handle, [
                 'Numero Depart', 'Numero FFE', 'Cavalier', 'Club', 'Cheval',
-                'Classement epreuve 1', 'Participation Championnat',
+                'Classement epreuve 1', 'Participation Championnat', 'Doublon',
             ], ';');
 
             foreach ($rows as $index => $row) {
+                $chevalKey = mb_strtolower($row['cheval_nom']);
+                $cavalierKey = mb_strtolower($row['cavalier_prenom'] . ' ' . $row['cavalier_nom']);
+
+                $doublon = [];
+                if ($chevalLetters->has($chevalKey)) {
+                    $doublon[] = 'Ch.' . $chevalLetters[$chevalKey];
+                }
+                if ($cavalierLetters->has($cavalierKey)) {
+                    $doublon[] = 'Cav.' . $cavalierLetters[$cavalierKey];
+                }
+
                 fputcsv($handle, [
                     $index + 1,
                     $row['numero_depart'] ?? '',
@@ -864,6 +885,7 @@ class ChampionnatController extends Controller
                     $row['cheval_nom'],
                     $row['classement_e1'] ?? '',
                     $row['participation'],
+                    implode(' / ', $doublon),
                 ], ';');
             }
 
