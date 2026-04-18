@@ -87,12 +87,14 @@
             font-weight: 700; font-size: 14px; color: #111;
         }
         td.points-e1 {
-            width: 50px; text-align: center;
+            width: 55px; text-align: center;
             font-weight: 600; font-size: 13px;
+            white-space: nowrap;
         }
         td.temps-e1 {
-            width: 50px; text-align: center;
+            width: 65px; text-align: center;
             font-size: 12px; color: #444; font-family: 'Courier New', monospace;
+            white-space: nowrap;
         }
 
         .badge {
