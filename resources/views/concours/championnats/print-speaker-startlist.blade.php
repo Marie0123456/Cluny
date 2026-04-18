@@ -135,7 +135,7 @@
 
         @media print {
             .no-print { display: none; }
-            body { padding: 6mm 8mm; }
+            body { padding: 6mm 14mm 6mm 8mm; }
             tbody tr { break-inside: avoid; }
             thead { display: table-header-group; }
             tfoot { display: table-footer-group; }
