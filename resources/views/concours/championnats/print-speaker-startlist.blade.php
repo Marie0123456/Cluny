@@ -135,10 +135,20 @@
 
         @media print {
             .no-print { display: none; }
-            body { padding: 6mm 14mm 6mm 8mm; }
+            body { padding: 6mm 8mm; }
             tbody tr { break-inside: avoid; }
             thead { display: table-header-group; }
             tfoot { display: table-footer-group; }
+            table { table-layout: fixed; }
+            td.cavalier, td.cheval, td.club {
+                white-space: normal;
+                overflow: hidden; text-overflow: ellipsis;
+            }
+            td.num { width: 35px; }
+            td.num-ffe { width: 45px; }
+            td.rang-e1 { width: 35px; }
+            td.points-e1 { width: 45px; }
+            td.temps-e1 { width: 55px; }
             .footer-fixed {
                 display: block;
                 position: fixed;
