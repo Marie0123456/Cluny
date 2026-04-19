@@ -489,12 +489,13 @@ class ChampionnatController extends Controller
             $r2 = $resultats2[$key];
             $isExcluded = $exclusionKeys->has($key);
 
-            // CSO: skip entries with missing temps on either manche (normal statut only)
-            if (!$championnat->discipline->usesPercentage()) {
-                if (($r1->statut === 'normal' && $r1->temps === null) ||
-                    ($r2->statut === 'normal' && $r2->temps === null)) {
-                    continue;
-                }
+            // CSO: no temps on either manche = not ranked (shown on site without rank)
+            $missingTemps = !$championnat->discipline->usesPercentage() && (
+                ($r1->statut === 'normal' && $r1->temps === null) ||
+                ($r2->statut === 'normal' && $r2->temps === null)
+            );
+            if ($missingTemps) {
+                $isExcluded = true;
             }
 
             $totalPoints = (float) $r1->points + (float) $r2->points;
@@ -516,7 +517,7 @@ class ChampionnatController extends Controller
                 'total_points' => $totalPoints,
                 'total_temps' => $totalTemps,
                 'is_excluded' => $isExcluded,
-                'exclusion_reason' => $isExcluded ? 'Multi' : null,
+                'exclusion_reason' => $missingTemps ? 'N/T' : ($isExcluded ? 'Multi' : null),
             ]);
         }
 
@@ -558,9 +559,10 @@ class ChampionnatController extends Controller
             $key = $r1->cavalier_id . '-' . $r1->cheval_id;
             $isExcluded = $exclusionKeys->has($key);
 
-            // CSO: skip entries with missing temps (normal statut only)
-            if (!$championnat->discipline->usesPercentage() && $r1->statut === 'normal' && $r1->temps === null) {
-                continue;
+            // CSO: no temps = shown on site without rank
+            $missingTemps = !$championnat->discipline->usesPercentage() && $r1->statut === 'normal' && $r1->temps === null;
+            if ($missingTemps) {
+                $isExcluded = true;
             }
 
             // Dressage libre: +1 au pourcentage final
@@ -581,7 +583,7 @@ class ChampionnatController extends Controller
                 'total_points' => $totalPoints,
                 'total_temps' => $r1->temps ?? 0,
                 'is_excluded' => $isExcluded,
-                'exclusion_reason' => $isExcluded ? 'Multi' : null,
+                'exclusion_reason' => $missingTemps ? 'N/T' : ($isExcluded ? 'Multi' : null),
             ]);
         }
 
