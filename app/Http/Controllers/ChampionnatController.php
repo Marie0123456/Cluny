@@ -489,6 +489,14 @@ class ChampionnatController extends Controller
             $r2 = $resultats2[$key];
             $isExcluded = $exclusionKeys->has($key);
 
+            // CSO: skip entries with missing temps on either manche (normal statut only)
+            if (!$championnat->discipline->usesPercentage()) {
+                if (($r1->statut === 'normal' && $r1->temps === null) ||
+                    ($r2->statut === 'normal' && $r2->temps === null)) {
+                    continue;
+                }
+            }
+
             $totalPoints = (float) $r1->points + (float) $r2->points;
             $totalTemps = ($r1->temps ?? 0) + ($r2->temps ?? 0);
 
@@ -549,6 +557,11 @@ class ChampionnatController extends Controller
         foreach ($resultats1 as $r1) {
             $key = $r1->cavalier_id . '-' . $r1->cheval_id;
             $isExcluded = $exclusionKeys->has($key);
+
+            // CSO: skip entries with missing temps (normal statut only)
+            if (!$championnat->discipline->usesPercentage() && $r1->statut === 'normal' && $r1->temps === null) {
+                continue;
+            }
 
             // Dressage libre: +1 au pourcentage final
             $libreBonus = ($r1->libre && $championnat->discipline === DisciplineChampionnat::DRESSAGE) ? 1 : 0;
