@@ -188,6 +188,7 @@
             // Mots-cles de detection par discipline (insensible a la casse et aux accents).
             // Endurance: matche aussi la faute "endurence".
             const DISCIPLINE_KEYWORDS = {
+                'Dressage': ['dressage', 'dr -', 'dr '],
                 'Equifeel': ['equifeel'],
                 'Equifun': ['equifun'],
                 'Endurance': ['endurance', 'endurence'],
