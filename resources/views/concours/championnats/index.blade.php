@@ -235,7 +235,7 @@
 
             function toggleEpreuve2() {
                 const disc = disciplineSelect.value;
-                const oneEpreuveDisciplines = ['Dressage', 'Equifeel', 'Equifun', 'Endurance'];
+                const oneEpreuveDisciplines = ['Equifeel', 'Equifun', 'Endurance'];
                 if (oneEpreuveDisciplines.includes(disc)) {
                     // Une seule epreuve
                     epreuve2Wrapper.style.display = 'none';
