@@ -233,18 +233,20 @@
                 });
             }
 
+            const concoursDiscipline = @json($concours->discipline->value);
+
             function toggleEpreuve2() {
                 const disc = disciplineSelect.value;
                 const oneEpreuveDisciplines = ['Equifeel', 'Equifun', 'Endurance'];
-                if (oneEpreuveDisciplines.includes(disc)) {
-                    // Une seule epreuve
+                const needsE2 = !oneEpreuveDisciplines.includes(disc)
+                    && (disc !== 'Dressage' || concoursDiscipline === 'Dressage');
+                if (needsE2) {
+                    epreuve2Wrapper.style.display = '';
+                    epreuve2Select.setAttribute('required', 'required');
+                } else {
                     epreuve2Wrapper.style.display = 'none';
                     epreuve2Select.value = '';
                     epreuve2Select.removeAttribute('required');
-                } else {
-                    // CSO / Hunter: epreuve 2 obligatoire
-                    epreuve2Wrapper.style.display = '';
-                    epreuve2Select.setAttribute('required', 'required');
                 }
             }
 

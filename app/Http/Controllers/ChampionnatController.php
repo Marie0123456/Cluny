@@ -29,7 +29,8 @@ class ChampionnatController extends Controller
     public function store(Request $request, Concours $concours)
     {
         $disc = DisciplineChampionnat::tryFrom($request->input('discipline'));
-        $needsE2 = $disc && $disc->hasTwoEpreuves();
+        $isDressageCompet = $disc === DisciplineChampionnat::DRESSAGE && $concours->discipline === Discipline::DRESSAGE;
+        $needsE2 = $disc && ($disc->hasTwoEpreuves() || $isDressageCompet);
 
         // Equifeel/Equifun/Endurance: uniquement pour concours Open
         $isOpen = $concours->discipline === Discipline::OPEN;

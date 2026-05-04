@@ -30,8 +30,8 @@ enum DisciplineChampionnat: string
     public function hasTwoEpreuves(): bool
     {
         return match ($this) {
-            self::CSO, self::HUNTER, self::DRESSAGE => true,
-            self::EQUIFEEL, self::EQUIFUN, self::ENDURANCE => false,
+            self::CSO, self::HUNTER => true,
+            self::DRESSAGE, self::EQUIFEEL, self::EQUIFUN, self::ENDURANCE => false,
         };
     }
 
