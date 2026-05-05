@@ -609,9 +609,6 @@
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm {{ $isExcluded ? 'text-orange-400' : 'text-gray-500' }}">
                                         {{ $participant->club ?? '-' }}
-                                        @if ($participant->cre)
-                                            <span class="text-xs text-gray-400 ml-1">({{ $participant->cre }})</span>
-                                        @endif
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm {{ $isExcluded ? 'text-orange-400' : 'text-gray-500' }}">
                                         {{ $participant->cheval_nom }}
