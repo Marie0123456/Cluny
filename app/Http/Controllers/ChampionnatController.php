@@ -113,7 +113,7 @@ class ChampionnatController extends Controller
         $classementGeneral = collect();
         if ($championnat->epreuve2_id) {
             if ($resultatsEpreuve1->isNotEmpty() && $resultatsEpreuve2->isNotEmpty()) {
-                $classementGeneral = $this->calculerClassement($championnat, $exclusionKeys, $allResultats);
+                $classementGeneral = $this->calculerClassement($championnat, $exclusionKeys, $allResultats, $concours);
             }
         } else {
             if ($resultatsEpreuve1->isNotEmpty()) {
@@ -189,7 +189,7 @@ class ChampionnatController extends Controller
         } else {
             $allResultats = $championnat->resultats()->with(['cavalier', 'cheval'])->get();
             $raw = $championnat->epreuve2_id
-                ? $this->calculerClassement($championnat, $exclusionKeys, $allResultats)
+                ? $this->calculerClassement($championnat, $exclusionKeys, $allResultats, $concours)
                 : $this->calculerClassementSimple($championnat, $exclusionKeys, $allResultats);
 
             $classement = $raw
@@ -470,7 +470,7 @@ class ChampionnatController extends Controller
         return $value;
     }
 
-    private function calculerClassement(Championnat $championnat, $exclusionKeys, ?\Illuminate\Support\Collection $preloadedResultats = null): \Illuminate\Support\Collection
+    private function calculerClassement(Championnat $championnat, $exclusionKeys, ?\Illuminate\Support\Collection $preloadedResultats = null, ?Concours $concours = null): \Illuminate\Support\Collection
     {
         $allResultats = $preloadedResultats ?? $championnat->resultats()->with(['cavalier', 'cheval'])->get();
 
@@ -499,8 +499,20 @@ class ChampionnatController extends Controller
                 $isExcluded = true;
             }
 
+            // Dressage FFE Compet: only CRE Bourgogne Franche Comté
+            $wrongCre = false;
+            if ($concours && !$concours->type_ffe_sif && $championnat->discipline === DisciplineChampionnat::DRESSAGE) {
+                $cre = mb_strtolower($r1->cavalier->cre ?? '');
+                if (!str_contains($cre, 'bourgogne') && !str_contains($cre, 'bfc')) {
+                    $isExcluded = true;
+                    $wrongCre = true;
+                }
+            }
+
             $totalPoints = (float) $r1->points + (float) $r2->points;
             $totalTemps = ($r1->temps ?? 0) + ($r2->temps ?? 0);
+
+            $exclusionReason = $wrongCre ? 'CRE' : ($missingTemps ? 'N/T' : ($isExcluded ? 'Multi' : null));
 
             $classement->push([
                 'cavalier_id' => $r1->cavalier_id,
@@ -509,6 +521,7 @@ class ChampionnatController extends Controller
                 'cavalier_prenom' => $r1->cavalier->prenom,
                 'cheval_nom' => $r1->cheval->nom,
                 'club' => $r1->cavalier->club,
+                'cre' => $r1->cavalier->cre,
                 'points_e1' => (float) $r1->points,
                 'temps_e1' => $r1->temps,
                 'statut_e1' => $r1->statut,
@@ -518,7 +531,7 @@ class ChampionnatController extends Controller
                 'total_points' => $totalPoints,
                 'total_temps' => $totalTemps,
                 'is_excluded' => $isExcluded,
-                'exclusion_reason' => $missingTemps ? 'N/T' : ($isExcluded ? 'Multi' : null),
+                'exclusion_reason' => $exclusionReason,
             ]);
         }
 
@@ -662,7 +675,7 @@ class ChampionnatController extends Controller
         $hasE2 = $championnat->epreuve2_id !== null;
 
         $classement = $hasE2
-            ? $this->calculerClassement($championnat, $exclusionKeys)
+            ? $this->calculerClassement($championnat, $exclusionKeys, null, $concours)
             : $this->calculerClassementSimple($championnat, $exclusionKeys);
 
         // Filter: only non-excluded entries (one per cavalier, best result)
