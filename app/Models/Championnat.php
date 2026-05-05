@@ -69,6 +69,7 @@ class Championnat extends Model
                     'cavaliers.nom as cavalier_nom',
                     'cavaliers.prenom as cavalier_prenom',
                     'cavaliers.club',
+                    'cavaliers.cre',
                     'chevaux.id as cheval_id',
                     'chevaux.nom as cheval_nom',
                 )
@@ -91,6 +92,7 @@ class Championnat extends Model
                 'cavaliers.nom as cavalier_nom',
                 'cavaliers.prenom as cavalier_prenom',
                 'cavaliers.club',
+                'cavaliers.cre',
                 'chevaux.id as cheval_id',
                 'chevaux.nom as cheval_nom',
             )

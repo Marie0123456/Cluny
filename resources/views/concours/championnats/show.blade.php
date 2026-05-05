@@ -595,6 +595,12 @@
                                 @php
                                     $pKey = $participant->cavalier_id . '-' . $participant->cheval_id;
                                     $isExcluded = $exclusionKeys->has($pKey);
+                                    if (!$isExcluded && !$concours->type_ffe_sif && $championnat->discipline === \App\Enums\DisciplineChampionnat::DRESSAGE) {
+                                        $cre = mb_strtolower($participant->cre ?? '');
+                                        if (!str_contains($cre, 'bourgogne') && !str_contains($cre, 'bfc')) {
+                                            $isExcluded = true;
+                                        }
+                                    }
                                 @endphp
                                 <tr class="{{ $isExcluded ? 'bg-orange-50 opacity-50' : '' }}">
                                     <td class="px-6 py-4 whitespace-nowrap text-sm {{ $isExcluded ? 'text-orange-400' : 'text-gray-500' }}">{{ $index + 1 }}</td>
