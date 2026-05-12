@@ -268,7 +268,7 @@ class FfeCompetImportService
             foreach ($reader->getSheetIterator() as $sheet) {
                 foreach ($sheet->getRowIterator() as $row) {
                     $rawRows[] = array_map(
-                        fn ($cell) => trim((string) $cell->getValue()),
+                        fn ($cell) => $this->cellValueToString($cell->getValue()),
                         $row->getCells()
                     );
                 }
@@ -460,6 +460,17 @@ class FfeCompetImportService
             }
         }
         return $result;
+    }
+
+    private function cellValueToString(mixed $value): string
+    {
+        if ($value === null) {
+            return '';
+        }
+        if ($value instanceof \DateTimeImmutable || $value instanceof \DateTime) {
+            return $value->format('d/m/Y');
+        }
+        return trim((string) $value);
     }
 
     private function parseDate(string $value): ?string
