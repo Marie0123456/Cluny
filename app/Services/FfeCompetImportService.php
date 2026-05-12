@@ -410,15 +410,15 @@ class FfeCompetImportService
                 'sexe'           => 17,
                 'robe'           => 18,
             ];
-            // Statut : chercher par nom (position variable selon les exports)
+            // Statut/Etat : chercher par nom (position variable selon les exports)
             foreach ($headers as $i => $h) {
-                if (str_contains($h, 'statut')) {
+                if (str_contains($h, 'statut') || str_contains($h, 'etat') || str_contains($h, 'état')) {
                     $result['statut'] = $i;
                     break;
                 }
             }
-            // Si pas trouvé par nom, prendre la dernière colonne non vide
-            if (! isset($result['statut']) && count($headers) > 19) {
+            // Si pas trouvé par nom, prendre la dernière colonne
+            if (! isset($result['statut'])) {
                 $result['statut'] = count($headers) - 1;
             }
             return $result;
@@ -445,7 +445,7 @@ class FfeCompetImportService
             'age'            => ['age', 'âge'],
             'sexe'           => ['sexe'],
             'robe'           => ['robe'],
-            'statut'         => ['statut'],
+            'statut'         => ['statut', 'etat', 'état'],
         ];
 
         $result = [];
