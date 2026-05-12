@@ -218,6 +218,8 @@ class FfeCompetImportService
                     'pf'            => 0,
                 ]);
 
+                $engagement->update(['is_non_partant' => true]);
+
                 $counters['nb_forfaits']++;
                 $existingNp[$engagement->id] = true;
             }

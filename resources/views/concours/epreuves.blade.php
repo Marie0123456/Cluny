@@ -246,7 +246,7 @@
                             Téléchargez le fichier depuis FFE Compet
                             <span class="font-medium">("Extraction excel")</span>
                             sur la page des engagements du concours, puis importez-le ici.<br>
-                            <span class="text-gray-400 text-xs">Les forfaits (colonne "Statut") sont détectés automatiquement et enregistrés comme Non-Partants.</span>
+                            <span class="text-gray-400 text-xs">Les forfaits (colonne "Etat") sont détectés automatiquement et enregistrés comme Non-Partants.</span>
                         </p>
                         <form method="POST" action="{{ route('concours.import.store', $concours) }}" enctype="multipart/form-data" class="sm:flex sm:items-end sm:space-x-4 space-y-3 sm:space-y-0">
                             @csrf
