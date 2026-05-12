@@ -9,7 +9,7 @@ use RuntimeException;
 
 class FfeCompetService
 {
-    const BASE_URL = 'https://www.ffecompet.ffe.com';
+    const BASE_URL = 'https://ffecompet.ffe.com';
 
     private Client $client;
     private CookieJar $cookieJar;
