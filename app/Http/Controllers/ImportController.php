@@ -42,16 +42,62 @@ class ImportController extends Controller
         }
 
         $request->validate([
-            'fichier' => 'required|file|max:10240|mimes:csv,txt',
+            'fichier' => 'required|file|max:20480|mimes:csv,txt,xls,xlsx',
         ]);
 
         $file = $request->file('fichier');
 
-        $format = $concours->type_ffe_sif ? 'ffe_sif' : 'ffe_compet';
+        // FFE Compet : utilise FfeCompetImportService (gère Excel + forfaits)
+        if ($concours->type_ffe_compet) {
+            $format  = 'ffe_compet';
+            $service = new FfeCompetImportService();
 
-        $service = $concours->type_ffe_sif
-            ? new SifCsvImportService()
-            : new CsvImportService();
+            try {
+                $result = $service->sync($concours, file_get_contents($file->getRealPath()));
+
+                ImportLog::create([
+                    'concours_id'    => $concours->id,
+                    'user_id'        => auth()->id(),
+                    'nom_fichier'    => $file->getClientOriginalName(),
+                    'format'         => $format,
+                    'nb_epreuves'    => $result['nb_epreuves'],
+                    'nb_engagements' => $result['nb_engagements'],
+                    'nb_cavaliers'   => $result['nb_cavaliers'],
+                    'nb_chevaux'     => $result['nb_chevaux'],
+                    'statut'         => 'succes',
+                ]);
+
+                $parts = [];
+                if ($result['nb_epreuves'] > 0)    $parts[] = "{$result['nb_epreuves']} épreuves";
+                if ($result['nb_cavaliers'] > 0)   $parts[] = "{$result['nb_cavaliers']} cavaliers";
+                if ($result['nb_chevaux'] > 0)     $parts[] = "{$result['nb_chevaux']} chevaux";
+                if ($result['nb_engagements'] > 0) $parts[] = "{$result['nb_engagements']} engagements";
+                if ($result['nb_forfaits'] > 0)    $parts[] = "{$result['nb_forfaits']} forfait(s) détecté(s)";
+
+                $message = ! empty($parts)
+                    ? 'Import réussi : ' . implode(', ', $parts) . '.'
+                    : 'Import terminé : toutes les données existent déjà, rien de nouveau à importer.';
+
+                return redirect()->route('concours.show', $concours)->with('success', $message);
+
+            } catch (\Exception $e) {
+                ImportLog::create([
+                    'concours_id'    => $concours->id,
+                    'user_id'        => auth()->id(),
+                    'nom_fichier'    => $file->getClientOriginalName(),
+                    'format'         => $format,
+                    'statut'         => 'erreur',
+                    'message_erreur' => $e->getMessage(),
+                ]);
+
+                return redirect()->route('concours.show', $concours)
+                    ->with('error', 'Erreur lors de l\'import : ' . $e->getMessage());
+            }
+        }
+
+        // FFE SIF : CSV classique
+        $format  = 'ffe_sif';
+        $service = new SifCsvImportService();
 
         try {
             $result = $service->import($concours, $file);
