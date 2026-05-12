@@ -18,23 +18,17 @@ class FfeCompetService
     {
         $this->cookieJar = new CookieJar();
         $this->client = new Client([
-            'base_uri' => self::BASE_URL,
-            'cookies' => $this->cookieJar,
-            'allow_redirects' => true,
-            'timeout' => 30,
-            'headers' => [
-                'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-                'Accept' => 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            'cookies'         => $this->cookieJar,
+            'allow_redirects' => ['track_redirects' => true, 'max' => 10],
+            'timeout'         => 30,
+            'headers'         => [
+                'User-Agent'      => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                'Accept'          => 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
                 'Accept-Language' => 'fr-FR,fr;q=0.9',
             ],
         ]);
     }
 
-    /**
-     * Authenticate and download the engagements Excel file for a given contest.
-     *
-     * @throws RuntimeException
-     */
     public function downloadEngagements(string $login, string $password, string $numeroConcours): string
     {
         $this->authenticate($login, $password);
@@ -44,38 +38,45 @@ class FfeCompetService
     private function authenticate(string $login, string $password): void
     {
         try {
-            // GET login page to retrieve any hidden CAS token (execution field)
-            $response = $this->client->get('/');
-            $html = (string) $response->getBody();
+            // GET espace_perso — FFE Compet redirige vers la page de login CAS
+            $response  = $this->client->get(self::BASE_URL . '/espace_perso');
+            $html      = (string) $response->getBody();
+            $finalUrl  = $this->getFinalUrl($response, self::BASE_URL . '/espace_perso');
 
-            // If already redirected to login page, extract execution token
-            $execution = $this->extractHiddenField($html, 'execution');
+            // Extraire l'action du formulaire et la résoudre en URL absolue
+            $formAction = $this->extractFormAction($html);
+            $loginUrl   = $formAction
+                ? $this->resolveUrl($finalUrl, $formAction)
+                : $this->resolveUrl($finalUrl, 'login');
 
+            // Tokens CAS cachés
             $formData = [
-                'username' => $login,
-                'password' => $password,
-                '_eventId' => 'submit',
+                'username'  => $login,
+                'password'  => $password,
+                '_eventId'  => 'submit',
             ];
 
+            $execution = $this->extractHiddenField($html, 'execution');
             if ($execution !== null) {
                 $formData['execution'] = $execution;
             }
 
-            // POST credentials to the login endpoint
-            $response = $this->client->post('/login', [
+            $lt = $this->extractHiddenField($html, 'lt');
+            if ($lt !== null) {
+                $formData['lt'] = $lt;
+            }
+
+            $response = $this->client->post($loginUrl, [
                 'form_params' => $formData,
-                'headers' => [
-                    'Content-Type' => 'application/x-www-form-urlencoded',
-                    'Referer' => self::BASE_URL . '/',
-                ],
+                'headers'     => ['Referer' => $finalUrl],
             ]);
 
             $body = (string) $response->getBody();
 
-            // Detect login failure by checking for the login form still being present
-            if (str_contains($body, 'id="fm1"') || str_contains($body, 'loginForm')) {
+            if (str_contains($body, 'id="fm1"') || str_contains($body, 'id="username"')) {
                 throw new RuntimeException('Identifiants FFE Compet invalides. Vérifiez votre login et mot de passe.');
             }
+
         } catch (GuzzleException $e) {
             throw new RuntimeException('Impossible de se connecter à FFE Compet : ' . $e->getMessage());
         }
@@ -84,18 +85,17 @@ class FfeCompetService
     private function fetchExcel(string $numeroConcours): string
     {
         try {
-            $url = '/concours/' . $numeroConcours . '/all/xls?club=all&discipline=all&typeEng=';
+            $url = self::BASE_URL . '/concours/' . $numeroConcours . '/all/xls?club=all&discipline=all&typeEng=';
 
             $response = $this->client->get($url);
-            $content = (string) $response->getBody();
+            $content  = (string) $response->getBody();
 
             if (empty(trim($content))) {
                 throw new RuntimeException('Le fichier téléchargé depuis FFE Compet est vide. Vérifiez le numéro de concours et vos droits d\'accès.');
             }
 
-            // Detect if we were redirected to the login page (session expired)
-            if (str_contains($content, 'id="fm1"') || str_contains($content, 'loginForm')) {
-                throw new RuntimeException('Session FFE Compet expirée. Réessayez.');
+            if (str_contains($content, 'id="fm1"') || str_contains($content, 'id="username"')) {
+                throw new RuntimeException('Session FFE Compet expirée ou accès refusé. Réessayez.');
             }
 
             return $content;
@@ -104,13 +104,55 @@ class FfeCompetService
         }
     }
 
+    private function extractFormAction(string $html): ?string
+    {
+        if (preg_match('/<form[^>]+id=["\']fm1["\'][^>]*action=["\']([^"\']+)["\']/', $html, $m)) {
+            return $m[1];
+        }
+        if (preg_match('/<form[^>]+action=["\']([^"\']+)["\'][^>]*id=["\']fm1["\']/', $html, $m)) {
+            return $m[1];
+        }
+        // Fallback : premier form avec method=post
+        if (preg_match('/<form[^>]+method=["\']post["\'][^>]*action=["\']([^"\']+)["\']/', $html, $m)) {
+            return $m[1];
+        }
+        return null;
+    }
+
+    private function getFinalUrl($response, string $fallback): string
+    {
+        $redirects = $response->getHeader('X-Guzzle-Redirect-History');
+        if (! empty($redirects)) {
+            return end($redirects);
+        }
+        return $fallback;
+    }
+
+    private function resolveUrl(string $base, string $relative): string
+    {
+        // Déjà absolu
+        if (preg_match('#^https?://#', $relative)) {
+            return $relative;
+        }
+        $parts = parse_url($base);
+        $origin = $parts['scheme'] . '://' . $parts['host'];
+
+        // Relatif à la racine
+        if (str_starts_with($relative, '/')) {
+            return $origin . $relative;
+        }
+        // Relatif au répertoire courant
+        $dir = isset($parts['path']) ? dirname($parts['path']) : '/';
+        return $origin . rtrim($dir, '/') . '/' . $relative;
+    }
+
     private function extractHiddenField(string $html, string $fieldName): ?string
     {
-        if (preg_match('/<input[^>]+name=["\']' . preg_quote($fieldName, '/') . '["\'][^>]+value=["\']([^"\']*)["\']/', $html, $matches)) {
-            return $matches[1];
+        if (preg_match('/<input[^>]+name=["\']' . preg_quote($fieldName, '/') . '["\'][^>]+value=["\']([^"\']*)["\']/', $html, $m)) {
+            return $m[1];
         }
-        if (preg_match('/<input[^>]+value=["\']([^"\']*)["\'][^>]+name=["\']' . preg_quote($fieldName, '/') . '["\']/', $html, $matches)) {
-            return $matches[1];
+        if (preg_match('/<input[^>]+value=["\']([^"\']*)["\'][^>]+name=["\']' . preg_quote($fieldName, '/') . '["\']/', $html, $m)) {
+            return $m[1];
         }
         return null;
     }
