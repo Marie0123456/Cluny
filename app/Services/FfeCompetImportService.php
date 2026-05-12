@@ -212,11 +212,14 @@ class FfeCompetImportService
                     'engagement_id' => $engagement->id,
                     'concours_id'   => $concours->id,
                     'type'          => ModificationType::NON_PARTANT,
-                    'statut'        => ModificationStatut::FAIT,
+                    'statut'        => ModificationStatut::CREE,
                     'description'   => 'Forfait importé depuis FFE Compet',
+                    'source_import' => 'ffe_compet',
                     'prix'          => 0,
                     'pf'            => 0,
                 ]);
+
+                $engagement->update(['is_non_partant' => true]);
 
                 $counters['nb_forfaits']++;
                 $existingNp[$engagement->id] = true;

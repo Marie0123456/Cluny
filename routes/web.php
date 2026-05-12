@@ -63,6 +63,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/modifications/changement-epreuve', [ModificationController::class, 'changementEpreuve'])->name('modifications.changement-epreuve');
         Route::post('/modifications/invitation', [ModificationController::class, 'invitation'])->name('modifications.invitation');
         Route::post('/modifications/non-partant', [ModificationController::class, 'nonPartant'])->name('modifications.non-partant');
+        Route::post('/modifications/echange', [ModificationController::class, 'echange'])->name('modifications.echange');
     });
 
     // Template CSV download

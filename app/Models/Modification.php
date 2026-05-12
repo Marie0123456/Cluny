@@ -14,6 +14,7 @@ class Modification extends Model
 
     protected $fillable = [
         'engagement_id',
+        'second_engagement_id',
         'concours_id',
         'type',
         'description',
@@ -41,6 +42,7 @@ class Modification extends Model
         'modified_by',
         'done_by',
         'done_at',
+        'source_import',
     ];
 
     protected function casts(): array
@@ -65,6 +67,11 @@ class Modification extends Model
     public function engagement(): BelongsTo
     {
         return $this->belongsTo(Engagement::class);
+    }
+
+    public function secondEngagement(): BelongsTo
+    {
+        return $this->belongsTo(Engagement::class, 'second_engagement_id');
     }
 
     public function concours(): BelongsTo
