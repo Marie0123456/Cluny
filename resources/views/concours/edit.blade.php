@@ -44,9 +44,10 @@
                         </select>
                     </div>
 
-                    <div class="mb-4 space-y-2">
+                    <div class="mb-4 space-y-2" x-data="{ isCompet: {{ old('type_ffe_compet', $concours->type_ffe_compet) ? 'true' : 'false' }} }">
                         <label class="flex items-center">
                             <input type="checkbox" name="type_ffe_compet" value="1" {{ old('type_ffe_compet', $concours->type_ffe_compet) ? 'checked' : '' }}
+                                x-model="isCompet"
                                 class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
                             <span class="ml-2 text-sm text-gray-700">FFE Compet</span>
                         </label>
@@ -60,6 +61,37 @@
                                 class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
                             <span class="ml-2 text-sm text-gray-700">Grand National</span>
                         </label>
+
+                        {{-- Credentials FFE Compet --}}
+                        <div x-show="isCompet" x-cloak class="mt-3 p-4 bg-indigo-50 border border-indigo-200 rounded-lg space-y-3">
+                            <p class="text-xs font-semibold text-indigo-700">Identifiants FFE Compet</p>
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-600 mb-1">Numéro de concours FFE</label>
+                                    <input type="text" name="ffe_numero_concours" value="{{ old('ffe_numero_concours', $concours->ffe_numero_concours) }}"
+                                        placeholder="ex : 202671012"
+                                        class="block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-600 mb-1">Login FFE</label>
+                                    <input type="text" name="ffe_login" value="{{ old('ffe_login', $concours->ffe_login) }}"
+                                        autocomplete="off"
+                                        class="block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-600 mb-1">
+                                        Mot de passe FFE
+                                        @if ($concours->ffe_password)
+                                            <span class="text-gray-400 font-normal">(laisser vide pour conserver)</span>
+                                        @endif
+                                    </label>
+                                    <input type="password" name="ffe_password"
+                                        placeholder="{{ $concours->ffe_password ? '••••••••' : '' }}"
+                                        autocomplete="new-password"
+                                        class="block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="flex justify-end space-x-3">
