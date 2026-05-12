@@ -41,6 +41,7 @@ class Modification extends Model
         'modified_by',
         'done_by',
         'done_at',
+        'source_import',
     ];
 
     protected function casts(): array

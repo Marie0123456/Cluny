@@ -1135,12 +1135,14 @@
                                     @if (in_array($mod->statut->value, ['cree', 'modifie']))
                                         <button type="button" onclick="marquerFait({{ $mod->id }}, this)" class="text-green-600 hover:text-green-800 text-sm font-medium py-1">Fait</button>
                                     @endif
-                                    <form method="POST" action="{{ route('modifications.destroy', $mod) }}"
-                                        onsubmit="return confirm('{{ $mod->statut->value === 'a_supprimer' ? 'Confirmer la suppression définitive ?' : 'Marquer cette modification à supprimer ?' }}')">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="text-red-600 hover:text-red-800 text-sm font-medium py-1">Supprimer</button>
-                                    </form>
+                                    @if (!$mod->source_import)
+                                        <form method="POST" action="{{ route('modifications.destroy', $mod) }}"
+                                            onsubmit="return confirm('{{ $mod->statut->value === 'a_supprimer' ? 'Confirmer la suppression définitive ?' : 'Marquer cette modification à supprimer ?' }}')">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="text-red-600 hover:text-red-800 text-sm font-medium py-1">Supprimer</button>
+                                        </form>
+                                    @endif
                                 </div>
 
                                 {{-- Inline edit (mobile) --}}
@@ -1462,12 +1464,14 @@
                                                 @if (in_array($mod->statut->value, ['cree', 'modifie']))
                                                     <button type="button" onclick="marquerFait({{ $mod->id }}, this)" class="text-green-600 hover:text-green-800 text-xs font-medium">Fait</button>
                                                 @endif
-                                                <form method="POST" action="{{ route('modifications.destroy', $mod) }}"
-                                                    onsubmit="return confirm('{{ $mod->statut->value === 'a_supprimer' ? 'Confirmer la suppression définitive ?' : 'Marquer cette modification à supprimer ?' }}')">
-                                                    @csrf
-                                                    @method('DELETE')
-                                                    <button type="submit" class="text-red-600 hover:text-red-800 text-xs font-medium">Supprimer</button>
-                                                </form>
+                                                @if (!$mod->source_import)
+                                                    <form method="POST" action="{{ route('modifications.destroy', $mod) }}"
+                                                        onsubmit="return confirm('{{ $mod->statut->value === 'a_supprimer' ? 'Confirmer la suppression définitive ?' : 'Marquer cette modification à supprimer ?' }}')">
+                                                        @csrf
+                                                        @method('DELETE')
+                                                        <button type="submit" class="text-red-600 hover:text-red-800 text-xs font-medium">Supprimer</button>
+                                                    </form>
+                                                @endif
                                             </div>
                                         </td>
                                     </tr>

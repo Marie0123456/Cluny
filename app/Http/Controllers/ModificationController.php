@@ -503,6 +503,10 @@ class ModificationController extends Controller
 
     public function destroy(Modification $modification)
     {
+        if ($modification->source_import) {
+            abort(403, 'Les forfaits importés depuis FFE Compet ne peuvent pas être supprimés.');
+        }
+
         // Premier clic : marquer "à supprimer" sans rien annuler
         if ($modification->statut->value !== 'a_supprimer') {
             $modification->update([
