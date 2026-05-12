@@ -78,6 +78,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/import', [ImportController::class, 'store'])->name('import.store');
         Route::post('/import/ffe-credentials', [ImportController::class, 'saveCredentials'])->name('import.save-credentials');
         Route::post('/import/ffe-sync', [ImportController::class, 'syncFfeCompet'])->name('import.ffe-sync');
+        Route::get('/import/ffe-diag', [ImportController::class, 'diagFfeCompet'])->name('import.ffe-diag');
         Route::delete('/purge', [ConcoursController::class, 'purge'])->name('purge');
 
         // Backup & Restore
