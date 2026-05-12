@@ -23,6 +23,9 @@ class Concours extends Model
         'type_ffe_sif',
         'type_ffe_compet',
         'grand_national',
+        'ffe_numero_concours',
+        'ffe_login',
+        'ffe_password',
     ];
 
     protected function casts(): array
@@ -34,6 +37,7 @@ class Concours extends Model
             'type_ffe_sif' => 'boolean',
             'type_ffe_compet' => 'boolean',
             'grand_national' => 'boolean',
+            'ffe_password' => 'encrypted',
         ];
     }
 
