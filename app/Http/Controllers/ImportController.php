@@ -42,7 +42,7 @@ class ImportController extends Controller
         }
 
         $request->validate([
-            'fichier' => 'required|file|max:20480|mimes:csv,txt,xls,xlsx',
+            'fichier' => 'required|file|max:20480',
         ]);
 
         $file = $request->file('fichier');
