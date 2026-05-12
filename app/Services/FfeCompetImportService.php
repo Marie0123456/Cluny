@@ -12,18 +12,16 @@ use App\Models\Epreuve;
 use App\Models\Modification;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
-use PhpOffice\PhpSpreadsheet\IOFactory;
-use PhpOffice\PhpSpreadsheet\Shared\Date as SpreadsheetDate;
+use OpenSpout\Reader\XLSX\Reader as XlsxReader;
 
 class FfeCompetImportService
 {
     /**
-     * Import or sync engagements from a raw Excel file content.
-     * Returns counters and the number of forfaits processed.
+     * Import or sync engagements from a raw Excel/HTML file content.
      */
     public function sync(Concours $concours, string $fileContent): array
     {
-        $rows = $this->parseExcel($fileContent);
+        $rows = $this->parseFile($fileContent);
 
         if (empty($rows)) {
             throw new \RuntimeException('Le fichier FFE Compet ne contient aucune donnée.');
@@ -106,12 +104,12 @@ class FfeCompetImportService
                 $key = ($row['cheval'] ?? '') . '|' . ($row['sire'] ?? '');
                 if (! $chevalCache->has($key) && ! isset($newChevaux[$key])) {
                     $newChevaux[$key] = [
-                        'nom'      => $row['cheval'] ?? '',
-                        'num_sire' => $row['sire'] ?: null,
-                        'age'      => $this->parseAge($row['age'] ?? ''),
-                        'sexe'     => $row['sexe'] ?? null,
-                        'robe'     => $row['robe'] ?? null,
-                        'race'     => $row['race'] ?? null,
+                        'nom'        => $row['cheval'] ?? '',
+                        'num_sire'   => $row['sire'] ?: null,
+                        'age'        => $this->parseAge($row['age'] ?? ''),
+                        'sexe'       => $row['sexe'] ?? null,
+                        'robe'       => $row['robe'] ?? null,
+                        'race'       => $row['race'] ?? null,
                         'created_at' => $now,
                         'updated_at' => $now,
                     ];
@@ -126,7 +124,7 @@ class FfeCompetImportService
                     ->keyBy(fn ($c) => $c->nom . '|' . ($c->num_sire ?? ''));
             }
 
-            // === Phase 4 : Engagements + forfaits ===
+            // === Phase 4 : Engagements ===
             $existingEngagements = Engagement::whereIn('epreuve_id', $epreuveCache->pluck('id'))
                 ->get()
                 ->keyBy(fn ($e) => $e->epreuve_id . '|' . $e->cavalier_id . '|' . $e->cheval_id);
@@ -137,8 +135,7 @@ class FfeCompetImportService
                 if (! $numero || ! $epreuveCache->has($numero)) {
                     continue;
                 }
-                $epreuve = $epreuveCache[$numero];
-
+                $epreuve     = $epreuveCache[$numero];
                 $cavalierKey = ($row['nom'] ?? '') . '|' . ($row['prenom'] ?? '') . '|' . ($row['licence'] ?? '');
                 $chevalKey   = ($row['cheval'] ?? '') . '|' . ($row['sire'] ?? '');
 
@@ -152,15 +149,15 @@ class FfeCompetImportService
 
                 if (! $existingEngagements->has($engKey) && ! isset($newEngagements[$engKey])) {
                     $newEngagements[$engKey] = [
-                        'epreuve_id'     => $epreuve->id,
-                        'cavalier_id'    => $cavalier->id,
-                        'cheval_id'      => $cheval->id,
-                        'numero_depart'  => $row['num_depart'] ?: null,
-                        'role_cavalier'  => $row['role_cavalier'] ?: null,
-                        'dept_groom'     => $row['dept_groom'] ?: null,
-                        'role_cheval'    => $row['role_cheval'] ?: null,
-                        'created_at'     => $now,
-                        'updated_at'     => $now,
+                        'epreuve_id'    => $epreuve->id,
+                        'cavalier_id'   => $cavalier->id,
+                        'cheval_id'     => $cheval->id,
+                        'numero_depart' => $row['num_depart'] ?: null,
+                        'role_cavalier' => $row['role_cavalier'] ?: null,
+                        'dept_groom'    => $row['dept_groom'] ?: null,
+                        'role_cheval'   => $row['role_cheval'] ?: null,
+                        'created_at'    => $now,
+                        'updated_at'    => $now,
                     ];
                 }
             }
@@ -169,14 +166,12 @@ class FfeCompetImportService
                     Engagement::insert($chunk);
                 }
                 $counters['nb_engagements'] = count($newEngagements);
-                // Reload after insert
                 $existingEngagements = Engagement::whereIn('epreuve_id', $epreuveCache->pluck('id'))
                     ->get()
                     ->keyBy(fn ($e) => $e->epreuve_id . '|' . $e->cavalier_id . '|' . $e->cheval_id);
             }
 
-            // === Phase 5 : Forfaits (NON_PARTANT) ===
-            // Pre-load existing NON_PARTANT modifications to avoid duplicates
+            // === Phase 5 : Forfaits → NON_PARTANT ===
             $existingNp = Modification::where('concours_id', $concours->id)
                 ->where('type', ModificationType::NON_PARTANT)
                 ->pluck('engagement_id')
@@ -191,8 +186,7 @@ class FfeCompetImportService
                 if (! $numero || ! $epreuveCache->has($numero)) {
                     continue;
                 }
-                $epreuve = $epreuveCache[$numero];
-
+                $epreuve     = $epreuveCache[$numero];
                 $cavalierKey = ($row['nom'] ?? '') . '|' . ($row['prenom'] ?? '') . '|' . ($row['licence'] ?? '');
                 $chevalKey   = ($row['cheval'] ?? '') . '|' . ($row['sire'] ?? '');
 
@@ -232,73 +226,131 @@ class FfeCompetImportService
         return $counters;
     }
 
-    private function parseExcel(string $content): array
+    private function parseFile(string $content): array
     {
-        // Write content to a temp file for PhpSpreadsheet
-        $tmpFile = tempnam(sys_get_temp_dir(), 'ffe_') . '.xls';
+        // Detect format by magic bytes / content
+        if (str_starts_with($content, "PK\x03\x04")) {
+            return $this->parseXlsx($content);
+        }
+
+        // HTML disguised as Excel (common on French federation sites)
+        if (str_contains(strtolower(substr($content, 0, 200)), '<html') ||
+            str_contains(strtolower(substr($content, 0, 500)), '<table')) {
+            return $this->parseHtml($content);
+        }
+
+        // Fallback: CSV
+        return $this->parseCsv($content);
+    }
+
+    private function parseXlsx(string $content): array
+    {
+        $tmpFile = tempnam(sys_get_temp_dir(), 'ffe_') . '.xlsx';
         file_put_contents($tmpFile, $content);
 
         try {
-            $spreadsheet = IOFactory::load($tmpFile);
-            $sheet = $spreadsheet->getActiveSheet();
-            $data = $sheet->toArray(null, true, true, false);
+            $reader = new XlsxReader();
+            $reader->open($tmpFile);
+
+            $rawRows = [];
+            foreach ($reader->getSheetIterator() as $sheet) {
+                foreach ($sheet->getRowIterator() as $row) {
+                    $rawRows[] = array_map(
+                        fn ($cell) => trim((string) $cell->getValue()),
+                        $row->getCells()
+                    );
+                }
+                break; // first sheet only
+            }
+            $reader->close();
         } finally {
             @unlink($tmpFile);
         }
 
-        if (empty($data)) {
+        return $this->mapRows($rawRows);
+    }
+
+    private function parseHtml(string $content): array
+    {
+        if (! mb_check_encoding($content, 'UTF-8')) {
+            $content = mb_convert_encoding($content, 'UTF-8', 'ISO-8859-1');
+        }
+
+        libxml_use_internal_errors(true);
+        $dom = new \DOMDocument();
+        $dom->loadHTML($content);
+        libxml_clear_errors();
+
+        $rows = [];
+        foreach ($dom->getElementsByTagName('tr') as $tr) {
+            $cells = [];
+            foreach ($tr->getElementsByTagName('td') as $td) {
+                $cells[] = trim($td->textContent);
+            }
+            if (! empty(array_filter($cells))) {
+                $rows[] = $cells;
+            }
+        }
+
+        return $this->mapRows($rows);
+    }
+
+    private function parseCsv(string $content): array
+    {
+        if (! mb_check_encoding($content, 'UTF-8')) {
+            $content = mb_convert_encoding($content, 'UTF-8', 'ISO-8859-1');
+        }
+
+        $lines = array_filter(explode("\n", $content), fn ($l) => trim($l) !== '');
+        $lines = array_values($lines);
+
+        $separator = $this->detectSeparator(reset($lines));
+        $rawRows = array_map(
+            fn ($line) => array_map('trim', explode($separator, $line)),
+            $lines
+        );
+
+        return $this->mapRows($rawRows);
+    }
+
+    private function mapRows(array $rawRows): array
+    {
+        if (empty($rawRows)) {
             return [];
         }
 
-        // Find header row (contains recognizable column names)
-        $headerRowIndex = $this->findHeaderRow($data);
-        if ($headerRowIndex === null) {
-            throw new \RuntimeException('Impossible de trouver la ligne d\'en-tête dans le fichier FFE Compet.');
+        $headerIndex = $this->findHeaderRow($rawRows);
+        if ($headerIndex === null) {
+            return [];
         }
 
-        $headers = array_map(fn ($h) => mb_strtolower(trim((string) $h)), $data[$headerRowIndex]);
+        $headers   = array_map(fn ($h) => mb_strtolower(trim((string) $h)), $rawRows[$headerIndex]);
         $columnMap = $this->buildColumnMap($headers);
-        $rows = [];
+        $rows      = [];
 
-        for ($i = $headerRowIndex + 1; $i < count($data); $i++) {
-            $rawRow = $data[$i];
-
-            // Skip empty rows
-            if (empty(array_filter($rawRow, fn ($v) => $v !== null && $v !== ''))) {
+        for ($i = $headerIndex + 1; $i < count($rawRows); $i++) {
+            $raw = $rawRows[$i];
+            if (empty(array_filter($raw, fn ($v) => $v !== null && $v !== ''))) {
                 continue;
             }
 
             $row = [];
             foreach ($columnMap as $field => $colIndex) {
-                $row[$field] = isset($rawRow[$colIndex]) ? trim((string) $rawRow[$colIndex]) : '';
+                $row[$field] = isset($raw[$colIndex]) ? trim((string) $raw[$colIndex]) : '';
             }
 
-            // Parse date if it's an Excel serial number
-            if (isset($row['epreuve_date']) && is_numeric($row['epreuve_date'])) {
-                try {
-                    $row['epreuve_date'] = SpreadsheetDate::excelToDateTimeObject((float) $row['epreuve_date'])->format('Y-m-d');
-                } catch (\Exception) {
-                    $row['epreuve_date'] = null;
-                }
-            } elseif (isset($row['epreuve_date']) && ! empty($row['epreuve_date'])) {
-                try {
-                    $row['epreuve_date'] = Carbon::createFromFormat('d/m/Y', $row['epreuve_date'])->format('Y-m-d');
-                } catch (\Exception) {
-                    $row['epreuve_date'] = null;
-                }
-            }
-
-            $rows[] = $row;
+            $row['epreuve_date'] = $this->parseDate($row['epreuve_date'] ?? '');
+            $rows[]              = $row;
         }
 
         return $rows;
     }
 
-    private function findHeaderRow(array $data): ?int
+    private function findHeaderRow(array $rows): ?int
     {
         $knownHeaders = ['epreuve', 'cavalier', 'cheval', 'licence', 'sire', 'nom'];
-        foreach ($data as $index => $row) {
-            $line = mb_strtolower(implode(' ', array_map(fn ($v) => (string) $v, $row)));
+        foreach ($rows as $index => $row) {
+            $line    = mb_strtolower(implode(' ', array_map(fn ($v) => (string) $v, $row)));
             $matches = 0;
             foreach ($knownHeaders as $h) {
                 if (str_contains($line, $h)) {
@@ -314,7 +366,6 @@ class FfeCompetImportService
 
     private function buildColumnMap(array $headers): array
     {
-        // Maps internal field names to column indices using fuzzy header matching
         $map = [
             'epreuve_numero' => ['epreuve_numero', 'num_epreuve', 'numero_epreuve', 'epreuve'],
             'epreuve_nom'    => ['epreuve_nom', 'nom_epreuve', 'libelle_epreuve', 'libelle'],
@@ -322,7 +373,7 @@ class FfeCompetImportService
             'num_depart'     => ['num_depart', 'numero_depart', 'num depart', 'depart'],
             'nom'            => ['nom'],
             'prenom'         => ['prenom', 'prénom'],
-            'role_cavalier'  => ['role_cavalier', 'role cavalier', 'rôle cavalier'],
+            'role_cavalier'  => ['role_cavalier', 'role cavalier'],
             'licence'        => ['licence'],
             'club'           => ['club'],
             'cre'            => ['cre'],
@@ -352,6 +403,36 @@ class FfeCompetImportService
         }
 
         return $result;
+    }
+
+    private function parseDate(string $value): ?string
+    {
+        if (empty($value)) {
+            return null;
+        }
+        // Excel serial date (numeric)
+        if (is_numeric($value)) {
+            try {
+                return Carbon::create(1899, 12, 30)->addDays((int) $value)->format('Y-m-d');
+            } catch (\Exception) {
+                return null;
+            }
+        }
+        try {
+            return Carbon::createFromFormat('d/m/Y', $value)->format('Y-m-d');
+        } catch (\Exception) {
+            return null;
+        }
+    }
+
+    private function detectSeparator(string $line): string
+    {
+        $counts = [
+            "\t" => substr_count($line, "\t"),
+            ';'  => substr_count($line, ';'),
+            ','  => substr_count($line, ','),
+        ];
+        return array_search(max($counts), $counts);
     }
 
     private function parseAge(string $ageStr): ?int
