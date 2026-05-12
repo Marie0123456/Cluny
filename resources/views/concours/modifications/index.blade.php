@@ -954,6 +954,8 @@
                         </div>
                     </form>
                     </div>
+                </div>
+
                 <!-- Echange form -->
                 <div x-show="activeForm === 'echange'" x-transition x-cloak>
                     <div x-data="echangeForm()" class="bg-white shadow-sm sm:rounded-lg p-4 sm:p-6 mb-6 space-y-4">
