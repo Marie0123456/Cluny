@@ -228,18 +228,30 @@ class FfeCompetImportService
 
     private function parseFile(string $content): array
     {
-        // Detect format by magic bytes / content
+        // Vieux format binaire XLS (OLE2 : D0 CF 11 E0)
+        if (str_starts_with($content, "\xD0\xCF\x11\xE0")) {
+            throw new \RuntimeException(
+                'Le fichier est au format Excel 97-2003 (.xls binaire). ' .
+                'Ouvrez-le dans Excel puis enregistrez-le au format .xlsx, et réimportez-le.'
+            );
+        }
+
+        // XLSX (fichier ZIP)
         if (str_starts_with($content, "PK\x03\x04")) {
             return $this->parseXlsx($content);
         }
 
-        // HTML disguised as Excel (common on French federation sites)
-        if (str_contains(strtolower(substr($content, 0, 200)), '<html') ||
-            str_contains(strtolower(substr($content, 0, 500)), '<table')) {
+        // Ignorer un éventuel BOM UTF-8 avant de tester HTML
+        $sample = ltrim($content, "\xEF\xBB\xBF \t\r\n");
+
+        // HTML déguisé en Excel (courant sur les sites FFE)
+        if (str_starts_with(strtolower($sample), '<html') ||
+            str_starts_with(strtolower($sample), '<!doctype') ||
+            str_contains(strtolower(substr($sample, 0, 500)), '<table')) {
             return $this->parseHtml($content);
         }
 
-        // Fallback: CSV
+        // Fallback : CSV / TSV
         return $this->parseCsv($content);
     }
 
@@ -348,11 +360,15 @@ class FfeCompetImportService
 
     private function findHeaderRow(array $rows): ?int
     {
-        $knownHeaders = ['epreuve', 'cavalier', 'cheval', 'licence', 'sire', 'nom'];
         foreach ($rows as $index => $row) {
-            $line    = mb_strtolower(implode(' ', array_map(fn ($v) => (string) $v, $row)));
+            $line = mb_strtolower(implode(' ', array_map(fn ($v) => (string) $v, $row)));
+            // La ligne d'en-tête FFE Compet contient toujours 'licence' et 'sire'
+            if (str_contains($line, 'licence') && str_contains($line, 'sire')) {
+                return $index;
+            }
+            // Fallback : au moins 3 mots-clés génériques
             $matches = 0;
-            foreach ($knownHeaders as $h) {
+            foreach (['epreuve', 'cavalier', 'cheval', 'licence', 'sire', 'nom', 'prenom', 'prénom'] as $h) {
                 if (str_contains($line, $h)) {
                     $matches++;
                 }
@@ -366,42 +382,83 @@ class FfeCompetImportService
 
     private function buildColumnMap(array $headers): array
     {
+        $joined = implode(' ', $headers);
+
+        // Format FFE Compet réel : colonnes toujours dans le même ordre
+        // N°Epr | Nom(épr) | Date | Dép. | Nom(cav) | Prénom | Rôle | Num Licence |
+        // Club | CRE | Dept. | N°Dept | Dept.Groom | Nom(cheval) | Rôle | Num Sire |
+        // Âge | Sexe | Robe | Race | Statut
+        if (str_contains($joined, 'licence') && str_contains($joined, 'sire') && count($headers) >= 15) {
+            $result = [
+                'epreuve_numero' => 0,
+                'epreuve_nom'    => 1,
+                'epreuve_date'   => 2,
+                'num_depart'     => 3,
+                'nom'            => 4,
+                'prenom'         => 5,
+                'role_cavalier'  => 6,
+                'licence'        => 7,
+                'club'           => 8,
+                'cre'            => 9,
+                'departement'    => 10,
+                'num_dept'       => 11,
+                'dept_groom'     => 12,
+                'cheval'         => 13,
+                'role_cheval'    => 14,
+                'sire'           => 15,
+                'age'            => 16,
+                'sexe'           => 17,
+                'robe'           => 18,
+            ];
+            // Statut : chercher par nom (position variable selon les exports)
+            foreach ($headers as $i => $h) {
+                if (str_contains($h, 'statut')) {
+                    $result['statut'] = $i;
+                    break;
+                }
+            }
+            // Si pas trouvé par nom, prendre la dernière colonne non vide
+            if (! isset($result['statut']) && count($headers) > 19) {
+                $result['statut'] = count($headers) - 1;
+            }
+            return $result;
+        }
+
+        // Fallback : correspondance par nom de colonne
         $map = [
-            'epreuve_numero' => ['epreuve_numero', 'num_epreuve', 'numero_epreuve', 'epreuve'],
-            'epreuve_nom'    => ['epreuve_nom', 'nom_epreuve', 'libelle_epreuve', 'libelle'],
-            'epreuve_date'   => ['epreuve_date', 'date_epreuve', 'date'],
-            'num_depart'     => ['num_depart', 'numero_depart', 'num depart', 'depart'],
+            'epreuve_numero' => ['epreuve_numero', 'num_epreuve', 'epreuve'],
+            'epreuve_nom'    => ['epreuve_nom', 'libelle'],
+            'epreuve_date'   => ['epreuve_date', 'date'],
+            'num_depart'     => ['num_depart', 'depart', 'dép'],
             'nom'            => ['nom'],
             'prenom'         => ['prenom', 'prénom'],
-            'role_cavalier'  => ['role_cavalier', 'role cavalier'],
+            'role_cavalier'  => ['role_cavalier', 'rôle'],
             'licence'        => ['licence'],
             'club'           => ['club'],
             'cre'            => ['cre'],
             'departement'    => ['departement', 'département'],
-            'num_dept'       => ['num_dept', 'num_departement', 'dept'],
-            'dept_groom'     => ['dept_groom', 'groom'],
+            'num_dept'       => ['num_dept', 'dept'],
+            'dept_groom'     => ['groom'],
             'cheval'         => ['cheval'],
-            'role_cheval'    => ['role_cheval', 'role cheval'],
+            'role_cheval'    => ['role_cheval'],
             'sire'           => ['sire'],
             'age'            => ['age', 'âge'],
             'sexe'           => ['sexe'],
             'robe'           => ['robe'],
-            'race'           => ['race'],
             'statut'         => ['statut'],
         ];
 
         $result = [];
         foreach ($map as $field => $candidates) {
-            foreach ($headers as $colIndex => $header) {
+            foreach ($headers as $i => $header) {
                 foreach ($candidates as $candidate) {
                     if (str_contains($header, $candidate)) {
-                        $result[$field] = $colIndex;
+                        $result[$field] = $i;
                         break 2;
                     }
                 }
             }
         }
-
         return $result;
     }
 
