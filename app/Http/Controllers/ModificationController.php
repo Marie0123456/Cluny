@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\ModificationStatut;
 use App\Enums\ModificationType;
 use App\Models\Cavalier;
 use App\Models\Cheval;
@@ -22,6 +23,7 @@ class ModificationController extends Controller
                 'engagement.epreuve:id,numero,nom,date',
                 'engagement.cavalier:id,nom,prenom,num_licence',
                 'engagement.cheval:id,nom,num_sire',
+                'secondEngagement.cavalier:id,nom,prenom',
                 'ancienCheval:id,nom,num_sire',
                 'nouveauCheval:id,nom,num_sire',
                 'ancienCavalier:id,nom,prenom,num_licence',
@@ -410,6 +412,44 @@ class ModificationController extends Controller
             ->with('success', 'Non-partant enregistré.');
     }
 
+    public function echange(Request $request, Concours $concours)
+    {
+        $validated = $request->validate([
+            'engagement_id_1' => 'required|exists:engagements,id',
+            'engagement_id_2' => 'required|exists:engagements,id|different:engagement_id_1',
+        ]);
+
+        $eng1 = Engagement::with(['cavalier', 'epreuve'])->findOrFail($validated['engagement_id_1']);
+        $eng2 = Engagement::with(['cavalier'])->findOrFail($validated['engagement_id_2']);
+
+        if ($eng1->epreuve_id !== $eng2->epreuve_id || $eng1->epreuve->concours_id !== $concours->id) {
+            return back()->with('error', 'Les deux engagements doivent être dans la même épreuve.');
+        }
+
+        $num1 = $eng1->numero_depart;
+        $num2 = $eng2->numero_depart;
+
+        \DB::transaction(function () use ($eng1, $eng2, $num1, $num2, $concours) {
+            $eng1->update(['numero_depart' => $num2]);
+            $eng2->update(['numero_depart' => $num1]);
+
+            Modification::create([
+                'engagement_id'        => $eng1->id,
+                'second_engagement_id' => $eng2->id,
+                'concours_id'          => $concours->id,
+                'type'                 => ModificationType::ECHANGE,
+                'statut'               => ModificationStatut::CREE,
+                'description'          => 'N°' . ($num1 ?? '?') . ' ↔ N°' . ($num2 ?? '?'),
+                'prix'                 => 0,
+                'pf'                   => 0,
+                'created_by'           => auth()->id(),
+            ]);
+        });
+
+        return redirect()->route('concours.modifications.index', $concours)
+            ->with('success', 'Échange enregistré.');
+    }
+
     public function updatePaiement(Request $request, Modification $modification)
     {
         $validated = $request->validate([
@@ -536,6 +576,15 @@ class ModificationController extends Controller
             $modification->engagement->update([
                 'is_non_partant' => false,
             ]);
+        }
+
+        if ($modification->type === ModificationType::ECHANGE && $modification->second_engagement_id) {
+            $eng2 = Engagement::find($modification->second_engagement_id);
+            if ($eng2) {
+                $tmp = $modification->engagement->numero_depart;
+                $modification->engagement->update(['numero_depart' => $eng2->numero_depart]);
+                $eng2->update(['numero_depart' => $tmp]);
+            }
         }
 
         if ($modification->type->value === 'ajout_engagement') {

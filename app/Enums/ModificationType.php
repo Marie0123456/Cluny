@@ -9,6 +9,7 @@ enum ModificationType: string
     case AJOUT_ENGAGEMENT = 'ajout_engagement';
     case CHANGEMENT_EPREUVE = 'changement_epreuve';
     case NON_PARTANT = 'non_partant';
+    case ECHANGE = 'echange';
 
     public function label(): string
     {
@@ -18,6 +19,7 @@ enum ModificationType: string
             self::AJOUT_ENGAGEMENT => 'Invitation',
             self::CHANGEMENT_EPREUVE => "Changement d'épreuve",
             self::NON_PARTANT => 'Non-partant',
+            self::ECHANGE => 'Échange',
         };
     }
 
@@ -29,6 +31,7 @@ enum ModificationType: string
             self::AJOUT_ENGAGEMENT => 'bg-blue-100 text-blue-800',
             self::CHANGEMENT_EPREUVE => 'bg-yellow-100 text-yellow-800',
             self::NON_PARTANT => 'bg-gray-100 text-gray-800',
+            self::ECHANGE => 'bg-teal-100 text-teal-800',
         };
     }
 

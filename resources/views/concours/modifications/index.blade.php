@@ -57,8 +57,13 @@
                         </button>
                         <button @click="activeForm = activeForm === 'np' ? '' : 'np'"
                             :class="activeForm === 'np' ? 'bg-gray-700 ring-2 ring-gray-300' : 'bg-gray-600'"
-                            class="inline-flex items-center justify-center col-span-2 sm:col-span-1 px-3 sm:px-4 py-2.5 sm:py-2 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 transition">
+                            class="inline-flex items-center justify-center px-3 sm:px-4 py-2.5 sm:py-2 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 transition">
                             Déclarer NP
+                        </button>
+                        <button @click="activeForm = activeForm === 'echange' ? '' : 'echange'"
+                            :class="activeForm === 'echange' ? 'bg-teal-700 ring-2 ring-teal-300' : 'bg-teal-600'"
+                            class="inline-flex items-center justify-center px-3 sm:px-4 py-2.5 sm:py-2 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-teal-700 transition">
+                            Échange
                         </button>
                     </div>
                 </div>
@@ -949,6 +954,98 @@
                         </div>
                     </form>
                     </div>
+                <!-- Echange form -->
+                <div x-show="activeForm === 'echange'" x-transition x-cloak>
+                    <div x-data="echangeForm()" class="bg-white shadow-sm sm:rounded-lg p-4 sm:p-6 mb-6 space-y-4">
+                    <form method="POST" action="{{ route('concours.modifications.echange', $concours) }}" class="space-y-4">
+                        @csrf
+
+                        <!-- Epreuve -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Épreuve</label>
+                            <select x-model="epreuveId" @change="onEpreuveChange()"
+                                class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                <option value="">Choisir l'épreuve</option>
+                                @foreach($epreuves as $epreuve)
+                                    <option value="{{ $epreuve->id }}">{{ $epreuve->numero }} - {{ $epreuve->nom }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <!-- Cavalier 1 -->
+                        <div x-show="cavaliers.length > 0" class="relative">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Cavalier 1</label>
+                            <input type="text" x-model="searchCav1"
+                                @input="filterCav1()"
+                                @focus="showCav1List = true"
+                                placeholder="Nom, cheval ou N° de départ..."
+                                class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                            <div x-show="selectedCav1" class="mt-1 text-sm text-teal-700 font-medium">
+                                <span x-text="selectedCav1 ? `N°${selectedCav1.numero_depart} — ${selectedCav1.cavalier_nom} ${selectedCav1.cavalier_prenom}` : ''"></span>
+                            </div>
+                            <input type="hidden" name="engagement_id_1" :value="engagementId1">
+                            <ul x-show="showCav1List && filteredCav1.length > 0"
+                                @click.away="showCav1List = false"
+                                class="absolute z-50 w-full bg-white border border-gray-300 rounded-md shadow-lg mt-1 max-h-60 overflow-y-auto">
+                                <template x-for="c in filteredCav1" :key="c.engagement_id">
+                                    <li @click="selectCav1(c)"
+                                        class="cursor-pointer hover:bg-teal-50 px-4 py-3 border-b border-gray-100">
+                                        <div class="flex items-center justify-between">
+                                            <div>
+                                                <span class="font-semibold text-sm text-gray-900" x-text="`${c.cavalier_nom} ${c.cavalier_prenom}`"></span>
+                                                <span x-show="c.numero_depart" class="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-teal-100 text-teal-700" x-text="`N°${c.numero_depart}`"></span>
+                                            </div>
+                                            <span class="text-sm text-gray-500" x-text="c.cheval_nom"></span>
+                                        </div>
+                                    </li>
+                                </template>
+                            </ul>
+                        </div>
+
+                        <!-- Cavalier 2 -->
+                        <div x-show="engagementId1 && filteredCav2.length > 0" class="relative">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Cavalier 2</label>
+                            <input type="text" x-model="searchCav2"
+                                @input="filterCav2()"
+                                @focus="showCav2List = true"
+                                placeholder="Nom, cheval ou N° de départ..."
+                                class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                            <div x-show="selectedCav2" class="mt-1 text-sm text-teal-700 font-medium">
+                                <span x-text="selectedCav2 ? `N°${selectedCav2.numero_depart} — ${selectedCav2.cavalier_nom} ${selectedCav2.cavalier_prenom}` : ''"></span>
+                            </div>
+                            <input type="hidden" name="engagement_id_2" :value="engagementId2">
+                            <ul x-show="showCav2List && filteredCav2.length > 0"
+                                @click.away="showCav2List = false"
+                                class="absolute z-50 w-full bg-white border border-gray-300 rounded-md shadow-lg mt-1 max-h-60 overflow-y-auto">
+                                <template x-for="c in filteredCav2" :key="c.engagement_id">
+                                    <li @click="selectCav2(c)"
+                                        class="cursor-pointer hover:bg-teal-50 px-4 py-3 border-b border-gray-100">
+                                        <div class="flex items-center justify-between">
+                                            <div>
+                                                <span class="font-semibold text-sm text-gray-900" x-text="`${c.cavalier_nom} ${c.cavalier_prenom}`"></span>
+                                                <span x-show="c.numero_depart" class="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-teal-100 text-teal-700" x-text="`N°${c.numero_depart}`"></span>
+                                            </div>
+                                            <span class="text-sm text-gray-500" x-text="c.cheval_nom"></span>
+                                        </div>
+                                    </li>
+                                </template>
+                            </ul>
+                        </div>
+
+                        <!-- Prévisualisation + submit -->
+                        <div x-show="engagementId1 && engagementId2" class="flex items-center gap-4">
+                            <div class="text-sm font-medium text-teal-700 bg-teal-50 border border-teal-200 rounded-md px-3 py-2">
+                                <span x-text="`N°${selectedCav1?.numero_depart ?? '?'} ↔ N°${selectedCav2?.numero_depart ?? '?'}`"></span>
+                                <span class="mx-2 text-gray-400">|</span>
+                                <span x-text="`${selectedCav1?.cavalier_nom ?? ''} ${selectedCav1?.cavalier_prenom ?? ''} ↔ ${selectedCav2?.cavalier_nom ?? ''} ${selectedCav2?.cavalier_prenom ?? ''}`"></span>
+                            </div>
+                            <button type="submit"
+                                class="inline-flex items-center px-4 py-2 bg-teal-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-teal-700">
+                                Valider l'échange
+                            </button>
+                        </div>
+                    </form>
+                    </div>
                 </div>
             </div>
 
@@ -1042,7 +1139,9 @@
                                     'epreuve' => (string) ($mod->engagement->epreuve->numero ?? ''),
                                     'nom' => $mod->type === \App\Enums\ModificationType::CHANGEMENT_CAVALIER
                                         ? trim(($mod->ancienCavalier->nom ?? '') . ' ' . ($mod->ancienCavalier->prenom ?? '') . ' ' . ($mod->nouveauCavalier->nom ?? '') . ' ' . ($mod->nouveauCavalier->prenom ?? ''))
-                                        : trim(($mod->engagement->cavalier->nom ?? '') . ' ' . ($mod->engagement->cavalier->prenom ?? '')),
+                                        : ($mod->type === \App\Enums\ModificationType::ECHANGE
+                                            ? trim(($mod->engagement->cavalier->nom ?? '') . ' ' . ($mod->engagement->cavalier->prenom ?? '') . ' ' . ($mod->secondEngagement->cavalier->nom ?? '') . ' ' . ($mod->secondEngagement->cavalier->prenom ?? ''))
+                                            : trim(($mod->engagement->cavalier->nom ?? '') . ' ' . ($mod->engagement->cavalier->prenom ?? ''))),
                                     'jour' => $mod->engagement->epreuve->date?->format('Y-m-d') ?? $mod->created_at->format('Y-m-d'),
                                     'statut' => $mod->statut->value,
                                     'paiement' => $paiementValues,
@@ -1063,7 +1162,9 @@
                                                 {{ $epreuveLabel($mod->engagement->epreuve ?? null) }}
                                             @endif
                                         </span>
-                                        @if ($mod->engagement->numero_depart)
+                                        @if ($mod->type === \App\Enums\ModificationType::ECHANGE)
+                                            <span class="text-xs font-medium text-teal-700">{{ $mod->description }}</span>
+                                        @elseif ($mod->engagement->numero_depart)
                                             <span class="text-xs text-gray-400">
                                                 @if ($mod->type === \App\Enums\ModificationType::NON_PARTANT)
                                                     N°{{ $mod->engagement->numero_depart }} <span class="font-bold text-red-600">NP</span>
@@ -1090,6 +1191,10 @@
                                         <span class="text-gray-400 line-through">{{ $mod->ancienCavalier->nom ?? '-' }} {{ $mod->ancienCavalier->prenom ?? '' }}</span>
                                         &rarr;
                                         <span class="text-green-700 font-medium">{{ $mod->nouveauCavalier->nom ?? '-' }} {{ $mod->nouveauCavalier->prenom ?? '' }}</span>
+                                    @elseif ($mod->type === \App\Enums\ModificationType::ECHANGE)
+                                        <span class="font-medium text-gray-900">{{ $mod->engagement->cavalier->nom ?? '' }} {{ $mod->engagement->cavalier->prenom ?? '' }}</span>
+                                        <span class="mx-1 text-teal-600 font-bold">↔</span>
+                                        <span class="font-medium text-gray-900">{{ $mod->secondEngagement->cavalier->nom ?? '' }} {{ $mod->secondEngagement->cavalier->prenom ?? '' }}</span>
                                     @else
                                         <span class="font-medium text-gray-900">{{ $mod->engagement->cavalier->nom ?? '' }} {{ $mod->engagement->cavalier->prenom ?? '' }}</span>
                                         @if ($mod->is_gn)
@@ -1338,7 +1443,9 @@
                                             'epreuve' => (string) ($mod->engagement->epreuve->numero ?? ''),
                                             'nom' => $mod->type === \App\Enums\ModificationType::CHANGEMENT_CAVALIER
                                                 ? trim(($mod->ancienCavalier->nom ?? '') . ' ' . ($mod->ancienCavalier->prenom ?? '') . ' ' . ($mod->nouveauCavalier->nom ?? '') . ' ' . ($mod->nouveauCavalier->prenom ?? ''))
-                                                : trim(($mod->engagement->cavalier->nom ?? '') . ' ' . ($mod->engagement->cavalier->prenom ?? '')),
+                                                : ($mod->type === \App\Enums\ModificationType::ECHANGE
+                                                    ? trim(($mod->engagement->cavalier->nom ?? '') . ' ' . ($mod->engagement->cavalier->prenom ?? '') . ' ' . ($mod->secondEngagement->cavalier->nom ?? '') . ' ' . ($mod->secondEngagement->cavalier->prenom ?? ''))
+                                                    : trim(($mod->engagement->cavalier->nom ?? '') . ' ' . ($mod->engagement->cavalier->prenom ?? ''))),
                                             'jour' => $mod->engagement->epreuve->date?->format('Y-m-d') ?? $mod->created_at->format('Y-m-d'),
                                             'statut' => $mod->statut->value,
                                             'paiement' => $paiementValues,
@@ -1361,7 +1468,9 @@
                                         </td>
                                         {{-- Depart --}}
                                         <td class="px-4 py-2 text-sm text-gray-500">
-                                            @if ($mod->type === \App\Enums\ModificationType::NON_PARTANT)
+                                            @if ($mod->type === \App\Enums\ModificationType::ECHANGE)
+                                                <span class="font-medium text-teal-700">{{ $mod->description }}</span>
+                                            @elseif ($mod->type === \App\Enums\ModificationType::NON_PARTANT)
                                                 {{ $mod->engagement->numero_depart ?? '-' }} <span class="font-bold text-red-600">NP</span>
                                             @elseif ($mod->type === \App\Enums\ModificationType::CHANGEMENT_EPREUVE && $mod->linkedModification)
                                                 <span class="text-gray-400">{{ $mod->linkedModification->engagement->numero_depart ?? '?' }}</span>
@@ -1380,6 +1489,10 @@
                                                 @if ($mod->nouveauCavalier->num_licence ?? null)
                                                     <div class="text-xs text-gray-500">({{ $mod->nouveauCavalier->num_licence }})</div>
                                                 @endif
+                                            @elseif ($mod->type === \App\Enums\ModificationType::ECHANGE)
+                                                <span class="font-medium text-gray-900">{{ $mod->engagement->cavalier->nom ?? '' }} {{ $mod->engagement->cavalier->prenom ?? '' }}</span>
+                                                <span class="mx-1 text-teal-600 font-bold">↔</span>
+                                                <span class="font-medium text-gray-900">{{ $mod->secondEngagement->cavalier->nom ?? '' }} {{ $mod->secondEngagement->cavalier->prenom ?? '' }}</span>
                                             @else
                                                 <span class="font-medium">{{ $mod->engagement->cavalier->nom ?? '' }} {{ $mod->engagement->cavalier->prenom ?? '' }}</span>
                                                 @if ($mod->is_gn)
@@ -2383,6 +2496,74 @@
                     const numDepart = c.numero_depart ? `N°${c.numero_depart} - ` : '';
                     this.selectedCavalierLabel = `${numDepart}${c.cavalier_nom} ${c.cavalier_prenom} — ${c.cheval_nom}`;
                 }
+            };
+        }
+
+        function echangeForm() {
+            const epreuves = __epreuves;
+
+            return {
+                epreuveId: '',
+                cavaliers: [],
+
+                searchCav1: '', engagementId1: '', selectedCav1: null, showCav1List: false, filteredCav1: [],
+                searchCav2: '', engagementId2: '', selectedCav2: null, showCav2List: false, filteredCav2: [],
+
+                onEpreuveChange() {
+                    const ep = epreuves.find(e => e.id == this.epreuveId);
+                    this.cavaliers = ep ? ep.engagements.filter(eng => !eng.is_non_partant) : [];
+                    this.resetCav1();
+                },
+
+                resetCav1() {
+                    this.searchCav1 = ''; this.engagementId1 = ''; this.selectedCav1 = null;
+                    this.showCav1List = false; this.filteredCav1 = this.cavaliers;
+                    this.resetCav2();
+                },
+
+                resetCav2() {
+                    this.searchCav2 = ''; this.engagementId2 = ''; this.selectedCav2 = null;
+                    this.showCav2List = false;
+                    this.filteredCav2 = this.cavaliers.filter(c => c.engagement_id !== this.engagementId1);
+                },
+
+                filterCav1() {
+                    this.showCav1List = true;
+                    const q = this.searchCav1.toLowerCase();
+                    this.filteredCav1 = (q
+                        ? this.cavaliers.filter(c =>
+                            (c.cavalier_nom + ' ' + c.cavalier_prenom).toLowerCase().includes(q) ||
+                            c.cheval_nom.toLowerCase().includes(q) ||
+                            (c.numero_depart && c.numero_depart.toString().includes(q)))
+                        : this.cavaliers
+                    );
+                },
+
+                selectCav1(c) {
+                    this.engagementId1 = c.engagement_id; this.selectedCav1 = c;
+                    this.searchCav1 = c.cavalier_nom + ' ' + c.cavalier_prenom;
+                    this.showCav1List = false;
+                    this.resetCav2();
+                },
+
+                filterCav2() {
+                    this.showCav2List = true;
+                    const q = this.searchCav2.toLowerCase();
+                    const available = this.cavaliers.filter(c => c.engagement_id !== this.engagementId1);
+                    this.filteredCav2 = (q
+                        ? available.filter(c =>
+                            (c.cavalier_nom + ' ' + c.cavalier_prenom).toLowerCase().includes(q) ||
+                            c.cheval_nom.toLowerCase().includes(q) ||
+                            (c.numero_depart && c.numero_depart.toString().includes(q)))
+                        : available
+                    );
+                },
+
+                selectCav2(c) {
+                    this.engagementId2 = c.engagement_id; this.selectedCav2 = c;
+                    this.searchCav2 = c.cavalier_nom + ' ' + c.cavalier_prenom;
+                    this.showCav2List = false;
+                },
             };
         }
     </script>
