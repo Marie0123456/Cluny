@@ -72,11 +72,18 @@ class ConcoursController extends Controller
             'type_ffe_sif' => 'boolean',
             'type_ffe_compet' => 'boolean',
             'grand_national' => 'boolean',
+            'ffe_numero_concours' => 'nullable|string|max:50',
+            'ffe_login' => 'nullable|string|max:100',
+            'ffe_password' => 'nullable|string|max:255',
         ]);
 
         $validated['type_ffe_sif'] = $request->boolean('type_ffe_sif');
         $validated['type_ffe_compet'] = $request->boolean('type_ffe_compet');
         $validated['grand_national'] = $request->boolean('grand_national');
+
+        if (empty($validated['ffe_password'])) {
+            unset($validated['ffe_password']);
+        }
 
         $concours = Concours::create($validated);
 
@@ -113,11 +120,18 @@ class ConcoursController extends Controller
             'type_ffe_sif' => 'boolean',
             'type_ffe_compet' => 'boolean',
             'grand_national' => 'boolean',
+            'ffe_numero_concours' => 'nullable|string|max:50',
+            'ffe_login' => 'nullable|string|max:100',
+            'ffe_password' => 'nullable|string|max:255',
         ]);
 
         $validated['type_ffe_sif'] = $request->boolean('type_ffe_sif');
         $validated['type_ffe_compet'] = $request->boolean('type_ffe_compet');
         $validated['grand_national'] = $request->boolean('grand_national');
+
+        if (empty($validated['ffe_password'])) {
+            unset($validated['ffe_password']);
+        }
 
         $concours->update($validated);
 
