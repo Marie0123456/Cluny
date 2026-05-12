@@ -117,8 +117,58 @@ class ImportController extends Controller
     }
 
     /**
-     * Sync engagements and forfaits from FFE Compet.
+     * Diagnostic : télécharge le fichier FFE Compet et affiche son contenu brut.
      */
+    public function diagFfeCompet(Request $request, Concours $concours)
+    {
+        if (! auth()->user()->isAdmin()) {
+            abort(403);
+        }
+
+        if (! $concours->ffe_numero_concours || ! $concours->ffe_login || ! $concours->ffe_password) {
+            return redirect()->route('concours.show', $concours)
+                ->with('error', 'Identifiants FFE Compet non configurés.');
+        }
+
+        try {
+            $fetchService = new FfeCompetService();
+            $content = $fetchService->downloadEngagements(
+                $concours->ffe_login,
+                $concours->ffe_password,
+                $concours->ffe_numero_concours
+            );
+
+            $size   = strlen($content);
+            $first4 = bin2hex(substr($content, 0, 4));
+            $isZip  = str_starts_with($content, "PK\x03\x04");
+            $isHtml = str_contains(strtolower(substr($content, 0, 500)), '<html') ||
+                      str_contains(strtolower(substr($content, 0, 500)), '<table');
+
+            if ($isZip) {
+                $format = 'XLSX (ZIP)';
+                $preview = '(fichier binaire XLSX — non affichable)';
+            } elseif ($isHtml) {
+                $format = 'HTML';
+                $preview = htmlspecialchars(substr($content, 0, 2000));
+            } else {
+                $format = 'Texte / CSV';
+                $preview = htmlspecialchars(substr($content, 0, 2000));
+            }
+
+            return response("<pre style='font-family:monospace;font-size:13px;padding:20px'>"
+                . "<strong>Taille :</strong> {$size} octets\n"
+                . "<strong>Magic bytes (hex) :</strong> {$first4}\n"
+                . "<strong>Format détecté :</strong> {$format}\n\n"
+                . "<strong>Contenu (2000 premiers caractères) :</strong>\n"
+                . $preview
+                . "</pre>");
+
+        } catch (\Exception $e) {
+            return response("<pre style='color:red;padding:20px'>ERREUR : " . htmlspecialchars($e->getMessage()) . "</pre>");
+        }
+    }
+
+
     public function syncFfeCompet(Request $request, Concours $concours)
     {
         if (! auth()->user()->isAdmin()) {

@@ -258,6 +258,10 @@
                                     <button @click="showCredentials = !showCredentials" class="text-sm text-indigo-600 hover:underline">
                                         Modifier les identifiants
                                     </button>
+                                    <a href="{{ route('concours.import.ffe-diag', $concours) }}" target="_blank"
+                                        class="text-xs text-gray-400 hover:text-gray-600 underline">
+                                        Tester la connexion
+                                    </a>
                                 </div>
                             @else
                                 <p class="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded px-3 py-2 mb-4">
