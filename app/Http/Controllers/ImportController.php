@@ -80,7 +80,7 @@ class ImportController extends Controller
 
                 return redirect()->route('concours.show', $concours)->with('success', $message);
 
-            } catch (\Exception $e) {
+            } catch (\Throwable $e) {
                 ImportLog::create([
                     'concours_id'    => $concours->id,
                     'user_id'        => auth()->id(),
@@ -277,7 +277,7 @@ class ImportController extends Controller
 
             return redirect()->route('concours.show', $concours)->with('success', $message);
 
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             ImportLog::create([
                 'concours_id'    => $concours->id,
                 'user_id'        => auth()->id(),
