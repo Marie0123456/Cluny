@@ -461,20 +461,18 @@
                 sortBy: '',
                 sortDir: 'asc',
 
-                get filteredRows() {
-                    return allRows.filter(r => {
-                        if (this.filterEpreuve && r.epreuve_id !== this.filterEpreuve) return false;
-                        if (this.filterCavalier && !r.cavalier.includes(this.filterCavalier.toLowerCase())) return false;
-                        if (this.filterJourPaiement === 'sans' && r.regle === 1) return false;
-                        if (this.filterJourPaiement && this.filterJourPaiement !== 'sans' && (r.regle !== 1 || r.jour !== this.filterJourPaiement)) return false;
-                        return true;
-                    });
+                _match(r) {
+                    if (this.filterEpreuve && r.epreuve_id !== this.filterEpreuve) return false;
+                    if (this.filterCavalier && !r.cavalier.includes(this.filterCavalier.toLowerCase())) return false;
+                    if (this.filterJourPaiement === 'sans' && r.regle === 1) return false;
+                    if (this.filterJourPaiement && this.filterJourPaiement !== 'sans' && (r.regle !== 1 || r.jour !== this.filterJourPaiement)) return false;
+                    return true;
                 },
 
-                get filteredTotal() { return this.filteredRows.reduce((s, r) => s + r.prix, 0); },
-                get filteredPf()    { return this.filteredRows.reduce((s, r) => s + r.pf, 0); },
-                get filteredHt()    { return Math.round((this.filteredTotal - this.filteredPf) / (1 + tva / 100) * 100) / 100; },
-                get filteredNonRegles() { return this.filteredRows.filter(r => r.prix > 0 && r.regle !== 1).length; },
+                get filteredTotal()     { return allRows.filter(r => this._match(r)).reduce((s, r) => s + r.prix, 0); },
+                get filteredPf()        { return allRows.filter(r => this._match(r)).reduce((s, r) => s + r.pf, 0); },
+                get filteredHt()        { return Math.round((this.filteredTotal - this.filteredPf) / (1 + tva / 100) * 100) / 100; },
+                get filteredNonRegles() { return allRows.filter(r => this._match(r) && r.prix > 0 && r.regle !== 1).length; },
 
                 formatPrix(val) {
                     return (val || 0).toFixed(2).replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' €';
