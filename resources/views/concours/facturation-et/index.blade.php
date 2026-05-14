@@ -48,7 +48,17 @@
                 </div>
             </div>
 
-            <div class="bg-white shadow-sm sm:rounded-lg" x-data="facturationFilter()" x-cloak>
+            @php
+                $rowsData = $modifications->map(fn($m) => [
+                    'epreuve_id' => (string) ($m->engagement->epreuve->id ?? ''),
+                    'cavalier'   => mb_strtolower(trim(($m->engagement->cavalier->prenom ?? '') . ' ' . ($m->engagement->cavalier->nom ?? ''))),
+                    'jour'       => $m->jour_paiement?->format('Y-m-d') ?? '',
+                    'regle'      => ($m->paiement_cb || $m->paiement_especes || $m->paiement_cheque || $m->paiement_internet || $m->paiement_virement || (float) $m->prix <= 0) ? 1 : 0,
+                    'prix'       => (float) $m->prix,
+                    'pf'         => (float) $m->pf,
+                ])->values();
+            @endphp
+            <div class="bg-white shadow-sm sm:rounded-lg" x-data="facturationFilter(@json($rowsData))" x-cloak>
                 @if ($modifications->isEmpty())
                     <div class="p-6 text-center text-gray-500">
                         Aucune modification payante pour le moment.
@@ -328,11 +338,14 @@
                             </tbody>
                             <tfoot class="bg-gray-50">
                                 <tr>
-                                    <td colspan="4" class="px-4 py-3 text-sm font-bold text-gray-900">Totaux</td>
-                                    <td class="px-4 py-3 text-sm font-bold text-gray-900 whitespace-nowrap">{{ number_format($totalPf, 2, ',', ' ') }} &euro;</td>
-                                    <td class="px-4 py-3 text-sm font-bold text-gray-900 whitespace-nowrap">{{ number_format(round(($totalPrix - $totalPf) / (1 + config('ehnc.tva_modifications') / 100), 2), 2, ',', ' ') }} &euro;</td>
-                                    <td class="px-4 py-3 text-sm font-bold text-gray-900 whitespace-nowrap">{{ number_format($totalPrix, 2, ',', ' ') }} &euro;</td>
-                                    <td class="px-4 py-3 text-sm font-bold {{ $nonRegles > 0 ? 'text-red-600' : 'text-green-600' }}">{{ $nonRegles }} non réglé{{ $nonRegles > 1 ? 's' : '' }}</td>
+                                    <td colspan="4" class="px-4 py-3 text-sm font-bold text-gray-900">
+                                        Totaux
+                                        <span x-show="filterEpreuve || filterCavalier || filterJourPaiement" class="text-xs font-normal text-indigo-600 ml-1">(filtrés)</span>
+                                    </td>
+                                    <td class="px-4 py-3 text-sm font-bold text-gray-900 whitespace-nowrap" x-text="formatPrix(filteredPf)"></td>
+                                    <td class="px-4 py-3 text-sm font-bold text-gray-900 whitespace-nowrap" x-text="formatPrix(filteredHt)"></td>
+                                    <td class="px-4 py-3 text-sm font-bold text-gray-900 whitespace-nowrap" x-text="formatPrix(filteredTotal)"></td>
+                                    <td class="px-4 py-3 text-sm font-bold whitespace-nowrap" :class="filteredNonRegles > 0 ? 'text-red-600' : 'text-green-600'" x-text="filteredNonRegles + ' non réglé' + (filteredNonRegles > 1 ? 's' : '')"></td>
                                     <td colspan="3"></td>
                                 </tr>
                             </tfoot>
@@ -436,13 +449,34 @@
             }
         }
 
-        function facturationFilter() {
+        function facturationFilter(allRows) {
+            const tva = {{ config('ehnc.tva_modifications') }};
+
             return {
                 filterEpreuve: '',
                 filterCavalier: '',
                 filterJourPaiement: '',
                 sortBy: '',
                 sortDir: 'asc',
+
+                get filteredRows() {
+                    return allRows.filter(r => {
+                        if (this.filterEpreuve && r.epreuve_id !== this.filterEpreuve) return false;
+                        if (this.filterCavalier && !r.cavalier.includes(this.filterCavalier.toLowerCase())) return false;
+                        if (this.filterJourPaiement === 'sans' && r.regle === 1) return false;
+                        if (this.filterJourPaiement && this.filterJourPaiement !== 'sans' && (r.regle !== 1 || r.jour !== this.filterJourPaiement)) return false;
+                        return true;
+                    });
+                },
+
+                get filteredTotal() { return this.filteredRows.reduce((s, r) => s + r.prix, 0); },
+                get filteredPf()    { return this.filteredRows.reduce((s, r) => s + r.pf, 0); },
+                get filteredHt()    { return Math.round((this.filteredTotal - this.filteredPf) / (1 + tva / 100) * 100) / 100; },
+                get filteredNonRegles() { return this.filteredRows.filter(r => r.prix > 0 && r.regle !== 1).length; },
+
+                formatPrix(val) {
+                    return (val || 0).toFixed(2).replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' €';
+                },
 
                 init() {
                     const key = 'facturationEtFilters_' + window.location.pathname;
