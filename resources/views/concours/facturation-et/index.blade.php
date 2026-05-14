@@ -58,7 +58,7 @@
                     'pf'         => (float) $m->pf,
                 ])->values();
             @endphp
-            <script>const __factEtRows = @json($rowsData);</script>
+            <script>window.__factEtRows = @json($rowsData);</script>
             <div class="bg-white shadow-sm sm:rounded-lg" x-data="facturationFilter()" x-cloak>
                 @if ($modifications->isEmpty())
                     <div class="p-6 text-center text-gray-500">
