@@ -2080,7 +2080,7 @@
                     this.searchCavalier = '';
                     this.resetNouveauCavalier();
                     const ep = epreuves.find(e => e.id == this.epreuveId);
-                    this.cavaliers = ep ? ep.engagements.filter(eng => !eng.is_non_partant) : [];
+                    this.cavaliers = ep ? ep.engagements : [];
                     this.filteredCavaliers = this.cavaliers;
                     this.proBlocked = isGrandNational && ep && ep.type_detecte === 'pro';
                 },
@@ -2186,7 +2186,7 @@
                     if (ep) {
                         this.epreuvePrix = parseFloat(ep.prix) || 0;
                         this.epreuveTypeDetecte = ep.type_detecte;
-                        this.cavaliers = ep.engagements.filter(eng => !eng.is_non_partant);
+                        this.cavaliers = ep.engagements;
                         this.filteredCavaliers = this.cavaliers;
                     } else {
                         this.epreuvePrix = 0;
@@ -2472,7 +2472,7 @@
                     this.selectedCavalierLabel = '';
                     this.searchCavalier = '';
                     const ep = epreuves.find(e => e.id == this.epreuveId);
-                    this.cavaliers = ep ? ep.engagements.filter(eng => !eng.is_non_partant) : [];
+                    this.cavaliers = ep ? ep.engagements : [];
                     this.filteredCavaliers = this.cavaliers;
                 },
 
@@ -2513,7 +2513,7 @@
 
                 onEpreuveChange() {
                     const ep = epreuves.find(e => e.id == this.epreuveId);
-                    this.cavaliers = ep ? ep.engagements.filter(eng => !eng.is_non_partant) : [];
+                    this.cavaliers = ep ? ep.engagements : [];
                     this.resetCav1();
                 },
 
