@@ -58,7 +58,8 @@
                     'pf'         => (float) $m->pf,
                 ])->values();
             @endphp
-            <div class="bg-white shadow-sm sm:rounded-lg" x-data="facturationFilter(@json($rowsData))" x-cloak>
+            <script>const __factEtRows = @json($rowsData);</script>
+            <div class="bg-white shadow-sm sm:rounded-lg" x-data="facturationFilter()" x-cloak>
                 @if ($modifications->isEmpty())
                     <div class="p-6 text-center text-gray-500">
                         Aucune modification payante pour le moment.
@@ -449,7 +450,8 @@
             }
         }
 
-        function facturationFilter(allRows) {
+        function facturationFilter() {
+            const allRows = window.__factEtRows || [];
             const tva = {{ config('ehnc.tva_modifications') }};
 
             return {
