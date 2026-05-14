@@ -38,6 +38,19 @@
                 </div>
             </div>
 
+            @php
+                $ventesData = $ventes->map(function ($v) {
+                    $hasPaiement = $v->paiement_cb || $v->paiement_especes || $v->paiement_cheque || $v->paiement_internet || $v->paiement_virement;
+                    return [
+                        'client'        => $v->nom_client ?? '',
+                        'produits'      => $v->lignes->pluck('produit.nom')->join(', '),
+                        'jour_paiement' => $v->jour_paiement?->format('Y-m-d') ?? '',
+                        'regle'         => $hasPaiement ? '1' : '0',
+                        'total'         => (float) $v->total_ttc,
+                    ];
+                })->values();
+            @endphp
+            <script>window.__ventesRows = @json($ventesData);</script>
             <div class="bg-white shadow-sm sm:rounded-lg" x-data="ventesFilter()" x-cloak>
                 @if ($ventes->isEmpty())
                     <div class="p-6 text-center text-gray-500">
@@ -164,8 +177,8 @@
                             </tbody>
                             <tfoot class="bg-gray-50">
                                 <tr>
-                                    <td colspan="6" class="px-4 py-3 text-sm font-bold text-gray-900 text-right">Total général</td>
-                                    <td class="px-4 py-3 text-sm font-bold text-gray-900 text-right">{{ number_format($totalGeneral, 2, ',', ' ') }} &euro;</td>
+                                    <td colspan="6" class="px-4 py-3 text-sm font-bold text-gray-900 text-right">Total</td>
+                                    <td class="px-4 py-3 text-sm font-bold text-gray-900 text-right" x-text="filteredTotalFormatted"></td>
                                     <td colspan="3"></td>
                                 </tr>
                             </tfoot>
@@ -263,17 +276,31 @@
         }
 
         function ventesFilter() {
+            const allRows = window.__ventesRows || [];
+
             return {
                 filterClient: '',
                 filterProduit: '',
                 filterJourPaiement: '',
 
-                showRow(row) {
+                _match(row) {
                     if (this.filterClient && !row.client.toLowerCase().includes(this.filterClient.toLowerCase())) return false;
                     if (this.filterProduit && !row.produits.toLowerCase().includes(this.filterProduit.toLowerCase())) return false;
                     if (this.filterJourPaiement === 'sans' && row.regle === '1') return false;
                     if (this.filterJourPaiement && this.filterJourPaiement !== 'sans' && (row.regle !== '1' || row.jour_paiement !== this.filterJourPaiement)) return false;
                     return true;
+                },
+
+                showRow(row) {
+                    return this._match(row);
+                },
+
+                get filteredTotal() {
+                    return allRows.filter(r => this._match(r)).reduce((s, r) => s + r.total, 0);
+                },
+
+                get filteredTotalFormatted() {
+                    return this.filteredTotal.toFixed(2).replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' €';
                 },
 
                 resetFilters() {
