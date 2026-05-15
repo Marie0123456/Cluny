@@ -13,7 +13,7 @@ enum Role: string
         return match ($this) {
             self::ADMIN => 'Administrateur',
             self::CHRONOMETREUR => 'Chronométreur',
-            self::VENDEUR => 'Vendeur',
+            self::VENDEUR => 'Stable manager',
         };
     }
 }
