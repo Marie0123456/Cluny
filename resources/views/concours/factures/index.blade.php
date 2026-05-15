@@ -40,11 +40,13 @@
                             <thead class="bg-gray-50">
                                 <tr>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nom</th>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Telephone</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
                                     <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Ventes</th>
                                     <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Modifications</th>
                                     <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Total</th>
+                                    @can('compta')
+                                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Facture faite</th>
+                                    @endcan
                                     <th class="px-4 py-3"></th>
                                 </tr>
                             </thead>
@@ -58,7 +60,7 @@
                                                 CAISSE
                                             </a>
                                         </td>
-                                        <td class="px-4 py-3 text-sm text-gray-400" colspan="2">Sans facturation nominative</td>
+                                        <td class="px-4 py-3 text-sm text-gray-400">Sans facturation nominative</td>
                                         <td class="px-4 py-3 text-sm text-center">
                                             @if ($caisseVentesCount > 0)
                                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
@@ -80,6 +82,9 @@
                                         <td class="px-4 py-3 text-sm text-right font-bold text-amber-800">
                                             {{ number_format($caisseTotal, 2, ',', ' ') }} &euro;
                                         </td>
+                                        @can('compta')
+                                            <td class="px-4 py-3"></td>
+                                        @endcan
                                         <td class="px-4 py-3 text-sm text-right">
                                             <a href="{{ route('concours.factures.caisse', $concours) }}"
                                                 class="text-amber-500 hover:text-amber-700" title="Voir détail">
@@ -93,14 +98,27 @@
 
                                 {{-- Clients facturés --}}
                                 @foreach ($clients as $client)
-                                    <tr>
+                                    @can('compta')
+                                        @php $faite = $factureStatuts[$client->id] ?? false; @endphp
+                                        <tr x-data="{
+                                            faite: {{ $faite ? 'true' : 'false' }},
+                                            async toggle() {
+                                                const r = await fetch(`{{ route('concours.factures.toggle-faite', [$concours, $client]) }}`, {
+                                                    method: 'PATCH',
+                                                    headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content, 'Accept': 'application/json' }
+                                                });
+                                                if (r.ok) { const d = await r.json(); this.faite = d.facture_faite; }
+                                            }
+                                        }" :class="faite ? 'bg-green-50' : ''">
+                                    @else
+                                        <tr>
+                                    @endcan
                                         <td class="px-4 py-3 text-sm font-medium">
                                             <a href="{{ route('concours.factures.show', [$concours, $client]) }}"
                                                 class="text-indigo-600 hover:text-indigo-900 hover:underline">
                                                 {{ $client->nom }}
                                             </a>
                                         </td>
-                                        <td class="px-4 py-3 text-sm text-gray-500">{{ $client->telephone ?? '-' }}</td>
                                         <td class="px-4 py-3 text-sm text-gray-500">{{ $client->email ?? '-' }}</td>
                                         <td class="px-4 py-3 text-sm text-center">
                                             @if ($client->ventes_count > 0)
@@ -128,6 +146,12 @@
                                                 -
                                             @endif
                                         </td>
+                                        @can('compta')
+                                            <td class="px-4 py-3 text-center">
+                                                <input type="checkbox" :checked="faite" @change="toggle()"
+                                                    class="rounded border-gray-300 text-green-600 shadow-sm focus:ring-green-500 cursor-pointer w-4 h-4">
+                                            </td>
+                                        @endcan
                                         <td class="px-4 py-3 text-sm text-right">
                                             <a href="{{ route('concours.factures.show', [$concours, $client]) }}"
                                                 class="text-gray-400 hover:text-indigo-600" title="Voir détail">

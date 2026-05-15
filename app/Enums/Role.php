@@ -7,6 +7,7 @@ enum Role: string
     case ADMIN = 'admin';
     case CHRONOMETREUR = 'chronometreur';
     case VENDEUR = 'vendeur';
+    case COMPTA = 'compta';
 
     public function label(): string
     {
@@ -14,6 +15,7 @@ enum Role: string
             self::ADMIN => 'Administrateur',
             self::CHRONOMETREUR => 'Chronométreur',
             self::VENDEUR => 'Stable manager',
+            self::COMPTA => 'Comptabilité',
         };
     }
 }

@@ -91,10 +91,14 @@ class FactureController extends Controller
             'non_regle'   => (float) $venteBilan->non_regle + (float) $modBilan->non_regle,
         ];
 
+        $factureStatuts = FactureCommentaire::where('concours_id', $concours->id)
+            ->pluck('facture_faite', 'client_facturation_id')
+            ->map(fn ($v) => (bool) $v);
+
         return view('concours.factures.index', compact(
             'concours', 'clients',
             'caisseVentesCount', 'caisseModificationsCount', 'caisseTotal',
-            'bilan'
+            'bilan', 'factureStatuts'
         ));
     }
 
@@ -122,6 +126,18 @@ class FactureController extends Controller
 
         return redirect()->route('concours.factures.show', [$concours, $client])
             ->with('success', 'Informations client mises à jour.');
+    }
+
+    public function toggleFaite(Request $request, Concours $concours, ClientFacturation $client)
+    {
+        $record = FactureCommentaire::firstOrNew([
+            'concours_id'          => $concours->id,
+            'client_facturation_id' => $client->id,
+        ]);
+        $record->facture_faite = !$record->facture_faite;
+        $record->save();
+
+        return response()->json(['facture_faite' => $record->facture_faite]);
     }
 
     public function updateCommentaire(Request $request, Concours $concours, ClientFacturation $client)
