@@ -92,8 +92,8 @@ class FactureController extends Controller
         ];
 
         $factureStatuts = FactureCommentaire::where('concours_id', $concours->id)
-            ->pluck('facture_faite', 'client_facturation_id')
-            ->map(fn ($v) => (bool) $v);
+            ->get(['client_facturation_id', 'facture_faite'])
+            ->pluck('facture_faite', 'client_facturation_id');
 
         return view('concours.factures.index', compact(
             'concours', 'clients',
