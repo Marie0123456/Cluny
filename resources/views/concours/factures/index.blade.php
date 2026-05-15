@@ -40,7 +40,6 @@
                             <thead class="bg-gray-50">
                                 <tr>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nom</th>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Telephone</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
                                     <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Ventes</th>
                                     <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Modifications</th>
@@ -58,7 +57,7 @@
                                                 CAISSE
                                             </a>
                                         </td>
-                                        <td class="px-4 py-3 text-sm text-gray-400" colspan="2">Sans facturation nominative</td>
+                                        <td class="px-4 py-3 text-sm text-gray-400">Sans facturation nominative</td>
                                         <td class="px-4 py-3 text-sm text-center">
                                             @if ($caisseVentesCount > 0)
                                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
@@ -100,7 +99,6 @@
                                                 {{ $client->nom }}
                                             </a>
                                         </td>
-                                        <td class="px-4 py-3 text-sm text-gray-500">{{ $client->telephone ?? '-' }}</td>
                                         <td class="px-4 py-3 text-sm text-gray-500">{{ $client->email ?? '-' }}</td>
                                         <td class="px-4 py-3 text-sm text-center">
                                             @if ($client->ventes_count > 0)
