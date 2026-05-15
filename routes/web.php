@@ -114,20 +114,14 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/statistiques/export-multi-epreuves', [StatistiqueController::class, 'exportMultiEpreuves'])->name('statistiques.export-multi-epreuves');
         Route::get('/statistiques/export-multi-epreuves-chevaux', [StatistiqueController::class, 'exportMultiEpreuvesChevaux'])->name('statistiques.export-multi-epreuves-chevaux');
 
-        // Championnats (FFE SIF Open)
-        Route::get('/championnats', [ChampionnatController::class, 'index'])->name('championnats.index');
+        // Championnats — actions admin uniquement (write)
         Route::post('/championnats', [ChampionnatController::class, 'store'])->name('championnats.store');
         Route::post('/championnats/generate-startlist', [ChampionnatController::class, 'generateStartList'])->name('championnats.generate-startlist');
         Route::post('/championnats/{championnat}/speaker-startlist', [ChampionnatController::class, 'generateSpeakerStartList'])->name('championnats.speaker-startlist');
-        Route::get('/championnats/doublons', [ChampionnatController::class, 'doublons'])->name('championnats.doublons');
         Route::post('/championnats/doublons', [ChampionnatController::class, 'storeDoublons'])->name('championnats.doublons.store');
-        Route::get('/championnats/{championnat}', [ChampionnatController::class, 'show'])->name('championnats.show');
         Route::get('/championnats/{championnat}/template-resultats', [ChampionnatController::class, 'templateResultats'])->name('championnats.template-resultats');
         Route::post('/championnats/{championnat}/import-resultats', [ChampionnatController::class, 'importResultats'])->name('championnats.import-resultats');
         Route::delete('/championnats/{championnat}/delete-resultats', [ChampionnatController::class, 'deleteResultats'])->name('championnats.delete-resultats');
-        Route::get('/championnats/{championnat}/export-resultats', [ChampionnatController::class, 'exportResultats'])->name('championnats.export-resultats');
-        Route::get('/championnats/{championnat}/print-classement', [ChampionnatController::class, 'printClassement'])->name('championnats.print-classement');
-        Route::get('/championnats/{championnat}/export-ldp', [ChampionnatController::class, 'exportLDP'])->name('championnats.export-ldp');
         Route::post('/championnats/{championnat}/toggle-libre', [ChampionnatController::class, 'toggleLibre'])->name('championnats.toggle-libre');
         Route::patch('/championnats/{championnat}/update-position', [ChampionnatController::class, 'updatePosition'])->name('championnats.update-position');
         Route::delete('/championnats/{championnat}', [ChampionnatController::class, 'destroy'])->name('championnats.destroy');
@@ -146,6 +140,16 @@ Route::middleware(['auth'])->group(function () {
         Route::patch('/commande-retrait-repas/{commandeRetraitRepas}/set-quantite', [CommandeRetraitRepasController::class, 'setQuantiteRetiree'])->name('commande-retrait-repas.set-quantite');
         Route::patch('/commande-retrait-repas/{commandeRetraitRepas}', [CommandeRetraitRepasController::class, 'update'])->name('commande-retrait-repas.update');
         Route::delete('/commande-retrait-repas/{commandeRetraitRepas}', [CommandeRetraitRepasController::class, 'destroy'])->name('commande-retrait-repas.destroy');
+    });
+
+    // Championnats — consultation (admin + chronométreur)
+    Route::prefix('concours/{concours}')->name('concours.')->middleware(['concours.access', 'role:admin,chronometreur'])->group(function () {
+        Route::get('/championnats', [ChampionnatController::class, 'index'])->name('championnats.index');
+        Route::get('/championnats/doublons', [ChampionnatController::class, 'doublons'])->name('championnats.doublons');
+        Route::get('/championnats/{championnat}', [ChampionnatController::class, 'show'])->name('championnats.show');
+        Route::get('/championnats/{championnat}/export-resultats', [ChampionnatController::class, 'exportResultats'])->name('championnats.export-resultats');
+        Route::get('/championnats/{championnat}/print-classement', [ChampionnatController::class, 'printClassement'])->name('championnats.print-classement');
+        Route::get('/championnats/{championnat}/export-ldp', [ChampionnatController::class, 'exportLDP'])->name('championnats.export-ldp');
     });
 
     // Modification actions
