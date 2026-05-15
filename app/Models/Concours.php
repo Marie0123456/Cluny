@@ -26,6 +26,7 @@ class Concours extends Model
         'ffe_numero_concours',
         'ffe_login',
         'ffe_password',
+        'caisse_facture_faite',
     ];
 
     protected function casts(): array
@@ -38,6 +39,7 @@ class Concours extends Model
             'type_ffe_compet' => 'boolean',
             'grand_national' => 'boolean',
             'ffe_password' => 'encrypted',
+            'caisse_facture_faite' => 'boolean',
         ];
     }
 

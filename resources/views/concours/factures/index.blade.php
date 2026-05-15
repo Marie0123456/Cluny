@@ -53,7 +53,19 @@
                             <tbody class="bg-white divide-y divide-gray-200">
                                 {{-- Facture Caisse --}}
                                 @if ($caisseVentesCount > 0 || $caisseModificationsCount > 0)
-                                    <tr class="bg-amber-50">
+                                    @can('compta')
+                                        @php $caisseFaite = $concours->caisse_facture_faite; @endphp
+                                    @endcan
+                                    <tr @can('compta') x-data="{
+                                        faite: {{ ($concours->caisse_facture_faite ?? false) ? 'true' : 'false' }},
+                                        async toggle() {
+                                            const r = await fetch(`{{ route('concours.factures.caisse.toggle-faite', $concours) }}`, {
+                                                method: 'PATCH',
+                                                headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content, 'Accept': 'application/json' }
+                                            });
+                                            if (r.ok) { const d = await r.json(); this.faite = d.facture_faite; }
+                                        }
+                                    }" :class="faite ? 'bg-green-50' : 'bg-amber-50'" @else class="bg-amber-50" @endcan>
                                         <td class="px-4 py-3 text-sm font-bold">
                                             <a href="{{ route('concours.factures.caisse', $concours) }}"
                                                 class="text-amber-700 hover:text-amber-900 hover:underline">
@@ -83,7 +95,10 @@
                                             {{ number_format($caisseTotal, 2, ',', ' ') }} &euro;
                                         </td>
                                         @can('compta')
-                                            <td class="px-4 py-3"></td>
+                                            <td class="px-4 py-3 text-center">
+                                                <input type="checkbox" :checked="faite" @change="toggle()"
+                                                    class="rounded border-gray-300 text-green-600 shadow-sm focus:ring-green-500 cursor-pointer w-4 h-4">
+                                            </td>
                                         @endcan
                                         <td class="px-4 py-3 text-sm text-right">
                                             <a href="{{ route('concours.factures.caisse', $concours) }}"
