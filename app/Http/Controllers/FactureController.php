@@ -128,6 +128,14 @@ class FactureController extends Controller
             ->with('success', 'Informations client mises à jour.');
     }
 
+    public function toggleCaisseFaite(Request $request, Concours $concours)
+    {
+        $concours->caisse_facture_faite = !$concours->caisse_facture_faite;
+        $concours->save();
+
+        return response()->json(['facture_faite' => $concours->caisse_facture_faite]);
+    }
+
     public function toggleFaite(Request $request, Concours $concours, ClientFacturation $client)
     {
         $record = FactureCommentaire::firstOrNew([
