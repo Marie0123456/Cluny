@@ -93,7 +93,6 @@ Route::middleware(['auth'])->group(function () {
 
         // Factures — actions d'écriture uniquement admin
         Route::patch('/factures/{client}/paiement-global', [FactureController::class, 'updatePaiementGlobal'])->name('factures.update-paiement-global');
-        Route::patch('/factures/{client}/commentaire', [FactureController::class, 'updateCommentaire'])->name('factures.update-commentaire');
 
         // Championnats — actions admin uniquement (write)
         Route::post('/championnats', [ChampionnatController::class, 'store'])->name('championnats.store');
@@ -125,6 +124,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/factures/caisse', [FactureController::class, 'caisse'])->name('factures.caisse');
         Route::get('/factures/{client}', [FactureController::class, 'show'])->name('factures.show');
         Route::patch('/factures/{client}/update-client', [FactureController::class, 'updateClient'])->name('factures.update-client');
+        Route::patch('/factures/{client}/commentaire', [FactureController::class, 'updateCommentaire'])->name('factures.update-commentaire');
 
         // Statistiques (FFE SIF Open)
         Route::get('/statistiques', [StatistiqueController::class, 'index'])->name('statistiques.index');
