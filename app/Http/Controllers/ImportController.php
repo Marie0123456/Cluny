@@ -7,6 +7,7 @@ use App\Models\ImportLog;
 use App\Services\CsvImportService;
 use App\Services\FfeCompetImportService;
 use App\Services\FfeCompetService;
+use App\Services\FfePdfPrixService;
 use App\Services\SifCsvImportService;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -289,6 +290,55 @@ class ImportController extends Controller
 
             return redirect()->route('concours.show', $concours)
                 ->with('error', 'Erreur de synchronisation FFE Compet : ' . $e->getMessage());
+        }
+    }
+
+    public function importPdfPrix(Request $request, Concours $concours)
+    {
+        if (!auth()->user()->isAdmin()) {
+            abort(403);
+        }
+
+        $request->validate([
+            'fichier_pdf' => 'required|file|mimes:pdf|max:20480',
+        ]);
+
+        try {
+            $service  = new FfePdfPrixService();
+            $content  = file_get_contents($request->file('fichier_pdf')->getRealPath());
+            $detected = $service->parse($content);
+
+            if (empty($detected)) {
+                return redirect()->route('concours.epreuves.index', $concours)
+                    ->with('error', 'Aucun prix détecté dans ce PDF. Vérifiez le format du fichier ou saisissez les prix manuellement.');
+            }
+
+            $epreuves = $concours->epreuves()->get(['id', 'numero']);
+
+            $updated  = [];
+            $notFound = [];
+
+            foreach ($detected as $numero => $prix) {
+                $epreuve = $epreuves->first(fn($e) => (string) $e->numero === (string) $numero);
+                if ($epreuve) {
+                    $epreuve->update(['prix' => $prix]);
+                    $updated[] = "N°{$numero} → " . number_format($prix, 2, ',', ' ') . ' €';
+                } else {
+                    $notFound[] = "N°{$numero} (" . number_format($prix, 2, ',', ' ') . ' €)';
+                }
+            }
+
+            $msg = count($updated) . ' épreuve(s) mise(s) à jour.';
+            if (!empty($notFound)) {
+                $msg .= ' Numéros non trouvés dans ce concours : ' . implode(', ', $notFound) . '.';
+                return redirect()->route('concours.epreuves.index', $concours)->with('warning', $msg);
+            }
+
+            return redirect()->route('concours.epreuves.index', $concours)->with('success', $msg);
+
+        } catch (\Throwable $e) {
+            return redirect()->route('concours.epreuves.index', $concours)
+                ->with('error', 'Erreur lors de la lecture du PDF : ' . $e->getMessage());
         }
     }
 }

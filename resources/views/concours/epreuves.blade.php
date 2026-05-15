@@ -44,6 +44,11 @@
                     {{ session('error') }}
                 </div>
             @endif
+            @if (session('warning'))
+                <div class="mb-4 bg-amber-100 border border-amber-400 text-amber-800 px-4 py-3 rounded">
+                    {{ session('warning') }}
+                </div>
+            @endif
 
             @include('concours.partials.tabs', ['active' => 'epreuves'])
 
@@ -260,6 +265,26 @@
                                 Importer
                             </button>
                         </form>
+
+                        {{-- PDF prix import --}}
+                        <div class="mt-5 pt-5 border-t border-gray-100">
+                            <h4 class="text-sm font-medium text-gray-700 mb-1">Importer les prix depuis le PDF du programme</h4>
+                            <p class="text-xs text-gray-400 mb-3">
+                                Le PDF doit être le programme officiel FFE Compet (avec les lignes <span class="font-mono">Engagement : XX,00 €</span> par épreuve).
+                            </p>
+                            <form method="POST" action="{{ route('concours.import.pdf-prix', $concours) }}" enctype="multipart/form-data" class="sm:flex sm:items-end sm:space-x-4 space-y-3 sm:space-y-0">
+                                @csrf
+                                <div class="flex-1">
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Fichier PDF</label>
+                                    <input type="file" name="fichier_pdf" accept=".pdf" required
+                                        class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-amber-50 file:text-amber-700 hover:file:bg-amber-100">
+                                    @error('fichier_pdf') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
+                                </div>
+                                <button type="submit" class="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2 bg-amber-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-amber-700">
+                                    Importer les prix
+                                </button>
+                            </form>
+                        </div>
 
                     @else
                         <p class="text-sm text-gray-500 mb-3">
