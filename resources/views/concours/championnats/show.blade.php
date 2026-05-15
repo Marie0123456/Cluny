@@ -178,6 +178,143 @@
                     }
                 </script>
             @else
+            @if ($concours->type_ffe_compet && $championnat->discipline === \App\Enums\DisciplineChampionnat::DRESSAGE)
+            {{-- Saisie manuelle des scores — Dressage FFE Compet --}}
+            @php
+                $scoresE1 = $resultatsEpreuve1->keyBy(fn($r) => $r->cavalier_id . '-' . $r->cheval_id);
+                $scoresE2 = $resultatsEpreuve2->keyBy(fn($r) => $r->cavalier_id . '-' . $r->cheval_id);
+                $scoreIdx = 0;
+            @endphp
+            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 mb-6">
+                <div class="flex items-center justify-between mb-4">
+                    <div>
+                        <h4 class="text-md font-medium text-gray-900">Saisie des scores</h4>
+                        <p class="text-xs text-gray-500 mt-1">Entrez le pourcentage obtenu pour chaque épreuve. Statut EL / NP / AB pour les non-classés.</p>
+                    </div>
+                    @if ($resultatsEpreuve1->isNotEmpty() || $resultatsEpreuve2->isNotEmpty())
+                        <div class="flex items-center gap-2">
+                            <a href="{{ route('concours.championnats.export-resultats', [$concours, $championnat]) }}"
+                                class="inline-flex items-center px-3 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 transition whitespace-nowrap">
+                                Exporter CSV
+                            </a>
+                            <a href="{{ route('concours.championnats.print-classement', [$concours, $championnat]) }}" target="_blank"
+                                class="inline-flex items-center px-3 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 transition whitespace-nowrap">
+                                Export PDF
+                            </a>
+                        </div>
+                    @endif
+                </div>
+                @if ($participants->isEmpty())
+                    <p class="text-sm text-gray-500 italic">Aucun participant éligible.</p>
+                @else
+                    <form method="POST" action="{{ route('concours.championnats.save-scores', [$concours, $championnat]) }}">
+                        @csrf
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">#</th>
+                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Cavalier</th>
+                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Cheval</th>
+                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Club</th>
+                                        <th class="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase">Statut E1</th>
+                                        <th class="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase">% E1</th>
+                                        @if ($hasE2)
+                                            <th class="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase">Statut E2</th>
+                                            <th class="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase">% E2</th>
+                                        @endif
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200">
+                                    @foreach ($participants as $i => $participant)
+                                        @php
+                                            $pKey = $participant->cavalier_id . '-' . $participant->cheval_id;
+                                            $isExcluded = $exclusionKeys->has($pKey);
+                                            if (!$isExcluded) {
+                                                $cre = mb_strtolower($participant->cre ?? '');
+                                                if (!str_contains($cre, 'bourgogne') && !str_contains($cre, 'bfc')) {
+                                                    $isExcluded = true;
+                                                }
+                                            }
+                                            $r1 = $scoresE1->get($pKey);
+                                            $r2 = $hasE2 ? $scoresE2->get($pKey) : null;
+                                            $s1 = $r1?->statut ?? 'normal';
+                                            $pct1 = ($r1 && $r1->statut === 'normal') ? number_format((float) $r1->points, 3, '.', '') : '';
+                                            $s2 = $r2?->statut ?? 'normal';
+                                            $pct2 = ($r2 && $r2->statut === 'normal') ? number_format((float) $r2->points, 3, '.', '') : '';
+                                            $idx1 = $scoreIdx * 2;
+                                            $idx2 = $scoreIdx * 2 + 1;
+                                            $scoreIdx++;
+                                        @endphp
+                                        @if ($isExcluded)
+                                            <tr class="bg-amber-50 opacity-60">
+                                                <td class="px-3 py-2 text-sm text-amber-500">{{ $i + 1 }}</td>
+                                                <td class="px-3 py-2 text-sm font-medium text-amber-600">{{ $participant->cavalier_prenom }} {{ $participant->cavalier_nom }}</td>
+                                                <td class="px-3 py-2 text-sm text-amber-500">{{ $participant->cheval_nom }}</td>
+                                                <td class="px-3 py-2 text-sm text-amber-400 italic" colspan="{{ $hasE2 ? 5 : 3 }}">Exclu du championnat</td>
+                                            </tr>
+                                        @else
+                                            <tr x-data="{ s1: '{{ $s1 }}', s2: '{{ $s2 }}' }">
+                                                <input type="hidden" name="scores[{{ $idx1 }}][cavalier_id]" value="{{ $participant->cavalier_id }}">
+                                                <input type="hidden" name="scores[{{ $idx1 }}][cheval_id]" value="{{ $participant->cheval_id }}">
+                                                <input type="hidden" name="scores[{{ $idx1 }}][epreuve]" value="1">
+                                                @if ($hasE2)
+                                                    <input type="hidden" name="scores[{{ $idx2 }}][cavalier_id]" value="{{ $participant->cavalier_id }}">
+                                                    <input type="hidden" name="scores[{{ $idx2 }}][cheval_id]" value="{{ $participant->cheval_id }}">
+                                                    <input type="hidden" name="scores[{{ $idx2 }}][epreuve]" value="2">
+                                                @endif
+                                                <td class="px-3 py-2 text-sm text-gray-500">{{ $i + 1 }}</td>
+                                                <td class="px-3 py-2 text-sm font-medium text-gray-900">{{ $participant->cavalier_prenom }} {{ $participant->cavalier_nom }}</td>
+                                                <td class="px-3 py-2 text-sm text-gray-500">{{ $participant->cheval_nom }}</td>
+                                                <td class="px-3 py-2 text-sm text-gray-500">{{ $participant->club ?? '-' }}</td>
+                                                <td class="px-3 py-2">
+                                                    <select name="scores[{{ $idx1 }}][statut]" x-model="s1"
+                                                        class="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-xs">
+                                                        <option value="normal">Normal</option>
+                                                        <option value="elimine">EL</option>
+                                                        <option value="non_partant">NP</option>
+                                                        <option value="abandon">AB</option>
+                                                    </select>
+                                                </td>
+                                                <td class="px-3 py-2">
+                                                    <input type="number" name="scores[{{ $idx1 }}][pourcentage]"
+                                                        value="{{ $pct1 }}" step="0.001" min="0" max="100"
+                                                        :disabled="s1 !== 'normal'"
+                                                        class="w-24 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm disabled:bg-gray-100 disabled:text-gray-400">
+                                                </td>
+                                                @if ($hasE2)
+                                                    <td class="px-3 py-2">
+                                                        <select name="scores[{{ $idx2 }}][statut]" x-model="s2"
+                                                            class="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-xs">
+                                                            <option value="normal">Normal</option>
+                                                            <option value="elimine">EL</option>
+                                                            <option value="non_partant">NP</option>
+                                                            <option value="abandon">AB</option>
+                                                        </select>
+                                                    </td>
+                                                    <td class="px-3 py-2">
+                                                        <input type="number" name="scores[{{ $idx2 }}][pourcentage]"
+                                                            value="{{ $pct2 }}" step="0.001" min="0" max="100"
+                                                            :disabled="s2 !== 'normal'"
+                                                            class="w-24 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm disabled:bg-gray-100 disabled:text-gray-400">
+                                                    </td>
+                                                @endif
+                                            </tr>
+                                        @endif
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="mt-4">
+                            <button type="submit"
+                                class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 transition">
+                                Enregistrer les scores
+                            </button>
+                        </div>
+                    </form>
+                @endif
+            </div>
+            @else
             {{-- Import CSV resultats --}}
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 mb-6">
                 <h4 class="text-md font-medium text-gray-900 mb-3">Importer les résultats (CSV)</h4>
@@ -322,6 +459,7 @@
                     </form>
                 </div>
             @endif
+            @endif {{-- FFE Compet Dressage ou import CSV --}}
 
             {{-- Classement Général du Championnat --}}
             @if ($classementGeneral->isNotEmpty())

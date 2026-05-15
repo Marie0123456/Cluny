@@ -142,7 +142,7 @@ Route::middleware(['auth'])->group(function () {
         Route::delete('/commande-retrait-repas/{commandeRetraitRepas}', [CommandeRetraitRepasController::class, 'destroy'])->name('commande-retrait-repas.destroy');
     });
 
-    // Championnats — consultation (admin + chronométreur)
+    // Championnats — consultation + saisie scores dressage (admin + chronométreur)
     Route::prefix('concours/{concours}')->name('concours.')->middleware(['concours.access', 'role:admin,chronometreur'])->group(function () {
         Route::get('/championnats', [ChampionnatController::class, 'index'])->name('championnats.index');
         Route::get('/championnats/doublons', [ChampionnatController::class, 'doublons'])->name('championnats.doublons');
@@ -150,6 +150,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/championnats/{championnat}/export-resultats', [ChampionnatController::class, 'exportResultats'])->name('championnats.export-resultats');
         Route::get('/championnats/{championnat}/print-classement', [ChampionnatController::class, 'printClassement'])->name('championnats.print-classement');
         Route::get('/championnats/{championnat}/export-ldp', [ChampionnatController::class, 'exportLDP'])->name('championnats.export-ldp');
+        Route::post('/championnats/{championnat}/save-scores', [ChampionnatController::class, 'saveScores'])->name('championnats.save-scores');
     });
 
     // Modification actions
