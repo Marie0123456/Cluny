@@ -1071,6 +1071,53 @@ class ChampionnatController extends Controller
         return redirect()->route('concours.championnats.show', [$concours, $championnat]);
     }
 
+    public function saveScores(Request $request, Concours $concours, Championnat $championnat)
+    {
+        if (!$concours->type_ffe_compet || $championnat->discipline !== DisciplineChampionnat::DRESSAGE) {
+            abort(403, 'Saisie manuelle réservée aux championnats Dressage FFE Compet.');
+        }
+
+        $validated = $request->validate([
+            'scores'                    => 'required|array',
+            'scores.*.cavalier_id'      => 'required|integer',
+            'scores.*.cheval_id'        => 'required|integer',
+            'scores.*.epreuve'          => 'required|in:1,2',
+            'scores.*.statut'           => 'required|in:normal,elimine,non_partant,abandon',
+            'scores.*.pourcentage'      => 'nullable|numeric|min:0|max:100',
+        ]);
+
+        $saved = 0;
+
+        foreach ($validated['scores'] as $s) {
+            $epreuveId = (int) $s['epreuve'] === 1
+                ? $championnat->epreuve1_id
+                : $championnat->epreuve2_id;
+
+            if (!$epreuveId) continue;
+
+            $points = $s['statut'] === 'normal' ? (float) ($s['pourcentage'] ?? 0) : 0;
+
+            ChampionnatResultat::updateOrCreate(
+                [
+                    'championnat_id' => $championnat->id,
+                    'epreuve_id'     => $epreuveId,
+                    'cavalier_id'    => (int) $s['cavalier_id'],
+                    'cheval_id'      => (int) $s['cheval_id'],
+                ],
+                [
+                    'points' => $points,
+                    'statut' => $s['statut'],
+                    'temps'  => null,
+                ]
+            );
+
+            $saved++;
+        }
+
+        return redirect()->route('concours.championnats.show', [$concours, $championnat])
+            ->with('success', "$saved score(s) enregistré(s).");
+    }
+
     public function destroy(Concours $concours, Championnat $championnat)
     {
         $championnat->delete();
