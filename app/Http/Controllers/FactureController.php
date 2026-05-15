@@ -52,9 +52,49 @@ class FactureController extends Controller
                 ->whereNull('client_facturation_id')
                 ->sum('prix');
 
+        // Bilan comptable
+        $venteBilan = Vente::where('concours_id', $concours->id)
+            ->selectRaw("
+                COALESCE(SUM(total_ttc), 0) as total,
+                COALESCE(SUM(CASE WHEN paiement_cb IS TRUE THEN total_ttc ELSE 0 END), 0) as cb,
+                COALESCE(SUM(CASE WHEN paiement_especes IS TRUE THEN total_ttc ELSE 0 END), 0) as especes,
+                COALESCE(SUM(CASE WHEN paiement_cheque IS TRUE THEN total_ttc ELSE 0 END), 0) as cheque,
+                COALESCE(SUM(CASE WHEN paiement_internet IS TRUE THEN total_ttc ELSE 0 END), 0) as internet,
+                COALESCE(SUM(CASE WHEN paiement_virement IS TRUE THEN total_ttc ELSE 0 END), 0) as virement,
+                COALESCE(SUM(CASE WHEN paiement_cb IS NOT TRUE AND paiement_especes IS NOT TRUE AND paiement_cheque IS NOT TRUE AND paiement_internet IS NOT TRUE AND paiement_virement IS NOT TRUE THEN total_ttc ELSE 0 END), 0) as non_regle
+            ")
+            ->first();
+
+        $modBilan = Modification::where('concours_id', $concours->id)
+            ->where('statut', '!=', 'supprime')
+            ->whereIn('type', ['ajout_engagement', 'changement_epreuve'])
+            ->selectRaw("
+                COALESCE(SUM(prix), 0) as total,
+                COALESCE(SUM(CASE WHEN paiement_cb IS TRUE THEN prix ELSE 0 END), 0) as cb,
+                COALESCE(SUM(CASE WHEN paiement_especes IS TRUE THEN prix ELSE 0 END), 0) as especes,
+                COALESCE(SUM(CASE WHEN paiement_cheque IS TRUE THEN prix ELSE 0 END), 0) as cheque,
+                COALESCE(SUM(CASE WHEN paiement_internet IS TRUE THEN prix ELSE 0 END), 0) as internet,
+                COALESCE(SUM(CASE WHEN paiement_virement IS TRUE THEN prix ELSE 0 END), 0) as virement,
+                COALESCE(SUM(CASE WHEN paiement_cb IS NOT TRUE AND paiement_especes IS NOT TRUE AND paiement_cheque IS NOT TRUE AND paiement_internet IS NOT TRUE AND paiement_virement IS NOT TRUE THEN prix ELSE 0 END), 0) as non_regle
+            ")
+            ->first();
+
+        $bilan = [
+            'ventesTotal' => (float) $venteBilan->total,
+            'modsTotal'   => (float) $modBilan->total,
+            'total'       => (float) $venteBilan->total + (float) $modBilan->total,
+            'cb'          => (float) $venteBilan->cb + (float) $modBilan->cb,
+            'especes'     => (float) $venteBilan->especes + (float) $modBilan->especes,
+            'cheque'      => (float) $venteBilan->cheque + (float) $modBilan->cheque,
+            'internet'    => (float) $venteBilan->internet + (float) $modBilan->internet,
+            'virement'    => (float) $venteBilan->virement + (float) $modBilan->virement,
+            'non_regle'   => (float) $venteBilan->non_regle + (float) $modBilan->non_regle,
+        ];
+
         return view('concours.factures.index', compact(
             'concours', 'clients',
-            'caisseVentesCount', 'caisseModificationsCount', 'caisseTotal'
+            'caisseVentesCount', 'caisseModificationsCount', 'caisseTotal',
+            'bilan'
         ));
     }
 
