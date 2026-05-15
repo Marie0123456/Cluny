@@ -143,6 +143,52 @@
                     </div>
                 @endif
             </div>
+            {{-- Bilan comptable du concours --}}
+            <div class="mt-6 bg-white shadow-sm sm:rounded-lg">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <h3 class="text-base font-semibold text-gray-900">Bilan comptable du concours</h3>
+                </div>
+                <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-8">
+
+                    {{-- Recettes globales --}}
+                    <div>
+                        <h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-4">Recettes globales</h4>
+                        <dl class="space-y-2">
+                            <div class="flex justify-between items-center">
+                                <dt class="text-sm text-gray-600">Ventes</dt>
+                                <dd class="text-sm font-medium text-gray-900">{{ number_format($bilan['ventesTotal'], 2, ',', ' ') }} &euro;</dd>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <dt class="text-sm text-gray-600">Modifications (Fact ET)</dt>
+                                <dd class="text-sm font-medium text-gray-900">{{ number_format($bilan['modsTotal'], 2, ',', ' ') }} &euro;</dd>
+                            </div>
+                            <div class="flex justify-between items-center pt-3 mt-1 border-t border-gray-200">
+                                <dt class="text-sm font-bold text-gray-900">Total général</dt>
+                                <dd class="text-lg font-bold text-indigo-700">{{ number_format($bilan['total'], 2, ',', ' ') }} &euro;</dd>
+                            </div>
+                        </dl>
+                    </div>
+
+                    {{-- Détail par moyen de paiement --}}
+                    <div>
+                        <h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-4">Détail par moyen de paiement</h4>
+                        <dl class="space-y-2">
+                            @foreach(['cb' => 'CB', 'cheque' => 'Chèque', 'especes' => 'Espèces', 'internet' => 'Internet', 'virement' => 'Virement'] as $mode => $label)
+                                <div class="flex justify-between items-center {{ $bilan[$mode] > 0 ? '' : 'opacity-40' }}">
+                                    <dt class="text-sm text-gray-600">{{ $label }}</dt>
+                                    <dd class="text-sm font-medium {{ $bilan[$mode] > 0 ? 'text-gray-900' : 'text-gray-400' }}">{{ number_format($bilan[$mode], 2, ',', ' ') }} &euro;</dd>
+                                </div>
+                            @endforeach
+                            <div class="flex justify-between items-center pt-3 mt-1 border-t border-gray-200 {{ $bilan['non_regle'] > 0 ? 'text-red-600' : 'opacity-40' }}">
+                                <dt class="text-sm font-medium">Non réglé</dt>
+                                <dd class="text-sm font-semibold">{{ number_format($bilan['non_regle'], 2, ',', ' ') }} &euro;</dd>
+                            </div>
+                        </dl>
+                    </div>
+
+                </div>
+            </div>
+
         </div>
     </div>
 </x-app-layout>
