@@ -12,7 +12,7 @@
             class="px-3 sm:px-6 py-3 text-xs sm:text-sm font-medium whitespace-nowrap border-b-2 {{ ($active ?? '') === 'modifications' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
             Modifs
         </a>
-        @can('admin')
+        @if (auth()->user()->can('compta'))
             <a href="{{ route('concours.facturation-et.index', $concours) }}"
                 class="px-3 sm:px-6 py-3 text-xs sm:text-sm font-medium whitespace-nowrap border-b-2 {{ ($active ?? '') === 'facturation-et' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
                 Fact. ET
@@ -31,16 +31,16 @@
                     Stats
                 </a>
             @endif
-        @endcan
-        @can('chronometreur')
+        @endif
+        @if (auth()->user()->can('chronometreur') || auth()->user()->can('compta'))
             @if (in_array($concours->discipline, [\App\Enums\Discipline::OPEN, \App\Enums\Discipline::DRESSAGE]))
                 <a href="{{ route('concours.championnats.index', $concours) }}"
                     class="px-3 sm:px-6 py-3 text-xs sm:text-sm font-medium whitespace-nowrap border-b-2 {{ ($active ?? '') === 'championnats' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
                     Champ.
                 </a>
             @endif
-        @endcan
-        @can('vendeur')
+        @endif
+        @if (auth()->user()->can('vendeur') || auth()->user()->can('compta'))
             <a href="{{ route('concours.commande-retraits.index', $concours) }}"
                 class="px-3 sm:px-6 py-3 text-xs sm:text-sm font-medium whitespace-nowrap border-b-2 {{ ($active ?? '') === 'commande-retraits' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
                 Retraits
@@ -51,6 +51,6 @@
                     Retrait Repas
                 </a>
             @endif
-        @endcan
+        @endif
     </nav>
 </div>

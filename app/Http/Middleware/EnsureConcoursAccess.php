@@ -15,7 +15,7 @@ class EnsureConcoursAccess
 
         $concoursId = is_object($concours) ? $concours->id : $concours;
 
-        if ($user->isAdmin()) {
+        if ($user->isAdmin() || $user->role === \App\Enums\Role::COMPTA) {
             return $next($request);
         }
 

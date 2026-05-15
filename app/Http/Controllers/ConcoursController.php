@@ -14,7 +14,7 @@ class ConcoursController extends Controller
     {
         $user = auth()->user();
 
-        if ($user->isAdmin()) {
+        if ($user->isAdmin() || $user->role === \App\Enums\Role::COMPTA) {
             $concours = Concours::orderBy('date_debut', 'desc')->get();
         } else {
             $concours = $user->concours()->orderBy('date_debut', 'desc')->get();

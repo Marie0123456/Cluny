@@ -85,12 +85,14 @@
             <div class="bg-white shadow-sm sm:rounded-lg p-6 mb-6" x-data="{ editComment: {{ $commentaire ? 'false' : 'true' }} }">
                 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-2">
                     <h3 class="text-sm font-medium text-gray-700">Commentaire facture</h3>
+                    @can('admin')
                     @if ($commentaire)
                         <button type="button" @click="editComment = !editComment"
                             class="inline-flex items-center px-2 py-1 border border-gray-300 shadow-sm text-xs font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
                             <span x-text="editComment ? 'Fermer' : 'Modifier'"></span>
                         </button>
                     @endif
+                @endcan
                 </div>
 
                 @if ($commentaire)
@@ -99,6 +101,7 @@
                     </div>
                 @endif
 
+                @can('admin')
                 <form x-show="editComment" x-cloak method="POST"
                     action="{{ route('concours.factures.update-commentaire', [$concours, $client]) }}">
                     @csrf
@@ -115,6 +118,7 @@
                         @endif
                     </div>
                 </form>
+                @endcan
             </div>
 
             <!-- Totaux -->
@@ -133,6 +137,7 @@
                 </div>
             </div>
 
+            @can('admin')
             <!-- Paiement global -->
             <div class="bg-white shadow-sm sm:rounded-lg p-6 mb-6" x-data="{
                 open: false,
@@ -221,6 +226,7 @@
                     </div>
                 @endif
             </div>
+            @endcan
 
             <!-- Ventes -->
             @if ($ventes->isNotEmpty())

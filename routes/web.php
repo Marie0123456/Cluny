@@ -74,7 +74,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/startlist-fonts-preview', fn () => view('concours.championnats.fonts-preview'))
         ->name('startlist.fonts-preview');
 
-    // Concours sub-pages (admin seulement)
+    // Concours sub-pages (admin seulement) — écriture + import + backup
     Route::prefix('concours/{concours}')->name('concours.')->middleware(['concours.access', 'role:admin'])->group(function () {
         Route::post('/import', [ImportController::class, 'store'])->name('import.store');
         Route::post('/import/ffe-credentials', [ImportController::class, 'saveCredentials'])->name('import.save-credentials');
@@ -87,32 +87,13 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/backup', [BackupController::class, 'backup'])->name('backup');
         Route::post('/restore', [BackupController::class, 'restore'])->name('restore');
 
-        // Facturation ET
-        Route::get('/facturation-et', [FacturationEtController::class, 'index'])->name('facturation-et.index');
-        Route::get('/facturation-et/export-csv', [FacturationEtController::class, 'exportCsv'])->name('facturation-et.export-csv');
-
-        // Ventes
-        Route::get('/ventes', [VenteController::class, 'index'])->name('ventes.index');
-        Route::get('/ventes/export-csv', [VenteController::class, 'exportCsv'])->name('ventes.export-csv');
+        // Ventes — création uniquement admin
         Route::get('/ventes/create', [VenteController::class, 'create'])->name('ventes.create');
         Route::post('/ventes', [VenteController::class, 'store'])->name('ventes.store');
 
-        // Factures
-        Route::get('/factures', [FactureController::class, 'index'])->name('factures.index');
-        Route::get('/factures/export-csv', [FactureController::class, 'exportCsv'])->name('factures.export-csv');
-        Route::get('/factures/print', [FactureController::class, 'print'])->name('factures.print');
-        Route::get('/factures/caisse', [FactureController::class, 'caisse'])->name('factures.caisse');
-        Route::get('/factures/{client}', [FactureController::class, 'show'])->name('factures.show');
+        // Factures — actions d'écriture uniquement admin
         Route::patch('/factures/{client}/paiement-global', [FactureController::class, 'updatePaiementGlobal'])->name('factures.update-paiement-global');
-        Route::patch('/factures/{client}/update-client', [FactureController::class, 'updateClient'])->name('factures.update-client');
         Route::patch('/factures/{client}/commentaire', [FactureController::class, 'updateCommentaire'])->name('factures.update-commentaire');
-
-        // Statistiques (FFE SIF Open)
-        Route::get('/statistiques', [StatistiqueController::class, 'index'])->name('statistiques.index');
-        Route::get('/statistiques/export-cavaliers', [StatistiqueController::class, 'exportCavaliers'])->name('statistiques.export-cavaliers');
-        Route::get('/statistiques/export-clubs', [StatistiqueController::class, 'exportClubs'])->name('statistiques.export-clubs');
-        Route::get('/statistiques/export-multi-epreuves', [StatistiqueController::class, 'exportMultiEpreuves'])->name('statistiques.export-multi-epreuves');
-        Route::get('/statistiques/export-multi-epreuves-chevaux', [StatistiqueController::class, 'exportMultiEpreuvesChevaux'])->name('statistiques.export-multi-epreuves-chevaux');
 
         // Championnats — actions admin uniquement (write)
         Route::post('/championnats', [ChampionnatController::class, 'store'])->name('championnats.store');
@@ -127,29 +108,63 @@ Route::middleware(['auth'])->group(function () {
         Route::delete('/championnats/{championnat}', [ChampionnatController::class, 'destroy'])->name('championnats.destroy');
     });
 
-    // Retrait Commandes + Retrait Repas (admin + vendeur)
-    Route::prefix('concours/{concours}')->name('concours.')->middleware(['concours.access', 'role:admin,vendeur'])->group(function () {
+    // Données financières — lecture + modification infos client (admin + compta)
+    Route::prefix('concours/{concours}')->name('concours.')->middleware(['concours.access', 'role:admin,compta'])->group(function () {
+        // Facturation ET
+        Route::get('/facturation-et', [FacturationEtController::class, 'index'])->name('facturation-et.index');
+        Route::get('/facturation-et/export-csv', [FacturationEtController::class, 'exportCsv'])->name('facturation-et.export-csv');
+
+        // Ventes (lecture)
+        Route::get('/ventes', [VenteController::class, 'index'])->name('ventes.index');
+        Route::get('/ventes/export-csv', [VenteController::class, 'exportCsv'])->name('ventes.export-csv');
+
+        // Factures (lecture + modification infos client)
+        Route::get('/factures', [FactureController::class, 'index'])->name('factures.index');
+        Route::get('/factures/export-csv', [FactureController::class, 'exportCsv'])->name('factures.export-csv');
+        Route::get('/factures/print', [FactureController::class, 'print'])->name('factures.print');
+        Route::get('/factures/caisse', [FactureController::class, 'caisse'])->name('factures.caisse');
+        Route::get('/factures/{client}', [FactureController::class, 'show'])->name('factures.show');
+        Route::patch('/factures/{client}/update-client', [FactureController::class, 'updateClient'])->name('factures.update-client');
+
+        // Statistiques (FFE SIF Open)
+        Route::get('/statistiques', [StatistiqueController::class, 'index'])->name('statistiques.index');
+        Route::get('/statistiques/export-cavaliers', [StatistiqueController::class, 'exportCavaliers'])->name('statistiques.export-cavaliers');
+        Route::get('/statistiques/export-clubs', [StatistiqueController::class, 'exportClubs'])->name('statistiques.export-clubs');
+        Route::get('/statistiques/export-multi-epreuves', [StatistiqueController::class, 'exportMultiEpreuves'])->name('statistiques.export-multi-epreuves');
+        Route::get('/statistiques/export-multi-epreuves-chevaux', [StatistiqueController::class, 'exportMultiEpreuvesChevaux'])->name('statistiques.export-multi-epreuves-chevaux');
+    });
+
+    // Retrait Commandes + Retrait Repas — lecture (admin + vendeur + compta)
+    Route::prefix('concours/{concours}')->name('concours.')->middleware(['concours.access', 'role:admin,vendeur,compta'])->group(function () {
         Route::get('/commande-retraits', [CommandeRetraitController::class, 'index'])->name('commande-retraits.index');
+        Route::get('/commande-retrait-repas', [CommandeRetraitRepasController::class, 'index'])->name('commande-retrait-repas.index');
+    });
+
+    // Retrait Commandes + Retrait Repas — écriture (admin + vendeur)
+    Route::prefix('concours/{concours}')->name('concours.')->middleware(['concours.access', 'role:admin,vendeur'])->group(function () {
         Route::post('/commande-retraits/import', [CommandeRetraitController::class, 'import'])->name('commande-retraits.import');
         Route::patch('/commande-retraits/{commandeRetrait}/set-quantite', [CommandeRetraitController::class, 'setQuantiteRetiree'])->name('commande-retraits.set-quantite');
         Route::patch('/commande-retraits/{commandeRetrait}', [CommandeRetraitController::class, 'update'])->name('commande-retraits.update');
         Route::delete('/commande-retraits/{commandeRetrait}', [CommandeRetraitController::class, 'destroy'])->name('commande-retraits.destroy');
 
-        Route::get('/commande-retrait-repas', [CommandeRetraitRepasController::class, 'index'])->name('commande-retrait-repas.index');
         Route::post('/commande-retrait-repas/import', [CommandeRetraitRepasController::class, 'import'])->name('commande-retrait-repas.import');
         Route::patch('/commande-retrait-repas/{commandeRetraitRepas}/set-quantite', [CommandeRetraitRepasController::class, 'setQuantiteRetiree'])->name('commande-retrait-repas.set-quantite');
         Route::patch('/commande-retrait-repas/{commandeRetraitRepas}', [CommandeRetraitRepasController::class, 'update'])->name('commande-retrait-repas.update');
         Route::delete('/commande-retrait-repas/{commandeRetraitRepas}', [CommandeRetraitRepasController::class, 'destroy'])->name('commande-retrait-repas.destroy');
     });
 
-    // Championnats — consultation + saisie scores dressage (admin + chronométreur)
-    Route::prefix('concours/{concours}')->name('concours.')->middleware(['concours.access', 'role:admin,chronometreur'])->group(function () {
+    // Championnats — consultation (admin + chronométreur + compta)
+    Route::prefix('concours/{concours}')->name('concours.')->middleware(['concours.access', 'role:admin,chronometreur,compta'])->group(function () {
         Route::get('/championnats', [ChampionnatController::class, 'index'])->name('championnats.index');
         Route::get('/championnats/doublons', [ChampionnatController::class, 'doublons'])->name('championnats.doublons');
         Route::get('/championnats/{championnat}', [ChampionnatController::class, 'show'])->name('championnats.show');
         Route::get('/championnats/{championnat}/export-resultats', [ChampionnatController::class, 'exportResultats'])->name('championnats.export-resultats');
         Route::get('/championnats/{championnat}/print-classement', [ChampionnatController::class, 'printClassement'])->name('championnats.print-classement');
         Route::get('/championnats/{championnat}/export-ldp', [ChampionnatController::class, 'exportLDP'])->name('championnats.export-ldp');
+    });
+
+    // Championnats — saisie scores dressage (admin + chronométreur)
+    Route::prefix('concours/{concours}')->name('concours.')->middleware(['concours.access', 'role:admin,chronometreur'])->group(function () {
         Route::post('/championnats/{championnat}/save-scores', [ChampionnatController::class, 'saveScores'])->name('championnats.save-scores');
     });
 

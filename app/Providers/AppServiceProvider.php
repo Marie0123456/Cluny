@@ -18,5 +18,6 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('admin', fn ($user) => $user->isAdmin());
         Gate::define('vendeur', fn ($user) => $user->role === Role::VENDEUR || $user->isAdmin());
         Gate::define('chronometreur', fn ($user) => $user->role === Role::CHRONOMETREUR || $user->isAdmin());
+        Gate::define('compta', fn ($user) => $user->role === Role::COMPTA || $user->isAdmin());
     }
 }
