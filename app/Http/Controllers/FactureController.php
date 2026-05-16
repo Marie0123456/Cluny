@@ -16,6 +16,8 @@ class FactureController extends Controller
     use HandlesPaiement;
     public function index(Concours $concours)
     {
+        $concours->load('caisseFactureFaitePar');
+
         $clients = ClientFacturation::whereHas('ventes', function ($q) use ($concours) {
             $q->where('concours_id', $concours->id);
         })
@@ -92,8 +94,9 @@ class FactureController extends Controller
         ];
 
         $factureStatuts = FactureCommentaire::where('concours_id', $concours->id)
-            ->get(['client_facturation_id', 'facture_faite'])
-            ->pluck('facture_faite', 'client_facturation_id');
+            ->with('factureFaitePar')
+            ->get(['client_facturation_id', 'facture_faite', 'facture_faite_par_id', 'facture_faite_le'])
+            ->keyBy('client_facturation_id');
 
         return view('concours.factures.index', compact(
             'concours', 'clients',
@@ -131,9 +134,20 @@ class FactureController extends Controller
     public function toggleCaisseFaite(Request $request, Concours $concours)
     {
         $concours->caisse_facture_faite = !$concours->caisse_facture_faite;
+        if ($concours->caisse_facture_faite) {
+            $concours->caisse_facture_faite_par_id = auth()->id();
+            $concours->caisse_facture_faite_le    = now();
+        } else {
+            $concours->caisse_facture_faite_par_id = null;
+            $concours->caisse_facture_faite_le    = null;
+        }
         $concours->save();
 
-        return response()->json(['facture_faite' => $concours->caisse_facture_faite]);
+        $info = $concours->caisse_facture_faite
+            ? 'par ' . auth()->user()->name . ' le ' . now()->format('d/m/Y H:i')
+            : '';
+
+        return response()->json(['facture_faite' => $concours->caisse_facture_faite, 'faite_info' => $info]);
     }
 
     public function toggleFaite(Request $request, Concours $concours, ClientFacturation $client)
@@ -143,9 +157,20 @@ class FactureController extends Controller
             'client_facturation_id' => $client->id,
         ]);
         $record->facture_faite = !$record->facture_faite;
+        if ($record->facture_faite) {
+            $record->facture_faite_par_id = auth()->id();
+            $record->facture_faite_le     = now();
+        } else {
+            $record->facture_faite_par_id = null;
+            $record->facture_faite_le     = null;
+        }
         $record->save();
 
-        return response()->json(['facture_faite' => $record->facture_faite]);
+        $info = $record->facture_faite
+            ? 'par ' . auth()->user()->name . ' le ' . now()->format('d/m/Y H:i')
+            : '';
+
+        return response()->json(['facture_faite' => $record->facture_faite, 'faite_info' => $info]);
     }
 
     public function updateCommentaire(Request $request, Concours $concours, ClientFacturation $client)

@@ -54,16 +54,23 @@
                                 {{-- Facture Caisse --}}
                                 @if ($caisseVentesCount > 0 || $caisseModificationsCount > 0)
                                     @can('compta')
-                                        @php $caisseFaite = $concours->caisse_facture_faite; @endphp
+                                        @php
+                                            $caisseFaite = $concours->caisse_facture_faite;
+                                            $caisseFaiteInfo = '';
+                                            if ($caisseFaite && $concours->caisse_facture_faite_par_id) {
+                                                $caisseFaiteInfo = 'par ' . optional($concours->caisseFactureFaitePar)->name . ' le ' . $concours->caisse_facture_faite_le?->format('d/m/Y H:i');
+                                            }
+                                        @endphp
                                     @endcan
                                     <tr @can('compta') x-data="{
                                         faite: {{ ($concours->caisse_facture_faite ?? false) ? 'true' : 'false' }},
+                                        faiteInfo: '{{ $caisseFaiteInfo ?? '' }}',
                                         async toggle() {
                                             const r = await fetch(`{{ route('concours.factures.caisse.toggle-faite', $concours) }}`, {
                                                 method: 'PATCH',
                                                 headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content, 'Accept': 'application/json' }
                                             });
-                                            if (r.ok) { const d = await r.json(); this.faite = d.facture_faite; }
+                                            if (r.ok) { const d = await r.json(); this.faite = d.facture_faite; this.faiteInfo = d.faite_info; }
                                         }
                                     }" :class="faite ? 'bg-green-50' : 'bg-amber-50'" @else class="bg-amber-50" @endcan>
                                         <td class="px-4 py-3 text-sm font-bold">
@@ -98,6 +105,7 @@
                                             <td class="px-4 py-3 text-center">
                                                 <input type="checkbox" :checked="faite" @change="toggle()"
                                                     class="rounded border-gray-300 text-green-600 shadow-sm focus:ring-green-500 cursor-pointer w-4 h-4">
+                                                <span x-show="faite && faiteInfo" x-text="faiteInfo" class="block text-xs text-gray-400 mt-1"></span>
                                             </td>
                                         @endcan
                                         <td class="px-4 py-3 text-sm text-right">
@@ -114,15 +122,23 @@
                                 {{-- Clients facturés --}}
                                 @foreach ($clients as $client)
                                     @can('compta')
-                                        @php $faite = $factureStatuts[$client->id] ?? false; @endphp
+                                        @php
+                                            $statut = $factureStatuts[$client->id] ?? null;
+                                            $faite = $statut?->facture_faite ?? false;
+                                            $faiteInfo = '';
+                                            if ($faite && $statut?->factureFaitePar) {
+                                                $faiteInfo = 'par ' . $statut->factureFaitePar->name . ' le ' . $statut->facture_faite_le?->format('d/m/Y H:i');
+                                            }
+                                        @endphp
                                         <tr x-data="{
                                             faite: {{ $faite ? 'true' : 'false' }},
+                                            faiteInfo: '{{ $faiteInfo }}',
                                             async toggle() {
                                                 const r = await fetch(`{{ route('concours.factures.toggle-faite', [$concours, $client]) }}`, {
                                                     method: 'PATCH',
                                                     headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content, 'Accept': 'application/json' }
                                                 });
-                                                if (r.ok) { const d = await r.json(); this.faite = d.facture_faite; }
+                                                if (r.ok) { const d = await r.json(); this.faite = d.facture_faite; this.faiteInfo = d.faite_info; }
                                             }
                                         }" :class="faite ? 'bg-green-50' : ''">
                                     @else
@@ -165,6 +181,7 @@
                                             <td class="px-4 py-3 text-center">
                                                 <input type="checkbox" :checked="faite" @change="toggle()"
                                                     class="rounded border-gray-300 text-green-600 shadow-sm focus:ring-green-500 cursor-pointer w-4 h-4">
+                                                <span x-show="faite && faiteInfo" x-text="faiteInfo" class="block text-xs text-gray-400 mt-1"></span>
                                             </td>
                                         @endcan
                                         <td class="px-4 py-3 text-sm text-right">

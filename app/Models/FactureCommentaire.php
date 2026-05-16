@@ -14,10 +14,13 @@ class FactureCommentaire extends Model
         'client_facturation_id',
         'commentaire',
         'facture_faite',
+        'facture_faite_par_id',
+        'facture_faite_le',
     ];
 
     protected $casts = [
         'facture_faite' => 'boolean',
+        'facture_faite_le' => 'datetime',
     ];
 
     public function concours(): BelongsTo
@@ -28,5 +31,10 @@ class FactureCommentaire extends Model
     public function clientFacturation(): BelongsTo
     {
         return $this->belongsTo(ClientFacturation::class);
+    }
+
+    public function factureFaitePar(): BelongsTo
+    {
+        return $this->belongsTo(\App\Models\User::class, 'facture_faite_par_id');
     }
 }

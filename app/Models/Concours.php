@@ -27,6 +27,8 @@ class Concours extends Model
         'ffe_login',
         'ffe_password',
         'caisse_facture_faite',
+        'caisse_facture_faite_par_id',
+        'caisse_facture_faite_le',
     ];
 
     protected function casts(): array
@@ -40,6 +42,7 @@ class Concours extends Model
             'grand_national' => 'boolean',
             'ffe_password' => 'encrypted',
             'caisse_facture_faite' => 'boolean',
+            'caisse_facture_faite_le' => 'datetime',
         ];
     }
 
@@ -76,5 +79,10 @@ class Concours extends Model
     public function championnats(): HasMany
     {
         return $this->hasMany(Championnat::class);
+    }
+
+    public function caisseFactureFaitePar(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(\App\Models\User::class, 'caisse_facture_faite_par_id');
     }
 }
