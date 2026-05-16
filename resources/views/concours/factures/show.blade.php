@@ -298,15 +298,60 @@
             <!-- Modifications -->
             @if ($modifications->isNotEmpty())
                 @php
-                    // Pour les concours FFE SIF (mais pas FFE Compet), afficher le nom de l'epreuve
-                    // plutot que son numero (sur ces concours le numero n'est pas significatif).
                     $useNomEpreuve = $concours->type_ffe_sif && !$concours->type_ffe_compet;
-                    $epreuveLabel = function ($epreuve) use ($useNomEpreuve) {
-                        if (!$epreuve) return '-';
-                        return $useNomEpreuve ? $epreuve->nom : $epreuve->numero;
-                    };
+                    $epreuveLabel  = fn($ep) => $ep ? ($useNomEpreuve ? $ep->nom : $ep->numero) : '-';
+                    $tva           = config('ehnc.tva_modifications');
+
+                    $modsData = $modifications->map(function ($mod) use ($epreuveLabel, $tva) {
+                        $pf   = $mod->pf !== null ? (float) $mod->pf : null;
+                        $puHt = ($mod->prix && $mod->pf !== null)
+                            ? round(($mod->prix - $mod->pf) / (1 + $tva / 100), 2)
+                            : null;
+                        $paiements = array_values(array_filter([
+                            $mod->paiement_cb       ? 'CB'       : null,
+                            $mod->paiement_especes  ? 'Espèces'  : null,
+                            $mod->paiement_cheque   ? 'Chèque'   : null,
+                            $mod->paiement_internet ? 'Internet'  : null,
+                            $mod->paiement_virement ? 'Virement'  : null,
+                        ]));
+                        return [
+                            'epreuve'   => (string) $epreuveLabel($mod->engagement->epreuve ?? null),
+                            'cavalier'  => trim(($mod->engagement->cavalier->prenom ?? '') . ' ' . ($mod->engagement->cavalier->nom ?? '')),
+                            'cheval'    => $mod->engagement->cheval->nom ?? '-',
+                            'type'      => $mod->type->value,
+                            'typeLabel' => $mod->type->label(),
+                            'typeBadge' => $mod->type->badgeClass(),
+                            'pf'        => $pf,
+                            'puHt'      => $puHt,
+                            'prix'      => $mod->prix ? (float) $mod->prix : null,
+                            'paiements' => $paiements,
+                            'paiement'  => implode(', ', $paiements) ?: '-',
+                            'date'      => $mod->jour_paiement ? $mod->jour_paiement->format('d/m/Y') : '-',
+                        ];
+                    })->toArray();
+
+                    $types = $modifications
+                        ->map(fn($m) => ['value' => $m->type->value, 'label' => $m->type->label()])
+                        ->unique('value')->values()->toArray();
                 @endphp
-                <div class="bg-white shadow-sm sm:rounded-lg">
+                <div class="bg-white shadow-sm sm:rounded-lg" x-data="{
+                    mods: @js($modsData),
+                    filterType: '',
+                    filterCavalier: '',
+                    filterPaiement: '',
+                    get filteredMods() {
+                        return this.mods.filter(m => {
+                            if (this.filterType     && m.type !== this.filterType) return false;
+                            if (this.filterCavalier && !m.cavalier.toLowerCase().includes(this.filterCavalier.toLowerCase())) return false;
+                            if (this.filterPaiement && !m.paiements.includes(this.filterPaiement)) return false;
+                            return true;
+                        });
+                    },
+                    get totalPrix() { return this.filteredMods.reduce((s, m) => s + (m.prix  ?? 0), 0); },
+                    get totalPf()   { return this.filteredMods.reduce((s, m) => s + (m.pf    ?? 0), 0); },
+                    get totalPuHt() { return this.filteredMods.reduce((s, m) => s + (m.puHt  ?? 0), 0); },
+                    fmt(n) { return n.toLocaleString('fr-FR', {minimumFractionDigits: 2, maximumFractionDigits: 2}); }
+                }">
                     <div class="px-4 pt-4">
                         <h3 class="text-lg font-medium text-gray-900">Modifications payantes</h3>
                     </div>
@@ -314,64 +359,75 @@
                         <table class="min-w-full divide-y divide-gray-200">
                             <thead class="bg-gray-50">
                                 <tr>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{{ $useNomEpreuve ? 'Épreuve' : 'N° Épreuve' }}</th>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cavalier</th>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cheval</th>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
-                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">PF</th>
-                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">P.U. HT</th>
-                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Prix</th>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Paiement</th>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">{{ $useNomEpreuve ? 'Épreuve' : 'N° Épreuve' }}</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                                        <div>Cavalier</div>
+                                        <input x-model="filterCavalier" type="text" placeholder="Filtrer..."
+                                            class="mt-1 block w-full text-xs font-normal normal-case border-gray-300 rounded shadow-sm focus:ring-indigo-500 focus:border-indigo-500 py-0.5 px-2">
+                                    </th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Cheval</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                                        <div>Type</div>
+                                        <select x-model="filterType"
+                                            class="mt-1 block w-full text-xs font-normal normal-case border-gray-300 rounded shadow-sm focus:ring-indigo-500 focus:border-indigo-500 py-0.5 px-1">
+                                            <option value="">Tous</option>
+                                            @foreach ($types as $t)
+                                                <option value="{{ $t['value'] }}">{{ $t['label'] }}</option>
+                                            @endforeach
+                                        </select>
+                                    </th>
+                                    <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">PF</th>
+                                    <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">P.U. HT</th>
+                                    <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Prix</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                                        <div>Paiement</div>
+                                        <select x-model="filterPaiement"
+                                            class="mt-1 block w-full text-xs font-normal normal-case border-gray-300 rounded shadow-sm focus:ring-indigo-500 focus:border-indigo-500 py-0.5 px-1">
+                                            <option value="">Tous</option>
+                                            <option value="CB">CB</option>
+                                            <option value="Espèces">Espèces</option>
+                                            <option value="Chèque">Chèque</option>
+                                            <option value="Internet">Internet</option>
+                                            <option value="Virement">Virement</option>
+                                        </select>
+                                    </th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200">
-                                @foreach ($modifications as $mod)
+                                <template x-for="(m, i) in filteredMods" :key="i">
                                     <tr>
-                                        <td class="px-4 py-3 text-sm text-gray-900 font-medium">{{ $epreuveLabel($mod->engagement->epreuve ?? null) }}</td>
-                                        <td class="px-4 py-3 text-sm text-gray-900">
-                                            {{ $mod->engagement->cavalier->prenom ?? '' }} {{ $mod->engagement->cavalier->nom ?? '' }}
-                                        </td>
-                                        <td class="px-4 py-3 text-sm text-gray-900">{{ $mod->engagement->cheval->nom ?? '-' }}</td>
+                                        <td class="px-4 py-3 text-sm text-gray-900 font-medium" x-text="m.epreuve"></td>
+                                        <td class="px-4 py-3 text-sm text-gray-900" x-text="m.cavalier"></td>
+                                        <td class="px-4 py-3 text-sm text-gray-900" x-text="m.cheval"></td>
                                         <td class="px-4 py-3 text-sm">
-                                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {{ $mod->type->badgeClass() }}">
-                                                {{ $mod->type->label() }}
-                                            </span>
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium" :class="m.typeBadge" x-text="m.typeLabel"></span>
                                         </td>
-                                        <td class="px-4 py-3 text-sm text-gray-900 text-right">
-                                            {{ $mod->pf ? number_format($mod->pf, 2, ',', ' ') . ' €' : '-' }}
-                                        </td>
-                                        <td class="px-4 py-3 text-sm text-gray-900 text-right">
-                                            @if ($mod->prix && $mod->pf !== null)
-                                                {{ number_format(($mod->prix - $mod->pf) / (1 + config('ehnc.tva_modifications') / 100), 2, ',', ' ') }} &euro;
-                                            @else
-                                                -
-                                            @endif
-                                        </td>
-                                        <td class="px-4 py-3 text-sm text-gray-900 font-medium text-right">
-                                            {{ $mod->prix ? number_format($mod->prix, 2, ',', ' ') . ' €' : '-' }}
-                                        </td>
-                                        <td class="px-4 py-3 text-sm text-gray-500">
-                                            @php
-                                                $paiements = [];
-                                                if ($mod->paiement_cb) $paiements[] = 'CB';
-                                                if ($mod->paiement_especes) $paiements[] = 'Espèces';
-                                                if ($mod->paiement_cheque) $paiements[] = 'Chèque';
-                                                if ($mod->paiement_internet) $paiements[] = 'Internet';
-                                                if ($mod->paiement_virement) $paiements[] = 'Virement';
-                                            @endphp
-                                            {{ $paiements ? implode(', ', $paiements) : '-' }}
-                                        </td>
-                                        <td class="px-4 py-3 text-sm text-gray-500">
-                                            {{ $mod->jour_paiement ? $mod->jour_paiement->format('d/m/Y') : '-' }}
-                                        </td>
+                                        <td class="px-4 py-3 text-sm text-gray-900 text-right" x-text="m.pf   !== null ? fmt(m.pf)   + ' €' : '-'"></td>
+                                        <td class="px-4 py-3 text-sm text-gray-900 text-right" x-text="m.puHt !== null ? fmt(m.puHt) + ' €' : '-'"></td>
+                                        <td class="px-4 py-3 text-sm text-gray-900 font-medium text-right" x-text="m.prix !== null ? fmt(m.prix) + ' €' : '-'"></td>
+                                        <td class="px-4 py-3 text-sm text-gray-500" x-text="m.paiement"></td>
+                                        <td class="px-4 py-3 text-sm text-gray-500" x-text="m.date"></td>
                                     </tr>
-                                @endforeach
+                                </template>
+                                <tr x-show="filteredMods.length === 0">
+                                    <td colspan="9" class="px-4 py-6 text-sm text-gray-400 text-center italic">Aucune modification pour ces filtres.</td>
+                                </tr>
                             </tbody>
                             <tfoot class="bg-gray-50">
                                 <tr>
+                                    <td colspan="4" class="px-4 py-2 text-xs text-gray-500 text-right">Sous-total PF</td>
+                                    <td class="px-4 py-2 text-xs font-medium text-gray-700 text-right" x-text="fmt(totalPf) + ' €'"></td>
+                                    <td colspan="4" class="px-4 py-2"></td>
+                                </tr>
+                                <tr>
+                                    <td colspan="5" class="px-4 py-2 text-xs text-gray-500 text-right">Sous-total P.U. HT</td>
+                                    <td class="px-4 py-2 text-xs font-medium text-gray-700 text-right" x-text="fmt(totalPuHt) + ' €'"></td>
+                                    <td colspan="3" class="px-4 py-2"></td>
+                                </tr>
+                                <tr class="border-t border-gray-200">
                                     <td colspan="6" class="px-4 py-3 text-sm font-bold text-gray-900 text-right">Sous-total modifications</td>
-                                    <td class="px-4 py-3 text-sm font-bold text-gray-900 text-right">{{ number_format($totalModifications, 2, ',', ' ') }} &euro;</td>
+                                    <td class="px-4 py-3 text-sm font-bold text-gray-900 text-right" x-text="fmt(totalPrix) + ' €'"></td>
                                     <td colspan="2"></td>
                                 </tr>
                             </tfoot>
