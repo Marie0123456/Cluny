@@ -144,8 +144,22 @@
                                 @endforeach
                             </tbody>
                             <tfoot class="bg-gray-50">
+                                @php
+                                    $totalCaissePF   = $modificationsGrouped->sum(fn($g) => ($g['pf']    ?? 0) * $g['quantite']);
+                                    $totalCaissePuHt = $modificationsGrouped->sum(fn($g) => ($g['pu_ht'] ?? 0) * $g['quantite']);
+                                @endphp
                                 <tr>
-                                    <td colspan="5" class="px-4 py-3 text-sm font-bold text-gray-900 text-right">Sous-total modifications</td>
+                                    <td colspan="2" class="px-4 py-2 text-xs text-gray-500 text-right">Sous-total PF</td>
+                                    <td class="px-4 py-2 text-xs font-medium text-gray-700 text-right">{{ number_format($totalCaissePF, 2, ',', ' ') }} &euro;</td>
+                                    <td colspan="3" class="px-4 py-2"></td>
+                                </tr>
+                                <tr>
+                                    <td colspan="3" class="px-4 py-2 text-xs text-gray-500 text-right">Sous-total P.U. HT</td>
+                                    <td class="px-4 py-2 text-xs font-medium text-gray-700 text-right">{{ number_format($totalCaissePuHt, 2, ',', ' ') }} &euro;</td>
+                                    <td colspan="2" class="px-4 py-2"></td>
+                                </tr>
+                                <tr class="border-t border-gray-200">
+                                    <td colspan="5" class="px-4 py-3 text-sm font-bold text-gray-900 text-right">Sous-total modifications TTC</td>
                                     <td class="px-4 py-3 text-sm font-bold text-gray-900 text-right">{{ number_format($totalCaisseModifications, 2, ',', ' ') }} &euro;</td>
                                 </tr>
                             </tfoot>
