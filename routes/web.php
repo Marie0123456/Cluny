@@ -56,14 +56,8 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/epreuves', [EpreuveController::class, 'index'])->name('epreuves.index');
         Route::get('/engages', [EngageController::class, 'index'])->name('engages.index');
 
-        // Modifications
+        // Modifications (lecture)
         Route::get('/modifications', [ModificationController::class, 'index'])->name('modifications.index');
-        Route::post('/modifications/changement-cheval', [ModificationController::class, 'changementCheval'])->name('modifications.changement-cheval');
-        Route::post('/modifications/changement-cavalier', [ModificationController::class, 'changementCavalier'])->name('modifications.changement-cavalier');
-        Route::post('/modifications/changement-epreuve', [ModificationController::class, 'changementEpreuve'])->name('modifications.changement-epreuve');
-        Route::post('/modifications/invitation', [ModificationController::class, 'invitation'])->name('modifications.invitation');
-        Route::post('/modifications/non-partant', [ModificationController::class, 'nonPartant'])->name('modifications.non-partant');
-        Route::post('/modifications/echange', [ModificationController::class, 'echange'])->name('modifications.echange');
     });
 
     // Template CSV download
@@ -90,6 +84,14 @@ Route::middleware(['auth'])->group(function () {
         // Ventes — création uniquement admin
         Route::get('/ventes/create', [VenteController::class, 'create'])->name('ventes.create');
         Route::post('/ventes', [VenteController::class, 'store'])->name('ventes.store');
+
+        // Modifications — création et actions (admin seulement)
+        Route::post('/modifications/changement-cheval', [ModificationController::class, 'changementCheval'])->name('modifications.changement-cheval');
+        Route::post('/modifications/changement-cavalier', [ModificationController::class, 'changementCavalier'])->name('modifications.changement-cavalier');
+        Route::post('/modifications/changement-epreuve', [ModificationController::class, 'changementEpreuve'])->name('modifications.changement-epreuve');
+        Route::post('/modifications/invitation', [ModificationController::class, 'invitation'])->name('modifications.invitation');
+        Route::post('/modifications/non-partant', [ModificationController::class, 'nonPartant'])->name('modifications.non-partant');
+        Route::post('/modifications/echange', [ModificationController::class, 'echange'])->name('modifications.echange');
 
         // Factures — actions d'écriture uniquement admin
         Route::patch('/factures/{client}/paiement-global', [FactureController::class, 'updatePaiementGlobal'])->name('factures.update-paiement-global');
@@ -125,8 +127,8 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/factures/{client}', [FactureController::class, 'show'])->name('factures.show');
         Route::patch('/factures/{client}/update-client', [FactureController::class, 'updateClient'])->name('factures.update-client');
         Route::patch('/factures/{client}/commentaire', [FactureController::class, 'updateCommentaire'])->name('factures.update-commentaire');
-        Route::patch('/factures/{client}/toggle-faite', [FactureController::class, 'toggleFaite'])->name('factures.toggle-faite');
-        Route::patch('/factures/caisse/toggle-faite', [FactureController::class, 'toggleCaisseFaite'])->name('factures.caisse.toggle-faite');
+        Route::patch('/factures/{client}/toggle-faite', [FactureController::class, 'toggleFaite'])->name('factures.toggle-faite')->middleware('role:compta');
+        Route::patch('/factures/caisse/toggle-faite', [FactureController::class, 'toggleCaisseFaite'])->name('factures.caisse.toggle-faite')->middleware('role:compta');
 
         // Statistiques (FFE SIF Open)
         Route::get('/statistiques', [StatistiqueController::class, 'index'])->name('statistiques.index');
@@ -170,10 +172,12 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/championnats/{championnat}/save-scores', [ChampionnatController::class, 'saveScores'])->name('championnats.save-scores');
     });
 
-    // Modification actions
-    Route::patch('/modifications/{modification}/fait', [ModificationController::class, 'marquerFait'])->name('modifications.fait');
-    Route::delete('/modifications/{modification}', [ModificationController::class, 'destroy'])->name('modifications.destroy');
-    Route::patch('/modifications/{modification}/update-paiement', [ModificationController::class, 'updatePaiement'])->name('modifications.update-paiement');
+    // Modification actions (admin seulement)
+    Route::middleware('role:admin')->group(function () {
+        Route::patch('/modifications/{modification}/fait', [ModificationController::class, 'marquerFait'])->name('modifications.fait');
+        Route::delete('/modifications/{modification}', [ModificationController::class, 'destroy'])->name('modifications.destroy');
+        Route::patch('/modifications/{modification}/update-paiement', [ModificationController::class, 'updatePaiement'])->name('modifications.update-paiement');
+    });
 
     // Vente actions (admin seulement)
     Route::middleware('role:admin')->group(function () {
