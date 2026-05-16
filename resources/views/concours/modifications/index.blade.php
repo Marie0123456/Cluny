@@ -31,6 +31,7 @@
 
             @include('concours.partials.tabs', ['active' => 'modifications'])
 
+            @can('admin')
             <!-- Barre de boutons modifications -->
             <div x-data="{ activeForm: '' }">
                 <div class="bg-white shadow-sm sm:rounded-lg p-3 sm:p-4 mb-6">
@@ -1050,6 +1051,7 @@
                     </div>
                 </div>
             </div>
+            @endcan
 
             <!-- Modifications table -->
             <div class="bg-white shadow-sm sm:rounded-lg" x-data="modificationsFilter()" x-cloak>
@@ -1234,6 +1236,7 @@
                                     </div>
                                 @endif
 
+                                @can('admin')
                                 {{-- Actions --}}
                                 <div class="flex items-center gap-4 pt-2 border-t border-gray-100">
                                     @if (in_array($mod->statut->value, ['cree', 'fait', 'modifie']) && $mod->type->isEditable())
@@ -1251,7 +1254,9 @@
                                         </form>
                                     @endif
                                 </div>
+                                @endcan
 
+                                @can('admin')
                                 {{-- Inline edit (mobile) --}}
                                 @if (in_array($mod->statut->value, ['cree', 'fait', 'modifie']) && $mod->type->isEditable())
                                     <div id="edit-card-{{ $mod->id }}" class="hidden mt-3 pt-3 border-t border-gray-200">
@@ -1408,6 +1413,7 @@
                                         </form>
                                     </div>
                                 @endif
+                                @endcan
                             </div>
                         @endforeach
                     </div>
@@ -1573,6 +1579,7 @@
                                         </td>
                                         <td class="px-4 py-2 text-sm text-right">
                                             <div class="flex justify-end space-x-2">
+                                                @can('admin')
                                                 @if (in_array($mod->statut->value, ['cree', 'fait', 'modifie']) && $mod->type->isEditable())
                                                     <button type="button" onclick="toggleEditRow({{ $mod->id }})" class="text-indigo-600 hover:text-indigo-800 text-xs font-medium">Editer</button>
                                                 @endif
@@ -1587,10 +1594,12 @@
                                                         <button type="submit" class="text-red-600 hover:text-red-800 text-xs font-medium">Supprimer</button>
                                                     </form>
                                                 @endif
+                                                @endcan
                                             </div>
                                         </td>
                                     </tr>
                                     {{-- Inline edit row --}}
+                                    @can('admin')
                                     @if (in_array($mod->statut->value, ['cree', 'fait', 'modifie']) && $mod->type->isEditable())
                                         <tr id="edit-row-{{ $mod->id }}" class="hidden bg-gray-50">
                                             <td colspan="{{ $concours->grand_national ? 8 : ($concours->type_ffe_sif ? 7 : 9) }}" class="px-4 py-4">
@@ -1768,6 +1777,7 @@
                                             </td>
                                         </tr>
                                     @endif
+                                    @endcan
                                 @endforeach
                             </tbody>
                         </table>
