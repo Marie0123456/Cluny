@@ -101,15 +101,15 @@
                 @php
                     $modsGroupedData = $modificationsGrouped->map(fn($g) => [
                         'label'     => $g['label'],
-                        'quantite'  => $g['quantite'],
-                        'pf'        => $g['pf'],
-                        'pu_ht'     => $g['pu_ht'],
+                        'quantite'  => (int) $g['quantite'],
+                        'pf'        => $g['pf'] !== null ? (float) $g['pf'] : null,
+                        'pu_ht'     => $g['pu_ht'] !== null ? (float) $g['pu_ht'] : null,
                         'paiements' => array_filter(explode(', ', $g['paiement']), fn($p) => $p !== ''),
-                        'total'     => $g['total'],
+                        'total'     => (float) $g['total'],
                     ])->values()->toArray();
 
-                    $distinctPf    = $modificationsGrouped->map(fn($g) => $g['pf'])->filter(fn($v) => $v !== null)->unique()->sort()->values();
-                    $distinctPuHt  = $modificationsGrouped->map(fn($g) => $g['pu_ht'])->filter(fn($v) => $v !== null)->unique()->sort()->values();
+                    $distinctPf   = $modificationsGrouped->map(fn($g) => $g['pf'] !== null ? (float) $g['pf'] : null)->filter(fn($v) => $v !== null)->unique()->sort()->values();
+                    $distinctPuHt = $modificationsGrouped->map(fn($g) => $g['pu_ht'] !== null ? (float) $g['pu_ht'] : null)->filter(fn($v) => $v !== null)->unique()->sort()->values();
                 @endphp
                 <div class="bg-white shadow-sm sm:rounded-lg"
                      x-data="{
@@ -119,12 +119,13 @@
                          filterPaiement: '',
                          get filteredGroups() {
                              return this.groups.filter(g => {
-                                 if (this.filterPf !== '' && g.pf !== parseFloat(this.filterPf)) return false;
-                                 if (this.filterPuHt !== '' && g.pu_ht !== parseFloat(this.filterPuHt)) return false;
+                                 if (this.filterPf !== '' && parseFloat(g.pf).toFixed(2) !== parseFloat(this.filterPf).toFixed(2)) return false;
+                                 if (this.filterPuHt !== '' && parseFloat(g.pu_ht).toFixed(2) !== parseFloat(this.filterPuHt).toFixed(2)) return false;
                                  if (this.filterPaiement !== '' && !g.paiements.includes(this.filterPaiement)) return false;
                                  return true;
                              });
                          },
+                         get totalQuantite() { return this.filteredGroups.reduce((s, g) => s + g.quantite, 0); },
                          get totalPF()  { return this.filteredGroups.reduce((s, g) => s + (g.pf   ?? 0) * g.quantite, 0); },
                          get totalPuHt(){ return this.filteredGroups.reduce((s, g) => s + (g.pu_ht ?? 0) * g.quantite, 0); },
                          get totalTtc() { return this.filteredGroups.reduce((s, g) => s + g.total, 0); },
@@ -209,7 +210,8 @@
                             </tbody>
                             <tfoot class="bg-gray-50">
                                 <tr>
-                                    <td colspan="2" class="px-4 py-2 text-xs text-gray-500 text-right">Sous-total PF</td>
+                                    <td class="px-4 py-2 text-xs text-gray-500 text-right">Sous-total quantité</td>
+                                    <td class="px-4 py-2 text-xs font-medium text-gray-700 text-center" x-text="totalQuantite"></td>
                                     <td class="px-4 py-2 text-xs font-medium text-gray-700 text-right"><span x-text="fmt(totalPF)"></span> &euro;</td>
                                     <td colspan="3" class="px-4 py-2"></td>
                                 </tr>
