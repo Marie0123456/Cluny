@@ -305,12 +305,14 @@
                                 </tbody>
                             </table>
                         </div>
+                        @can('chronometreur')
                         <div class="mt-4">
                             <button type="submit"
                                 class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 transition">
                                 Enregistrer les scores
                             </button>
                         </div>
+                        @endcan
                     </form>
                 @endif
             </div>
