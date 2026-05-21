@@ -58,7 +58,7 @@ class SifCsvImportService
         }
 
         // Map raw columns to structured rows
-        // Columns: 0=NumConcours(ignored), 1=NumEpreuve(ignored), 2=NumDepart, 3=Epreuve, 4=Discipline, 5=Licence, 6=Nom, 7=Prenom, 8=Club, 9=Sire, 10=Cheval
+        // Columns: 0=NumConcours, 1=NumEpreuve, 2=NumDepart, 3=Epreuve, 4=Discipline, 5=Licence, 6=Nom, 7=Prenom, 8=Club, 9=Sire, 10=Cheval
         $parsedRows = [];
         foreach ($rawRows as $cols) {
             if (count($cols) < 11) {
@@ -71,22 +71,29 @@ class SifCsvImportService
                 continue;
             }
 
-            $discipline = $cols[4];
-            $epreuveNom = $cols[3];
+            $discipline    = $cols[4];
+            $epreuveNom    = $cols[3];
+            $epreuveNumero = trim($cols[1]);
+            // If the CSV has no numero, generate a unique fallback key per epreuve name
+            if ($epreuveNumero === '') {
+                $epreuveNumero = 'auto-' . $epreuveNom;
+            }
+
             $epreuveLabel = $epreuveNom;
             if (! empty($discipline) && ! str_contains(mb_strtolower($epreuveNom), mb_strtolower($discipline))) {
                 $epreuveLabel = $discipline . ' - ' . $epreuveNom;
             }
 
             $parsedRows[] = [
-                'epreuveLabel' => $epreuveLabel,
-                'numeroDepart' => $cols[2],
-                'licence'      => $cols[5],
-                'nom'          => $nom,
-                'prenom'       => $cols[7],
-                'club'         => $cols[8],
-                'sire'         => $cols[9],
-                'chevalNom'    => $chevalNom,
+                'epreuveNumero' => $epreuveNumero,
+                'epreuveNom'    => $epreuveLabel,
+                'numeroDepart'  => $cols[2],
+                'licence'       => $cols[5],
+                'nom'           => $nom,
+                'prenom'        => $cols[7],
+                'club'          => $cols[8],
+                'sire'          => $cols[9],
+                'chevalNom'     => $chevalNom,
             ];
         }
 
@@ -101,19 +108,17 @@ class SifCsvImportService
             $now = now();
 
             // === Phase 1: Epreuves ===
-            $epreuveCache = $concours->epreuves()->get()->keyBy('nom');
-            $nextNumero = (int) ($concours->epreuves()->max('numero') ?? 0) + 1;
+            // Cache keyed by numero — two épreuves with the same name but different numero are distinct
+            $epreuveCache = $concours->epreuves()->get()->keyBy('numero');
 
             $newEpreuves = [];
-            $epreuveNumeros = [];
             foreach ($parsedRows as $row) {
-                $label = $row['epreuveLabel'];
-                if (! $epreuveCache->has($label) && ! isset($newEpreuves[$label])) {
-                    $epreuveNumeros[$label] = $nextNumero++;
-                    $newEpreuves[$label] = [
+                $num = $row['epreuveNumero'];
+                if (! $epreuveCache->has($num) && ! isset($newEpreuves[$num])) {
+                    $newEpreuves[$num] = [
                         'concours_id' => $concours->id,
-                        'nom'         => $label,
-                        'numero'      => $epreuveNumeros[$label],
+                        'nom'         => $row['epreuveNom'],
+                        'numero'      => $num,
                         'created_at'  => $now,
                         'updated_at'  => $now,
                     ];
@@ -122,7 +127,7 @@ class SifCsvImportService
             if (! empty($newEpreuves)) {
                 Epreuve::insert(array_values($newEpreuves));
                 $counters['nb_epreuves'] = count($newEpreuves);
-                $epreuveCache = $concours->epreuves()->get()->keyBy('nom');
+                $epreuveCache = $concours->epreuves()->get()->keyBy('numero');
             }
 
             // === Phase 2: Cavaliers ===
@@ -263,7 +268,7 @@ class SifCsvImportService
 
             $newEngagements = [];
             foreach ($parsedRows as $row) {
-                $epreuve  = $epreuveCache[$row['epreuveLabel']];
+                $epreuve  = $epreuveCache[$row['epreuveNumero']];
                 $cavalier = ! empty($row['licence'])
                     ? $cavaliersByLicence[$row['licence']]
                     : $cavaliersByName[$row['nom'] . '|' . $row['prenom']];
