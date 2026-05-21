@@ -1057,12 +1057,10 @@
             <div class="bg-white shadow-sm sm:rounded-lg" x-data="modificationsFilter()" x-cloak>
                 @php
                     $visibleMods = $modifications->filter(fn($m) => $m->statut->value !== 'supprime');
-                    // Pour les concours FFE SIF (mais pas FFE Compet), afficher le nom de l'epreuve
-                    // plutot que son numero (sur ces concours le numero n'est pas significatif).
-                    $useNomEpreuve = $concours->type_ffe_sif && !$concours->type_ffe_compet;
-                    $epreuveLabel = function ($epreuve, string $fallback = '-') use ($useNomEpreuve) {
+                    // Afficher numero + nom de l'épreuve
+                    $epreuveLabel = function ($epreuve, string $fallback = '-') {
                         if (!$epreuve) return $fallback;
-                        return $useNomEpreuve ? $epreuve->nom : $epreuve->numero;
+                        return ($epreuve->numero ? $epreuve->numero . ' - ' : '') . $epreuve->nom;
                     };
                 @endphp
 
