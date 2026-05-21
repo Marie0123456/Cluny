@@ -36,7 +36,7 @@ class ModificationController extends Controller
             ])
             ->join('engagements', 'modifications.engagement_id', '=', 'engagements.id')
             ->join('epreuves', 'engagements.epreuve_id', '=', 'epreuves.id')
-            ->orderByRaw('CAST(epreuves.numero AS INTEGER), epreuves.numero')
+            ->orderByRaw("CASE WHEN epreuves.numero ~ '^[0-9]+$' THEN CAST(epreuves.numero AS INTEGER) END NULLS LAST, epreuves.numero")
             ->orderBy('modifications.created_at', 'desc')
             ->select('modifications.*')
             ->get();
@@ -47,7 +47,7 @@ class ModificationController extends Controller
                 'engagements.cavalier:id,nom,prenom,num_licence',
                 'engagements.cheval:id,nom,num_sire',
             ])
-            ->orderByRaw('CAST(numero AS INTEGER), numero')
+            ->orderByRaw("CASE WHEN numero ~ '^[0-9]+$' THEN CAST(numero AS INTEGER) END NULLS LAST, numero")
             ->get();
 
         $epreuvesJson = $epreuves->map(function ($e) {

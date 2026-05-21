@@ -15,7 +15,7 @@ class EngageController extends Controller
                     ->orderByRaw("CASE WHEN numero_depart ~ '^[0-9]+$' THEN CAST(numero_depart AS INTEGER) END NULLS LAST, numero_depart NULLS LAST");
             }])
             ->orderBy('date')
-            ->orderByRaw('CAST(numero AS INTEGER), numero')
+            ->orderByRaw("CASE WHEN numero ~ '^[0-9]+$' THEN CAST(numero AS INTEGER) END NULLS LAST, numero")
             ->get();
 
         $epreuvesByDate = $epreuves->groupBy(fn($e) => $e->date ? $e->date->format('Y-m-d') : 'sans_date');
