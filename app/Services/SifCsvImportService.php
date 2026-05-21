@@ -9,6 +9,7 @@ use App\Models\Engagement;
 use App\Models\Epreuve;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use OpenSpout\Reader\XLSX\Reader as XlsxReader;
 
 class SifCsvImportService
 {
@@ -30,44 +31,36 @@ class SifCsvImportService
     ];
 
     /**
-     * Import engagés from an FFE SIF CSV file.
+     * Import engagés from an FFE SIF CSV or Excel file.
      *
-     * Accepts files with or without header row.
+     * Accepts CSV/TXT (with any separator) or XLSX.
      * Columns (by position): Numero Concours;Numero Epreuve;Numero Depart;Epreuve;Discipline;Licence;Nom;Prenom;Club;Sire;Cheval;...
      */
     public function import(Concours $concours, UploadedFile $file): array
     {
-        $content = file_get_contents($file->getRealPath());
+        $extension = strtolower($file->getClientOriginalExtension());
 
-        // Handle encoding (FFE files may be ISO-8859-1)
-        if (! mb_check_encoding($content, 'UTF-8')) {
-            $content = mb_convert_encoding($content, 'UTF-8', 'ISO-8859-1');
-        }
+        $rawRows = $extension === 'xlsx'
+            ? $this->parseXlsxToRows($file)
+            : $this->parseCsvToRows($file);
 
-        $lines = explode("\n", $content);
-        $lines = array_filter($lines, fn ($line) => trim($line) !== '');
-        $lines = array_values($lines);
-
-        if (count($lines) < 1) {
+        if (count($rawRows) < 1) {
             throw new \Exception('Le fichier est vide ou ne contient pas de données.');
         }
 
-        $separator = $this->detectSeparator($lines[0]);
-
-        // Detect if first line is a header row
-        if ($this->isHeaderRow($lines[0], $separator)) {
-            array_shift($lines);
+        // Detect and skip header row
+        if ($this->isHeaderRow($rawRows[0])) {
+            array_shift($rawRows);
         }
 
-        if (count($lines) < 1) {
+        if (count($rawRows) < 1) {
             throw new \Exception('Le fichier ne contient pas de données.');
         }
 
-        // Parse all lines upfront
+        // Map raw columns to structured rows
         // Columns: 0=NumConcours(ignored), 1=NumEpreuve(ignored), 2=NumDepart, 3=Epreuve, 4=Discipline, 5=Licence, 6=Nom, 7=Prenom, 8=Club, 9=Sire, 10=Cheval
         $parsedRows = [];
-        foreach ($lines as $line) {
-            $cols = array_map('trim', explode($separator, $line));
+        foreach ($rawRows as $cols) {
             if (count($cols) < 11) {
                 continue;
             }
@@ -78,7 +71,6 @@ class SifCsvImportService
                 continue;
             }
 
-            // Build epreuve display name
             $discipline = $cols[4];
             $epreuveNom = $cols[3];
             $epreuveLabel = $epreuveNom;
@@ -89,19 +81,19 @@ class SifCsvImportService
             $parsedRows[] = [
                 'epreuveLabel' => $epreuveLabel,
                 'numeroDepart' => $cols[2],
-                'licence' => $cols[5],
-                'nom' => $nom,
-                'prenom' => $cols[7],
-                'club' => $cols[8],
-                'sire' => $cols[9],
-                'chevalNom' => $chevalNom,
+                'licence'      => $cols[5],
+                'nom'          => $nom,
+                'prenom'       => $cols[7],
+                'club'         => $cols[8],
+                'sire'         => $cols[9],
+                'chevalNom'    => $chevalNom,
             ];
         }
 
         $counters = [
-            'nb_epreuves' => 0,
-            'nb_cavaliers' => 0,
-            'nb_chevaux' => 0,
+            'nb_epreuves'    => 0,
+            'nb_cavaliers'   => 0,
+            'nb_chevaux'     => 0,
             'nb_engagements' => 0,
         ];
 
@@ -120,10 +112,10 @@ class SifCsvImportService
                     $epreuveNumeros[$label] = $nextNumero++;
                     $newEpreuves[$label] = [
                         'concours_id' => $concours->id,
-                        'nom' => $label,
-                        'numero' => $epreuveNumeros[$label],
-                        'created_at' => $now,
-                        'updated_at' => $now,
+                        'nom'         => $label,
+                        'numero'      => $epreuveNumeros[$label],
+                        'created_at'  => $now,
+                        'updated_at'  => $now,
                     ];
                 }
             }
@@ -134,7 +126,6 @@ class SifCsvImportService
             }
 
             // === Phase 2: Cavaliers ===
-            // SIF uses dual-key lookup: by num_licence if available, otherwise by (nom, prenom)
             $csvLicences = [];
             $csvCavalierNoms = [];
             foreach ($parsedRows as $row) {
@@ -158,7 +149,6 @@ class SifCsvImportService
             }
 
             $newCavaliers = [];
-            // Track which keys we've already queued for creation
             $newCavaliersByLicence = [];
             $newCavaliersByName = [];
 
@@ -167,12 +157,12 @@ class SifCsvImportService
                     if (! $cavaliersByLicence->has($row['licence']) && ! isset($newCavaliersByLicence[$row['licence']])) {
                         $newCavaliersByLicence[$row['licence']] = true;
                         $newCavaliers[] = [
-                            'nom' => $row['nom'],
-                            'prenom' => $row['prenom'],
-                            'num_licence' => $row['licence'],
-                            'club' => $row['club'] ?: null,
-                            'created_at' => $now,
-                            'updated_at' => $now,
+                            'nom'          => $row['nom'],
+                            'prenom'       => $row['prenom'],
+                            'num_licence'  => $row['licence'],
+                            'club'         => $row['club'] ?: null,
+                            'created_at'   => $now,
+                            'updated_at'   => $now,
                         ];
                     }
                 } else {
@@ -180,12 +170,12 @@ class SifCsvImportService
                     if (! $cavaliersByName->has($nameKey) && ! isset($newCavaliersByName[$nameKey])) {
                         $newCavaliersByName[$nameKey] = true;
                         $newCavaliers[] = [
-                            'nom' => $row['nom'],
-                            'prenom' => $row['prenom'],
+                            'nom'         => $row['nom'],
+                            'prenom'      => $row['prenom'],
                             'num_licence' => null,
-                            'club' => $row['club'] ?: null,
-                            'created_at' => $now,
-                            'updated_at' => $now,
+                            'club'        => $row['club'] ?: null,
+                            'created_at'  => $now,
+                            'updated_at'  => $now,
                         ];
                     }
                 }
@@ -195,7 +185,6 @@ class SifCsvImportService
                     Cavalier::insert($chunk);
                 }
                 $counters['nb_cavaliers'] = count($newCavaliers);
-                // Reload caches
                 $allLicences = array_values(array_unique(array_map(fn ($r) => $r['licence'], array_filter($parsedRows, fn ($r) => ! empty($r['licence'])))));
                 if (! empty($allLicences)) {
                     $cavaliersByLicence = Cavalier::whereIn('num_licence', $allLicences)->get()->keyBy('num_licence');
@@ -206,7 +195,6 @@ class SifCsvImportService
             }
 
             // === Phase 3: Chevaux ===
-            // SIF uses dual-key: by num_sire if available, otherwise by nom
             $csvSires = [];
             $csvChevalNoms = [];
             foreach ($parsedRows as $row) {
@@ -237,8 +225,8 @@ class SifCsvImportService
                     if (! $chevauxBySire->has($row['sire']) && ! isset($newChevauxBySire[$row['sire']])) {
                         $newChevauxBySire[$row['sire']] = true;
                         $newChevaux[] = [
-                            'nom' => $row['chevalNom'],
-                            'num_sire' => $row['sire'],
+                            'nom'        => $row['chevalNom'],
+                            'num_sire'   => $row['sire'],
                             'created_at' => $now,
                             'updated_at' => $now,
                         ];
@@ -247,8 +235,8 @@ class SifCsvImportService
                     if (! $chevauxByName->has($row['chevalNom']) && ! isset($newChevauxByName[$row['chevalNom']])) {
                         $newChevauxByName[$row['chevalNom']] = true;
                         $newChevaux[] = [
-                            'nom' => $row['chevalNom'],
-                            'num_sire' => null,
+                            'nom'        => $row['chevalNom'],
+                            'num_sire'   => null,
                             'created_at' => $now,
                             'updated_at' => $now,
                         ];
@@ -260,7 +248,6 @@ class SifCsvImportService
                     Cheval::insert($chunk);
                 }
                 $counters['nb_chevaux'] = count($newChevaux);
-                // Reload caches
                 $allSires = array_values(array_unique(array_map(fn ($r) => $r['sire'], array_filter($parsedRows, fn ($r) => ! empty($r['sire'])))));
                 if (! empty($allSires)) {
                     $chevauxBySire = Cheval::whereIn('num_sire', $allSires)->get()->keyBy('num_sire');
@@ -276,12 +263,10 @@ class SifCsvImportService
 
             $newEngagements = [];
             foreach ($parsedRows as $row) {
-                $epreuve = $epreuveCache[$row['epreuveLabel']];
-
+                $epreuve  = $epreuveCache[$row['epreuveLabel']];
                 $cavalier = ! empty($row['licence'])
                     ? $cavaliersByLicence[$row['licence']]
                     : $cavaliersByName[$row['nom'] . '|' . $row['prenom']];
-
                 $cheval = ! empty($row['sire'])
                     ? $chevauxBySire[$row['sire']]
                     : $chevauxByName[$row['chevalNom']];
@@ -289,12 +274,12 @@ class SifCsvImportService
                 $engKey = $epreuve->id . '|' . $cavalier->id . '|' . $cheval->id;
                 if (! $existingEngagements->has($engKey) && ! isset($newEngagements[$engKey])) {
                     $newEngagements[$engKey] = [
-                        'epreuve_id' => $epreuve->id,
-                        'cavalier_id' => $cavalier->id,
-                        'cheval_id' => $cheval->id,
-                        'numero_depart' => $row['numeroDepart'] ?: null,
-                        'created_at' => $now,
-                        'updated_at' => $now,
+                        'epreuve_id'     => $epreuve->id,
+                        'cavalier_id'    => $cavalier->id,
+                        'cheval_id'      => $cheval->id,
+                        'numero_depart'  => $row['numeroDepart'] ?: null,
+                        'created_at'     => $now,
+                        'updated_at'     => $now,
                     ];
                 }
             }
@@ -309,30 +294,90 @@ class SifCsvImportService
         return $counters;
     }
 
-    private function isHeaderRow(string $line, string $separator): bool
+    /**
+     * Parse an XLSX file into a 2D array of trimmed strings.
+     */
+    private function parseXlsxToRows(UploadedFile $file): array
     {
-        $cols = array_map(fn ($c) => mb_strtolower(trim($c)), explode($separator, $line));
-        $headerKeywords = ['discipline', 'epreuve', 'licence', 'nom', 'prenom', 'cheval'];
+        $tmpFile = tempnam(sys_get_temp_dir(), 'sif_') . '.xlsx';
+        copy($file->getRealPath(), $tmpFile);
 
+        $rows = [];
+        try {
+            $reader = new XlsxReader();
+            $reader->open($tmpFile);
+            foreach ($reader->getSheetIterator() as $sheet) {
+                foreach ($sheet->getRowIterator() as $row) {
+                    $cells = array_map(
+                        fn ($cell) => trim((string) $cell->getValue()),
+                        $row->getCells()
+                    );
+                    if (! empty(array_filter($cells, fn ($c) => $c !== ''))) {
+                        $rows[] = $cells;
+                    }
+                }
+                break; // first sheet only
+            }
+            $reader->close();
+        } finally {
+            @unlink($tmpFile);
+        }
+
+        return $rows;
+    }
+
+    /**
+     * Parse a CSV/TXT file into a 2D array of trimmed strings.
+     */
+    private function parseCsvToRows(UploadedFile $file): array
+    {
+        $content = file_get_contents($file->getRealPath());
+
+        if (! mb_check_encoding($content, 'UTF-8')) {
+            $content = mb_convert_encoding($content, 'UTF-8', 'ISO-8859-1');
+        }
+
+        $lines = array_values(array_filter(
+            explode("\n", $content),
+            fn ($line) => trim($line) !== ''
+        ));
+
+        if (empty($lines)) {
+            return [];
+        }
+
+        $separator = $this->detectSeparator($lines[0]);
+
+        return array_map(
+            fn ($line) => array_map('trim', explode($separator, $line)),
+            $lines
+        );
+    }
+
+    /**
+     * Detect if the first row is a header row by matching known keywords.
+     */
+    private function isHeaderRow(array $cols): bool
+    {
+        $headerKeywords = ['discipline', 'epreuve', 'licence', 'nom', 'prenom', 'cheval'];
         $matches = 0;
         foreach ($headerKeywords as $keyword) {
             foreach ($cols as $col) {
-                if (str_contains($col, $keyword)) {
+                if (str_contains(mb_strtolower($col), $keyword)) {
                     $matches++;
                     break;
                 }
             }
         }
 
-        // If at least 3 header keywords found, it's likely a header row
         return $matches >= 3;
     }
 
     private function detectSeparator(string $line): string
     {
-        $tabCount = substr_count($line, "\t");
+        $tabCount       = substr_count($line, "\t");
         $semicolonCount = substr_count($line, ';');
-        $commaCount = substr_count($line, ',');
+        $commaCount     = substr_count($line, ',');
 
         if ($tabCount >= $semicolonCount && $tabCount >= $commaCount) {
             return "\t";
