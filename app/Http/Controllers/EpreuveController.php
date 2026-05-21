@@ -20,7 +20,7 @@ class EpreuveController extends Controller
                     $query->where('is_non_partant', true);
                 },
             ])
-            ->orderByRaw('CAST(numero AS INTEGER), numero')
+            ->orderByRaw("CASE WHEN numero ~ '^[0-9]+$' THEN CAST(numero AS INTEGER) END NULLS LAST, numero")
             ->get();
 
         return view('concours.epreuves', compact('concours', 'epreuves'));
