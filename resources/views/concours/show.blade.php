@@ -222,7 +222,7 @@
                         </div>
 
                     @else
-                        {{-- === Bloc FFE SIF : import CSV classique === --}}
+                        {{-- === Bloc FFE SIF : import CSV / Excel === --}}
                         <p class="text-sm text-gray-500 mb-3">
                             Colonnes attendues :
                             <code class="text-xs bg-gray-100 px-1.5 py-0.5 rounded">Discipline;Epreuve;Numero Depart;Licence;Nom;Prenom;Club;Sire;Cheval</code>
@@ -230,8 +230,8 @@
                         <form method="POST" action="{{ route('concours.import.store', $concours) }}" enctype="multipart/form-data" class="flex flex-col sm:flex-row sm:items-end gap-4">
                             @csrf
                             <div class="flex-1">
-                                <label for="fichier" class="block text-sm font-medium text-gray-700 mb-1">Fichier CSV/TXT</label>
-                                <input type="file" name="fichier" id="fichier" accept=".csv,.txt,.tsv" required
+                                <label for="fichier" class="block text-sm font-medium text-gray-700 mb-1">Fichier CSV/TXT/Excel</label>
+                                <input type="file" name="fichier" id="fichier" accept=".csv,.txt,.tsv,.xlsx" required
                                     class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
                                 @error('fichier') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
                             </div>
