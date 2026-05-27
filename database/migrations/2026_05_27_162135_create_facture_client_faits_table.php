@@ -11,7 +11,7 @@ return new class extends Migration
         Schema::create('facture_client_faits', function (Blueprint $table) {
             $table->id();
             $table->foreignId('concours_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('client_facturation_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('client_facturation_id')->constrained('clients_facturation')->cascadeOnDelete();
             $table->string('section'); // 'vente' or 'modification'
             $table->unsignedBigInteger('item_id'); // VenteLigne.id or Modification.id
             $table->boolean('fait')->default(false);
