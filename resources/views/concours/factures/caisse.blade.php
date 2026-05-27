@@ -38,7 +38,50 @@
 
             <!-- Ventes groupées -->
             @if ($ventesGrouped->isNotEmpty())
-                <div class="bg-white shadow-sm sm:rounded-lg mb-6">
+                @php
+                    $ventesGroupedData = $ventesGrouped->map(fn($g) => [
+                        'produit'   => $g['produit'],
+                        'quantite'  => (int) $g['quantite'],
+                        'puHt'      => round((float) $g['prix_unitaire_ttc'] / (1 + (float) $g['tva'] / 100), 2),
+                        'puTtc'     => (float) $g['prix_unitaire_ttc'],
+                        'tva'       => (float) $g['tva'],
+                        'totalHt'   => (float) $g['total_ht'],
+                        'totalTtc'  => (float) $g['total'],
+                        'paiements' => array_values(array_filter(explode(', ', $g['paiement']), fn($p) => $p !== '')),
+                    ])->values()->toArray();
+                    $distinctPuHt = $ventesGrouped
+                        ->map(fn($g) => round((float) $g['prix_unitaire_ttc'] / (1 + (float) $g['tva'] / 100), 2))
+                        ->unique()->sort()->values()->toArray();
+                @endphp
+                <div class="bg-white shadow-sm sm:rounded-lg mb-6"
+                     x-data="{
+                         rows: @js($ventesGroupedData),
+                         filterProduit: '',
+                         filterPuHt: '',
+                         filterPaiement: '',
+                         get filteredRows() {
+                             return this.rows.filter(r => {
+                                 if (this.filterProduit  && !r.produit.toLowerCase().includes(this.filterProduit.toLowerCase())) return false;
+                                 if (this.filterPuHt !== '' && parseFloat(r.puHt).toFixed(2) !== parseFloat(this.filterPuHt).toFixed(2)) return false;
+                                 if (this.filterPaiement && !r.paiements.includes(this.filterPaiement)) return false;
+                                 return true;
+                             });
+                         },
+                         get totalQuantite() { return this.filteredRows.reduce((s, r) => s + r.quantite, 0); },
+                         get totalHt()       { return this.filteredRows.reduce((s, r) => s + r.totalHt,  0); },
+                         get totalTtc()      { return this.filteredRows.reduce((s, r) => s + r.totalTtc, 0); },
+                         fmt(n) { return n.toLocaleString('fr-FR', {minimumFractionDigits: 2, maximumFractionDigits: 2}); },
+                         paiementClass(p) {
+                             const map = {
+                                 'CB':       'bg-blue-100 text-blue-800',
+                                 'Espèces':  'bg-green-100 text-green-800',
+                                 'Chèque':   'bg-yellow-100 text-yellow-800',
+                                 'Internet': 'bg-purple-100 text-purple-800',
+                                 'Virement': 'bg-indigo-100 text-indigo-800',
+                             };
+                             return 'inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ' + (map[p] ?? 'bg-gray-100 text-gray-600');
+                         },
+                     }">
                     <div class="px-4 pt-4">
                         <h3 class="text-lg font-medium text-gray-900">Ventes</h3>
                         <p class="text-sm text-gray-500">Regroupées par produit et mode de paiement</p>
@@ -47,48 +90,77 @@
                         <table class="min-w-full divide-y divide-gray-200">
                             <thead class="bg-gray-50">
                                 <tr>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Produit</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                        <div>Produit</div>
+                                        <input x-model="filterProduit" type="text" placeholder="Filtrer..."
+                                            class="mt-1 block w-full text-xs font-normal normal-case border-gray-300 rounded shadow-sm focus:ring-indigo-500 focus:border-indigo-500 py-0.5 px-2">
+                                    </th>
                                     <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Quantité</th>
+                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">
+                                        <div class="flex flex-col items-end gap-1">
+                                            <span>P.U. HT</span>
+                                            <select x-model="filterPuHt" class="text-xs font-normal normal-case border border-gray-300 rounded px-1 py-0.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                                                <option value="">Tous</option>
+                                                @foreach ($distinctPuHt as $val)
+                                                    <option value="{{ $val }}">{{ number_format($val, 2, ',', ' ') }} €</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                    </th>
                                     <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">P.U. TTC</th>
                                     <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">TVA</th>
                                     <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Total HT</th>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Paiement</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                        <div>Paiement</div>
+                                        <select x-model="filterPaiement"
+                                            class="mt-1 block w-full text-xs font-normal normal-case border-gray-300 rounded shadow-sm focus:ring-indigo-500 focus:border-indigo-500 py-0.5 px-1">
+                                            <option value="">Tous</option>
+                                            <option value="CB">CB</option>
+                                            <option value="Espèces">Espèces</option>
+                                            <option value="Chèque">Chèque</option>
+                                            <option value="Internet">Internet</option>
+                                            <option value="Virement">Virement</option>
+                                        </select>
+                                    </th>
                                     <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Total TTC</th>
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200">
-                                @foreach ($ventesGrouped as $group)
+                                <template x-for="(r, i) in filteredRows" :key="i">
                                     <tr>
-                                        <td class="px-4 py-3 text-sm font-medium text-gray-900">{{ $group['produit'] }}</td>
-                                        <td class="px-4 py-3 text-sm text-gray-900 text-center">{{ $group['quantite'] }}</td>
-                                        <td class="px-4 py-3 text-sm text-gray-900 text-right">{{ number_format($group['prix_unitaire_ttc'], 2, ',', ' ') }} &euro;</td>
-                                        <td class="px-4 py-3 text-sm text-gray-900 text-right">{{ number_format($group['tva'], 1) }}%</td>
-                                        <td class="px-4 py-3 text-sm text-gray-900 text-right">{{ number_format($group['total_ht'], 2, ',', ' ') }} &euro;</td>
+                                        <td class="px-4 py-3 text-sm font-medium text-gray-900" x-text="r.produit"></td>
+                                        <td class="px-4 py-3 text-sm text-gray-900 text-center" x-text="r.quantite"></td>
+                                        <td class="px-4 py-3 text-sm text-gray-900 text-right" x-text="fmt(r.puHt) + ' €'"></td>
+                                        <td class="px-4 py-3 text-sm text-gray-900 text-right" x-text="fmt(r.puTtc) + ' €'"></td>
+                                        <td class="px-4 py-3 text-sm text-gray-900 text-right" x-text="r.tva.toFixed(1) + '%'"></td>
+                                        <td class="px-4 py-3 text-sm text-gray-900 text-right" x-text="fmt(r.totalHt) + ' €'"></td>
                                         <td class="px-4 py-3 text-sm text-gray-500">
-                                            @foreach (explode(', ', $group['paiement']) as $p)
-                                                @if ($p === 'CB')
-                                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">CB</span>
-                                                @elseif ($p === 'Espèces')
-                                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">Espèces</span>
-                                                @elseif ($p === 'Chèque')
-                                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">Chèque</span>
-                                                @elseif ($p === 'Internet')
-                                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800">Internet</span>
-                                                @elseif ($p === 'Virement')
-                                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-indigo-100 text-indigo-800">Virement</span>
-                                                @else
-                                                    <span class="text-gray-400">{{ $p }}</span>
-                                                @endif
-                                            @endforeach
+                                            <template x-for="p in r.paiements" :key="p">
+                                                <span :class="paiementClass(p)" x-text="p"></span>
+                                            </template>
+                                            <span x-show="r.paiements.length === 0" class="text-gray-400">-</span>
                                         </td>
-                                        <td class="px-4 py-3 text-sm font-medium text-gray-900 text-right">{{ number_format($group['total'], 2, ',', ' ') }} &euro;</td>
+                                        <td class="px-4 py-3 text-sm font-medium text-gray-900 text-right" x-text="fmt(r.totalTtc) + ' €'"></td>
                                     </tr>
-                                @endforeach
+                                </template>
+                                <tr x-show="filteredRows.length === 0">
+                                    <td colspan="8" class="px-4 py-6 text-sm text-gray-400 text-center italic">Aucune vente pour ces filtres.</td>
+                                </tr>
                             </tbody>
                             <tfoot class="bg-gray-50">
                                 <tr>
-                                    <td colspan="6" class="px-4 py-3 text-sm font-bold text-gray-900 text-right">Sous-total ventes</td>
-                                    <td class="px-4 py-3 text-sm font-bold text-gray-900 text-right">{{ number_format($totalCaisseVentes, 2, ',', ' ') }} &euro;</td>
+                                    <td class="px-4 py-2 text-xs text-gray-500 text-right">Sous-total quantité</td>
+                                    <td class="px-4 py-2 text-xs font-medium text-gray-700 text-center" x-text="totalQuantite"></td>
+                                    <td colspan="6"></td>
+                                </tr>
+                                <tr>
+                                    <td colspan="5" class="px-4 py-2 text-xs text-gray-500 text-right">Sous-total Total HT</td>
+                                    <td class="px-4 py-2 text-xs font-medium text-gray-700 text-right" x-text="fmt(totalHt) + ' €'"></td>
+                                    <td colspan="2"></td>
+                                </tr>
+                                <tr class="border-t border-gray-200">
+                                    <td colspan="7" class="px-4 py-3 text-sm font-bold text-gray-900 text-right">Sous-total ventes</td>
+                                    <td class="px-4 py-3 text-sm font-bold text-gray-900 text-right"><span x-text="fmt(totalTtc)"></span> &euro;</td>
                                 </tr>
                             </tfoot>
                         </table>

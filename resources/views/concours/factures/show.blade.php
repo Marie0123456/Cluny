@@ -271,7 +271,9 @@
                                  return true;
                              });
                          },
-                         get totalTtc() { return this.filteredRows.reduce((s, r) => s + r.totalTtc, 0); },
+                         get totalQuantite() { return this.filteredRows.reduce((s, r) => s + r.quantite, 0); },
+                         get totalHt()       { return this.filteredRows.reduce((s, r) => s + r.totalHt,  0); },
+                         get totalTtc()      { return this.filteredRows.reduce((s, r) => s + r.totalTtc, 0); },
                          fmt(n) { return n.toLocaleString('fr-FR', {minimumFractionDigits: 2, maximumFractionDigits: 2}); },
                          paiementBadge(p) {
                              const map = {
@@ -347,6 +349,16 @@
                             </tbody>
                             <tfoot class="bg-gray-50">
                                 <tr>
+                                    <td colspan="2" class="px-4 py-2 text-xs text-gray-500 text-right">Sous-total quantité</td>
+                                    <td class="px-4 py-2 text-xs font-medium text-gray-700 text-center" x-text="totalQuantite"></td>
+                                    <td colspan="7"></td>
+                                </tr>
+                                <tr>
+                                    <td colspan="6" class="px-4 py-2 text-xs text-gray-500 text-right">Sous-total Total HT</td>
+                                    <td class="px-4 py-2 text-xs font-medium text-gray-700 text-right" x-text="fmt(totalHt) + ' €'"></td>
+                                    <td colspan="3"></td>
+                                </tr>
+                                <tr class="border-t border-gray-200">
                                     <td colspan="7" class="px-4 py-3 text-sm font-bold text-gray-900 text-right">Sous-total ventes</td>
                                     <td class="px-4 py-3 text-sm font-bold text-gray-900 text-right"><span x-text="fmt(totalTtc)"></span> &euro;</td>
                                     <td colspan="2"></td>
@@ -396,16 +408,24 @@
                     $types = $modifications
                         ->map(fn($m) => ['value' => $m->type->value, 'label' => $m->type->label()])
                         ->unique('value')->values()->toArray();
+                    $distinctPuHt = $modifications
+                        ->map(fn($m) => ($m->prix && $m->pf !== null)
+                            ? round(($m->prix - $m->pf) / (1 + $tva / 100), 2)
+                            : null)
+                        ->filter(fn($v) => $v !== null)
+                        ->unique()->sort()->values()->toArray();
                 @endphp
                 <div class="bg-white shadow-sm sm:rounded-lg" x-data="{
                     mods: @js($modsData),
                     filterType: '',
                     filterCavalier: '',
+                    filterPuHt: '',
                     filterPaiement: '',
                     get filteredMods() {
                         return this.mods.filter(m => {
                             if (this.filterType     && m.type !== this.filterType) return false;
                             if (this.filterCavalier && !m.cavalier.toLowerCase().includes(this.filterCavalier.toLowerCase())) return false;
+                            if (this.filterPuHt !== '' && (m.puHt === null || parseFloat(m.puHt).toFixed(2) !== parseFloat(this.filterPuHt).toFixed(2))) return false;
                             if (this.filterPaiement && !m.paiements.includes(this.filterPaiement)) return false;
                             return true;
                         });
@@ -440,7 +460,17 @@
                                         </select>
                                     </th>
                                     <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">PF</th>
-                                    <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">P.U. HT</th>
+                                    <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">
+                                        <div class="flex flex-col items-end gap-1">
+                                            <span>P.U. HT</span>
+                                            <select x-model="filterPuHt" class="text-xs font-normal normal-case border border-gray-300 rounded px-1 py-0.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                                                <option value="">Tous</option>
+                                                @foreach ($distinctPuHt as $val)
+                                                    <option value="{{ $val }}">{{ number_format($val, 2, ',', ' ') }} €</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                    </th>
                                     <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Prix</th>
                                     <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
                                         <div>Paiement</div>
