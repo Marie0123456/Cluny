@@ -258,15 +258,18 @@
                             ];
                         }
                     }
+                    $distinctPuHt = collect($ventesData)->pluck('puHt')->unique()->sort()->values()->toArray();
                 @endphp
                 <div class="bg-white shadow-sm sm:rounded-lg mb-6"
                      x-data="{
                          rows: @js($ventesData),
                          filterProduit: '',
+                         filterPuHt: '',
                          filterPaiement: '',
                          get filteredRows() {
                              return this.rows.filter(r => {
                                  if (this.filterProduit  && !r.produit.toLowerCase().includes(this.filterProduit.toLowerCase())) return false;
+                                 if (this.filterPuHt !== '' && parseFloat(r.puHt).toFixed(2) !== parseFloat(this.filterPuHt).toFixed(2)) return false;
                                  if (this.filterPaiement && !r.paiements.includes(this.filterPaiement)) return false;
                                  return true;
                              });
@@ -300,7 +303,17 @@
                                             class="mt-1 block w-full text-xs font-normal normal-case border-gray-300 rounded shadow-sm focus:ring-indigo-500 focus:border-indigo-500 py-0.5 px-2">
                                     </th>
                                     <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Qté</th>
-                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">P.U. HT</th>
+                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">
+                                        <div class="flex flex-col items-end gap-1">
+                                            <span>P.U. HT</span>
+                                            <select x-model="filterPuHt" class="text-xs font-normal normal-case border border-gray-300 rounded px-1 py-0.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                                                <option value="">Tous</option>
+                                                @foreach ($distinctPuHt as $val)
+                                                    <option value="{{ $val }}">{{ number_format($val, 2, ',', ' ') }} €</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                    </th>
                                     <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">P.U. TTC</th>
                                     <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">TVA</th>
                                     <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Total HT</th>
