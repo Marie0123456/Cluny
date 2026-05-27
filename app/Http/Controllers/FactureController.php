@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\CaisseFait;
 use App\Models\ClientFacturation;
 use App\Models\Concours;
 use App\Models\FactureCommentaire;
@@ -419,6 +420,35 @@ class FactureController extends Controller
         return [$ventes, $modifications, $totalVentes, $totalModifications];
     }
 
+    public function toggleCaisseItemFait(Request $request, Concours $concours)
+    {
+        $validated = $request->validate([
+            'section'    => 'required|in:vente,modification',
+            'groupe_key' => 'required|string|max:1000',
+        ]);
+
+        $record = CaisseFait::firstOrNew([
+            'concours_id' => $concours->id,
+            'section'     => $validated['section'],
+            'groupe_key'  => $validated['groupe_key'],
+        ]);
+        $record->fait = !($record->fait ?? false);
+        if ($record->fait) {
+            $record->fait_par_id = auth()->id();
+            $record->fait_le     = now();
+        } else {
+            $record->fait_par_id = null;
+            $record->fait_le     = null;
+        }
+        $record->save();
+
+        $info = $record->fait
+            ? 'par ' . auth()->user()->name . ' le ' . now()->format('d/m/Y H:i')
+            : '';
+
+        return response()->json(['fait' => $record->fait, 'fait_info' => $info]);
+    }
+
     private function getCaisseData(Concours $concours): array
     {
         // Ventes sans client facturation
@@ -434,6 +464,12 @@ class FactureController extends Controller
             ->whereNull('client_facturation_id')
             ->with(['engagement.epreuve', 'engagement.cavalier', 'engagement.cheval'])
             ->get();
+
+        // Charger les états "Fait" pour cette caisse
+        $caisseFaits = CaisseFait::where('concours_id', $concours->id)
+            ->with('faitPar')
+            ->get()
+            ->keyBy(fn($f) => $f->section . '|' . $f->groupe_key);
 
         // Grouper les ventes par produit + mode de paiement
         $ventesFlat = collect();
@@ -452,19 +488,25 @@ class FactureController extends Controller
         }
 
         $ventesGrouped = $ventesFlat->groupBy(fn($item) => $item['produit'] . '|' . $item['paiement'])
-            ->map(function ($items, $key) {
+            ->map(function ($items, $key) use ($caisseFaits) {
                 $first = $items->first();
                 $totalTtc = $items->sum('total');
                 $tva = $first['tva'];
                 $totalHt = $this->calculateHtFromTtc($totalTtc, $tva);
+                $faitRecord = $caisseFaits->get('vente|' . $key);
                 return [
-                    'produit' => $first['produit'],
-                    'paiement' => $first['paiement'],
-                    'quantite' => $items->sum('quantite'),
-                    'total' => $totalTtc,
+                    'produit'          => $first['produit'],
+                    'paiement'         => $first['paiement'],
+                    'quantite'         => $items->sum('quantite'),
+                    'total'            => $totalTtc,
                     'prix_unitaire_ttc' => $first['prix_unitaire_ttc'],
-                    'tva' => $tva,
-                    'total_ht' => $totalHt,
+                    'tva'              => $tva,
+                    'total_ht'         => $totalHt,
+                    'groupe_key'       => $key,
+                    'fait'             => (bool) ($faitRecord?->fait ?? false),
+                    'fait_info'        => ($faitRecord?->fait ?? false)
+                        ? 'par ' . ($faitRecord->faitPar?->name ?? '') . ' le ' . $faitRecord->fait_le?->format('d/m/Y H:i')
+                        : '',
                 ];
             })
             ->sortBy('produit')
@@ -484,7 +526,7 @@ class FactureController extends Controller
             $epreuveKey = $epreuveLabel($mod->engagement->epreuve ?? null);
             $pf = $mod->pf !== null ? number_format($mod->pf, 2) : 'null';
             return $mod->type->value . '|' . $epreuveKey . '|' . $paiement . '|' . $pf;
-        })->map(function ($items, $key) use ($epreuveLabel, $useNomEpreuve) {
+        })->map(function ($items, $key) use ($epreuveLabel, $useNomEpreuve, $caisseFaits) {
             $first = $items->first();
             $epreuveKey = $epreuveLabel($first->engagement->epreuve ?? null);
             $label = $useNomEpreuve
@@ -494,15 +536,21 @@ class FactureController extends Controller
             $pf = $first->pf;
             $totalTtc = $items->sum('prix');
             $puHt = $this->calculateModificationHt((float) $first->prix, $pf);
+            $faitRecord = $caisseFaits->get('modification|' . $key);
             return [
-                'label' => $label,
-                'type' => $first->type->value,
+                'label'          => $label,
+                'type'           => $first->type->value,
                 'epreuve_numero' => $epreuveKey,
-                'paiement' => $paiement,
-                'quantite' => $items->count(),
-                'total' => $totalTtc,
-                'pf' => $pf,
-                'pu_ht' => $puHt,
+                'paiement'       => $paiement,
+                'quantite'       => $items->count(),
+                'total'          => $totalTtc,
+                'pf'             => $pf,
+                'pu_ht'          => $puHt,
+                'groupe_key'     => $key,
+                'fait'           => (bool) ($faitRecord?->fait ?? false),
+                'fait_info'      => ($faitRecord?->fait ?? false)
+                    ? 'par ' . ($faitRecord->faitPar?->name ?? '') . ' le ' . $faitRecord->fait_le?->format('d/m/Y H:i')
+                    : '',
             ];
         })->sortBy(['type', 'epreuve_numero'])
             ->values();
