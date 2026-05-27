@@ -124,12 +124,12 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/factures/export-csv', [FactureController::class, 'exportCsv'])->name('factures.export-csv');
         Route::get('/factures/print', [FactureController::class, 'print'])->name('factures.print');
         Route::get('/factures/caisse', [FactureController::class, 'caisse'])->name('factures.caisse');
+        Route::patch('/factures/caisse/toggle-faite', [FactureController::class, 'toggleCaisseFaite'])->name('factures.caisse.toggle-faite')->middleware('role:compta');
+        Route::patch('/factures/caisse/toggle-item-fait', [FactureController::class, 'toggleCaisseItemFait'])->name('factures.caisse.toggle-item-fait')->middleware('role:compta');
         Route::get('/factures/{client}', [FactureController::class, 'show'])->name('factures.show');
         Route::patch('/factures/{client}/update-client', [FactureController::class, 'updateClient'])->name('factures.update-client');
         Route::patch('/factures/{client}/commentaire', [FactureController::class, 'updateCommentaire'])->name('factures.update-commentaire');
         Route::patch('/factures/{client}/toggle-faite', [FactureController::class, 'toggleFaite'])->name('factures.toggle-faite')->middleware('role:compta');
-        Route::patch('/factures/caisse/toggle-faite', [FactureController::class, 'toggleCaisseFaite'])->name('factures.caisse.toggle-faite')->middleware('role:compta');
-        Route::patch('/factures/caisse/toggle-item-fait', [FactureController::class, 'toggleCaisseItemFait'])->name('factures.caisse.toggle-item-fait')->middleware('role:compta');
 
         // Statistiques (FFE SIF Open)
         Route::get('/statistiques', [StatistiqueController::class, 'index'])->name('statistiques.index');
