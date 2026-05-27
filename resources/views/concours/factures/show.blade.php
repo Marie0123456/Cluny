@@ -422,7 +422,7 @@
                         <table class="min-w-full divide-y divide-gray-200">
                             <thead class="bg-gray-50">
                                 <tr>
-                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">{{ $useNomEpreuve ? 'Épreuve' : 'N° Épreuve' }}</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Épreuve</th>
                                     <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
                                         <div>Cavalier</div>
                                         <input x-model="filterCavalier" type="text" placeholder="Filtrer..."
