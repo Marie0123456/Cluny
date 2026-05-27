@@ -226,7 +226,64 @@
 
             <!-- Ventes -->
             @if ($ventes->isNotEmpty())
-                <div class="bg-white shadow-sm sm:rounded-lg mb-6">
+                @php
+                    $ventesData = [];
+                    foreach ($ventes as $vente) {
+                        $paiements = array_values(array_filter([
+                            $vente->paiement_cb       ? 'CB'       : null,
+                            $vente->paiement_especes  ? 'Espèces'  : null,
+                            $vente->paiement_cheque   ? 'Chèque'   : null,
+                            $vente->paiement_internet ? 'Internet'  : null,
+                            $vente->paiement_virement ? 'Virement'  : null,
+                        ]));
+                        foreach ($vente->lignes as $ligne) {
+                            $tvaPct   = (float) $ligne->produit->tva;
+                            $puTtc    = (float) $ligne->prix_unitaire_ttc;
+                            $puHt     = round($puTtc / (1 + $tvaPct / 100), 2);
+                            $totalTtc = (float) $ligne->total_ttc;
+                            $totalHt  = round($totalTtc / (1 + $tvaPct / 100), 2);
+                            $ventesData[] = [
+                                'client'      => $vente->nom_client ?? '',
+                                'commentaire' => $vente->commentaire ?? '',
+                                'produit'     => $ligne->produit->nom,
+                                'quantite'    => (int) $ligne->quantite,
+                                'puHt'        => $puHt,
+                                'puTtc'       => $puTtc,
+                                'tva'         => $tvaPct,
+                                'totalHt'     => $totalHt,
+                                'totalTtc'    => $totalTtc,
+                                'paiements'   => $paiements,
+                                'paiement'    => implode(', ', $paiements) ?: '-',
+                                'date'        => $vente->jour_paiement ? $vente->jour_paiement->format('d/m/Y') : '-',
+                            ];
+                        }
+                    }
+                @endphp
+                <div class="bg-white shadow-sm sm:rounded-lg mb-6"
+                     x-data="{
+                         rows: @js($ventesData),
+                         filterProduit: '',
+                         filterPaiement: '',
+                         get filteredRows() {
+                             return this.rows.filter(r => {
+                                 if (this.filterProduit  && !r.produit.toLowerCase().includes(this.filterProduit.toLowerCase())) return false;
+                                 if (this.filterPaiement && !r.paiements.includes(this.filterPaiement)) return false;
+                                 return true;
+                             });
+                         },
+                         get totalTtc() { return this.filteredRows.reduce((s, r) => s + r.totalTtc, 0); },
+                         fmt(n) { return n.toLocaleString('fr-FR', {minimumFractionDigits: 2, maximumFractionDigits: 2}); },
+                         paiementBadge(p) {
+                             const map = {
+                                 'CB':       'bg-blue-100 text-blue-800',
+                                 'Espèces':  'bg-green-100 text-green-800',
+                                 'Chèque':   'bg-yellow-100 text-yellow-800',
+                                 'Internet': 'bg-purple-100 text-purple-800',
+                                 'Virement': 'bg-indigo-100 text-indigo-800',
+                             };
+                             return 'inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ' + (map[p] ?? 'bg-gray-100 text-gray-600');
+                         },
+                     }">
                     <div class="px-4 pt-4">
                         <h3 class="text-lg font-medium text-gray-900">Ventes</h3>
                     </div>
@@ -235,58 +292,63 @@
                             <thead class="bg-gray-50">
                                 <tr>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Client</th>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Produit</th>
-                                    <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Qte</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                        <div>Produit</div>
+                                        <input x-model="filterProduit" type="text" placeholder="Filtrer..."
+                                            class="mt-1 block w-full text-xs font-normal normal-case border-gray-300 rounded shadow-sm focus:ring-indigo-500 focus:border-indigo-500 py-0.5 px-2">
+                                    </th>
+                                    <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Qté</th>
+                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">P.U. HT</th>
                                     <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">P.U. TTC</th>
                                     <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">TVA</th>
                                     <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Total HT</th>
                                     <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Total TTC</th>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Paiement</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                        <div>Paiement</div>
+                                        <select x-model="filterPaiement"
+                                            class="mt-1 block w-full text-xs font-normal normal-case border-gray-300 rounded shadow-sm focus:ring-indigo-500 focus:border-indigo-500 py-0.5 px-1">
+                                            <option value="">Tous</option>
+                                            <option value="CB">CB</option>
+                                            <option value="Espèces">Espèces</option>
+                                            <option value="Chèque">Chèque</option>
+                                            <option value="Internet">Internet</option>
+                                            <option value="Virement">Virement</option>
+                                        </select>
+                                    </th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200">
-                                @foreach ($ventes as $vente)
-                                    @php $ligneCount = $vente->lignes->count(); @endphp
-                                    @foreach ($vente->lignes as $index => $ligne)
-                                        <tr class="{{ $index === 0 ? 'border-t-2 border-gray-300' : '' }}">
-                                            @if ($index === 0)
-                                                <td class="px-4 py-3 text-sm font-medium text-gray-900" rowspan="{{ $ligneCount }}">
-                                                    {{ $vente->nom_client }}
-                                                    @if ($vente->commentaire)
-                                                        <div class="text-xs font-normal text-amber-700 bg-amber-50 rounded px-2 py-1 mt-1">{{ $vente->commentaire }}</div>
-                                                    @endif
-                                                </td>
-                                            @endif
-                                            <td class="px-4 py-3 text-sm text-gray-900">{{ $ligne->produit->nom }}</td>
-                                            <td class="px-4 py-3 text-sm text-gray-900 text-center">{{ $ligne->quantite }}</td>
-                                            <td class="px-4 py-3 text-sm text-gray-900 text-right">{{ number_format($ligne->prix_unitaire_ttc, 2, ',', ' ') }} &euro;</td>
-                                            <td class="px-4 py-3 text-sm text-gray-900 text-right">{{ number_format($ligne->produit->tva, 1) }}%</td>
-                                            @php
-                                                $totalHt = round($ligne->total_ttc / (1 + $ligne->produit->tva / 100), 2);
-                                            @endphp
-                                            <td class="px-4 py-3 text-sm text-gray-900 text-right">{{ number_format($totalHt, 2, ',', ' ') }} &euro;</td>
-                                            <td class="px-4 py-3 text-sm text-gray-900 font-medium text-right">{{ number_format($ligne->total_ttc, 2, ',', ' ') }} &euro;</td>
-                                            @if ($index === 0)
-                                                <td class="px-4 py-3 text-sm text-gray-500" rowspan="{{ $ligneCount }}">
-                                                    @if ($vente->paiement_cb)<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">CB</span>@endif
-                                                    @if ($vente->paiement_especes)<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">Espèces</span>@endif
-                                                    @if ($vente->paiement_cheque)<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">Chèque</span>@endif
-                                                    @if ($vente->paiement_internet)<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800">Internet</span>@endif
-                                                    @if ($vente->paiement_virement)<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-indigo-100 text-indigo-800">Virement</span>@endif
-                                                </td>
-                                                <td class="px-4 py-3 text-sm text-gray-500" rowspan="{{ $ligneCount }}">
-                                                    {{ $vente->jour_paiement ? $vente->jour_paiement->format('d/m/Y') : '-' }}
-                                                </td>
-                                            @endif
-                                        </tr>
-                                    @endforeach
-                                @endforeach
+                                <template x-for="(r, i) in filteredRows" :key="i">
+                                    <tr>
+                                        <td class="px-4 py-3 text-sm font-medium text-gray-900">
+                                            <span x-text="r.client"></span>
+                                            <div x-show="r.commentaire" class="text-xs font-normal text-amber-700 bg-amber-50 rounded px-2 py-1 mt-1" x-text="r.commentaire"></div>
+                                        </td>
+                                        <td class="px-4 py-3 text-sm text-gray-900" x-text="r.produit"></td>
+                                        <td class="px-4 py-3 text-sm text-gray-900 text-center" x-text="r.quantite"></td>
+                                        <td class="px-4 py-3 text-sm text-gray-900 text-right" x-text="fmt(r.puHt) + ' €'"></td>
+                                        <td class="px-4 py-3 text-sm text-gray-900 text-right" x-text="fmt(r.puTtc) + ' €'"></td>
+                                        <td class="px-4 py-3 text-sm text-gray-900 text-right" x-text="r.tva.toFixed(1) + '%'"></td>
+                                        <td class="px-4 py-3 text-sm text-gray-900 text-right" x-text="fmt(r.totalHt) + ' €'"></td>
+                                        <td class="px-4 py-3 text-sm text-gray-900 font-medium text-right" x-text="fmt(r.totalTtc) + ' €'"></td>
+                                        <td class="px-4 py-3 text-sm text-gray-500">
+                                            <template x-for="p in r.paiements" :key="p">
+                                                <span :class="paiementBadge(p)" x-text="p"></span>
+                                            </template>
+                                            <span x-show="r.paiements.length === 0" class="text-gray-400">-</span>
+                                        </td>
+                                        <td class="px-4 py-3 text-sm text-gray-500" x-text="r.date"></td>
+                                    </tr>
+                                </template>
+                                <tr x-show="filteredRows.length === 0">
+                                    <td colspan="10" class="px-4 py-6 text-sm text-gray-400 text-center italic">Aucune vente pour ces filtres.</td>
+                                </tr>
                             </tbody>
                             <tfoot class="bg-gray-50">
                                 <tr>
-                                    <td colspan="6" class="px-4 py-3 text-sm font-bold text-gray-900 text-right">Sous-total ventes</td>
-                                    <td class="px-4 py-3 text-sm font-bold text-gray-900 text-right">{{ number_format($totalVentes, 2, ',', ' ') }} &euro;</td>
+                                    <td colspan="7" class="px-4 py-3 text-sm font-bold text-gray-900 text-right">Sous-total ventes</td>
+                                    <td class="px-4 py-3 text-sm font-bold text-gray-900 text-right"><span x-text="fmt(totalTtc)"></span> &euro;</td>
                                     <td colspan="2"></td>
                                 </tr>
                             </tfoot>
@@ -298,9 +360,10 @@
             <!-- Modifications -->
             @if ($modifications->isNotEmpty())
                 @php
-                    $useNomEpreuve = $concours->type_ffe_sif && !$concours->type_ffe_compet;
-                    $epreuveLabel  = fn($ep) => $ep ? ($useNomEpreuve ? $ep->nom : $ep->numero) : '-';
-                    $tva           = config('ehnc.tva_modifications');
+                    $epreuveLabel = fn($ep) => $ep
+                        ? (($ep->numero ? $ep->numero . ' - ' : '') . $ep->nom)
+                        : '-';
+                    $tva = config('ehnc.tva_modifications');
 
                     $modsData = $modifications->map(function ($mod) use ($epreuveLabel, $tva) {
                         $pf   = $mod->pf !== null ? (float) $mod->pf : null;
