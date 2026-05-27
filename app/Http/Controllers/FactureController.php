@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\CaisseFait;
 use App\Models\ClientFacturation;
+use App\Models\FactureClientFait;
 use App\Models\Concours;
 use App\Models\FactureCommentaire;
 use App\Models\Modification;
@@ -418,6 +419,36 @@ class FactureController extends Controller
         $totalModifications = $modifications->sum('prix');
 
         return [$ventes, $modifications, $totalVentes, $totalModifications];
+    }
+
+    public function toggleClientFait(Request $request, Concours $concours, ClientFacturation $client)
+    {
+        $validated = $request->validate([
+            'section' => 'required|in:vente,modification',
+            'item_id' => 'required|integer',
+        ]);
+
+        $record = FactureClientFait::firstOrNew([
+            'concours_id'           => $concours->id,
+            'client_facturation_id' => $client->id,
+            'section'               => $validated['section'],
+            'item_id'               => $validated['item_id'],
+        ]);
+        $record->fait = !($record->fait ?? false);
+        if ($record->fait) {
+            $record->fait_par_id = auth()->id();
+            $record->fait_le     = now();
+        } else {
+            $record->fait_par_id = null;
+            $record->fait_le     = null;
+        }
+        $record->save();
+
+        $info = $record->fait
+            ? 'par ' . auth()->user()->name . ' le ' . now()->format('d/m/Y H:i')
+            : '';
+
+        return response()->json(['fait' => $record->fait, 'fait_info' => $info]);
     }
 
     public function toggleCaisseItemFait(Request $request, Concours $concours)

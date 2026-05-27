@@ -227,6 +227,14 @@
             <!-- Ventes -->
             @if ($ventes->isNotEmpty())
                 @php
+                    $canCompta = auth()->user()->can('compta');
+                    $ligneIds = $ventes->flatMap(fn($v) => $v->lignes->pluck('id'))->all();
+                    $venteFaits = \App\Models\FactureClientFait::where('concours_id', $concours->id)
+                        ->where('client_facturation_id', $client->id)
+                        ->where('section', 'vente')
+                        ->whereIn('item_id', $ligneIds)
+                        ->with('faitPar')
+                        ->get()->keyBy('item_id');
                     $ventesData = [];
                     foreach ($ventes as $vente) {
                         $paiements = array_values(array_filter([
@@ -242,7 +250,9 @@
                             $puHt     = round($puTtc / (1 + $tvaPct / 100), 2);
                             $totalTtc = (float) $ligne->total_ttc;
                             $totalHt  = round($totalTtc / (1 + $tvaPct / 100), 2);
+                            $faitRec  = $venteFaits[$ligne->id] ?? null;
                             $ventesData[] = [
+                                'ligne_id'    => $ligne->id,
                                 'client'      => $vente->nom_client ?? '',
                                 'commentaire' => $vente->commentaire ?? '',
                                 'produit'     => $ligne->produit->nom,
@@ -255,6 +265,10 @@
                                 'paiements'   => $paiements,
                                 'paiement'    => implode(', ', $paiements) ?: '-',
                                 'date'        => $vente->jour_paiement ? $vente->jour_paiement->format('d/m/Y') : '-',
+                                'fait'        => (bool) ($faitRec?->fait ?? false),
+                                'fait_info'   => ($faitRec?->fait ?? false)
+                                    ? 'par ' . ($faitRec->faitPar?->name ?? '') . ' le ' . $faitRec->fait_le?->format('d/m/Y H:i')
+                                    : '',
                             ];
                         }
                     }
@@ -263,6 +277,7 @@
                 <div class="bg-white shadow-sm sm:rounded-lg mb-6"
                      x-data="{
                          rows: @js($ventesData),
+                         canCompta: @js($canCompta),
                          filterProduit: '',
                          filterPuHt: '',
                          filterPaiement: '',
@@ -278,6 +293,18 @@
                          get totalHt()       { return this.filteredRows.reduce((s, r) => s + r.totalHt,  0); },
                          get totalTtc()      { return this.filteredRows.reduce((s, r) => s + r.totalTtc, 0); },
                          fmt(n) { return n.toLocaleString('fr-FR', {minimumFractionDigits: 2, maximumFractionDigits: 2}); },
+                         async toggleFait(r) {
+                             const res = await fetch('{{ route('concours.factures.toggle-item-fait', [$concours, $client]) }}', {
+                                 method: 'PATCH',
+                                 headers: {
+                                     'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content,
+                                     'Content-Type': 'application/json',
+                                     'Accept': 'application/json',
+                                 },
+                                 body: JSON.stringify({ section: 'vente', item_id: r.ligne_id }),
+                             });
+                             if (res.ok) { const d = await res.json(); r.fait = d.fait; r.fait_info = d.fait_info; }
+                         },
                          paiementBadge(p) {
                              const map = {
                                  'CB':       'bg-blue-100 text-blue-800',
@@ -331,11 +358,14 @@
                                         </select>
                                     </th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                                    @can('compta')
+                                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Fait</th>
+                                    @endcan
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200">
                                 <template x-for="(r, i) in filteredRows" :key="i">
-                                    <tr>
+                                    <tr :class="r.fait ? 'bg-green-50' : ''">
                                         <td class="px-4 py-3 text-sm font-medium text-gray-900">
                                             <span x-text="r.client"></span>
                                             <div x-show="r.commentaire" class="text-xs font-normal text-amber-700 bg-amber-50 rounded px-2 py-1 mt-1" x-text="r.commentaire"></div>
@@ -354,10 +384,21 @@
                                             <span x-show="r.paiements.length === 0" class="text-gray-400">-</span>
                                         </td>
                                         <td class="px-4 py-3 text-sm text-gray-500" x-text="r.date"></td>
+                                        <template x-if="canCompta">
+                                            <td class="px-4 py-3 text-center">
+                                                <div class="flex flex-col items-center gap-1">
+                                                    <input type="checkbox" :checked="r.fait"
+                                                        @click.prevent="toggleFait(r)"
+                                                        class="rounded border-gray-300 text-green-600 shadow-sm focus:ring-green-500 cursor-pointer">
+                                                    <span x-show="r.fait && r.fait_info" x-text="r.fait_info"
+                                                        class="text-xs text-gray-400 max-w-[120px] truncate"></span>
+                                                </div>
+                                            </td>
+                                        </template>
                                     </tr>
                                 </template>
                                 <tr x-show="filteredRows.length === 0">
-                                    <td colspan="10" class="px-4 py-6 text-sm text-gray-400 text-center italic">Aucune vente pour ces filtres.</td>
+                                    <td colspan="{{ auth()->user()->can('compta') ? 11 : 10 }}" class="px-4 py-6 text-sm text-gray-400 text-center italic">Aucune vente pour ces filtres.</td>
                                 </tr>
                             </tbody>
                             <tfoot class="bg-gray-50">
@@ -365,16 +406,19 @@
                                     <td colspan="2" class="px-4 py-2 text-xs text-gray-500 text-right">Sous-total quantité</td>
                                     <td class="px-4 py-2 text-xs font-medium text-gray-700 text-center" x-text="totalQuantite"></td>
                                     <td colspan="7"></td>
+                                    @can('compta')<td></td>@endcan
                                 </tr>
                                 <tr>
                                     <td colspan="6" class="px-4 py-2 text-xs text-gray-500 text-right">Sous-total Total HT</td>
                                     <td class="px-4 py-2 text-xs font-medium text-gray-700 text-right" x-text="fmt(totalHt) + ' €'"></td>
                                     <td colspan="3"></td>
+                                    @can('compta')<td></td>@endcan
                                 </tr>
                                 <tr class="border-t border-gray-200">
                                     <td colspan="7" class="px-4 py-3 text-sm font-bold text-gray-900 text-right">Sous-total ventes</td>
                                     <td class="px-4 py-3 text-sm font-bold text-gray-900 text-right"><span x-text="fmt(totalTtc)"></span> &euro;</td>
                                     <td colspan="2"></td>
+                                    @can('compta')<td></td>@endcan
                                 </tr>
                             </tfoot>
                         </table>
@@ -385,12 +429,19 @@
             <!-- Modifications -->
             @if ($modifications->isNotEmpty())
                 @php
+                    $canCompta = auth()->user()->can('compta');
                     $epreuveLabel = fn($ep) => $ep
                         ? (($ep->numero ? $ep->numero . ' - ' : '') . $ep->nom)
                         : '-';
                     $tva = config('ehnc.tva_modifications');
+                    $modFaits = \App\Models\FactureClientFait::where('concours_id', $concours->id)
+                        ->where('client_facturation_id', $client->id)
+                        ->where('section', 'modification')
+                        ->whereIn('item_id', $modifications->pluck('id')->all())
+                        ->with('faitPar')
+                        ->get()->keyBy('item_id');
 
-                    $modsData = $modifications->map(function ($mod) use ($epreuveLabel, $tva) {
+                    $modsData = $modifications->map(function ($mod) use ($epreuveLabel, $tva, $modFaits) {
                         $pf   = $mod->pf !== null ? (float) $mod->pf : null;
                         $puHt = ($mod->prix && $mod->pf !== null)
                             ? round(($mod->prix - $mod->pf) / (1 + $tva / 100), 2)
@@ -402,7 +453,9 @@
                             $mod->paiement_internet ? 'Internet'  : null,
                             $mod->paiement_virement ? 'Virement'  : null,
                         ]));
+                        $faitRec = $modFaits[$mod->id] ?? null;
                         return [
+                            'mod_id'    => $mod->id,
                             'epreuve'   => (string) $epreuveLabel($mod->engagement->epreuve ?? null),
                             'cavalier'  => trim(($mod->engagement->cavalier->prenom ?? '') . ' ' . ($mod->engagement->cavalier->nom ?? '')),
                             'cheval'    => $mod->engagement->cheval->nom ?? '-',
@@ -415,6 +468,10 @@
                             'paiements' => $paiements,
                             'paiement'  => implode(', ', $paiements) ?: '-',
                             'date'      => $mod->jour_paiement ? $mod->jour_paiement->format('d/m/Y') : '-',
+                            'fait'      => (bool) ($faitRec?->fait ?? false),
+                            'fait_info' => ($faitRec?->fait ?? false)
+                                ? 'par ' . ($faitRec->faitPar?->name ?? '') . ' le ' . $faitRec->fait_le?->format('d/m/Y H:i')
+                                : '',
                         ];
                     })->toArray();
 
@@ -430,6 +487,7 @@
                 @endphp
                 <div class="bg-white shadow-sm sm:rounded-lg" x-data="{
                     mods: @js($modsData),
+                    canCompta: @js($canCompta),
                     filterType: '',
                     filterCavalier: '',
                     filterPuHt: '',
@@ -446,7 +504,19 @@
                     get totalPrix() { return this.filteredMods.reduce((s, m) => s + (m.prix  ?? 0), 0); },
                     get totalPf()   { return this.filteredMods.reduce((s, m) => s + (m.pf    ?? 0), 0); },
                     get totalPuHt() { return this.filteredMods.reduce((s, m) => s + (m.puHt  ?? 0), 0); },
-                    fmt(n) { return n.toLocaleString('fr-FR', {minimumFractionDigits: 2, maximumFractionDigits: 2}); }
+                    fmt(n) { return n.toLocaleString('fr-FR', {minimumFractionDigits: 2, maximumFractionDigits: 2}); },
+                    async toggleFait(m) {
+                        const res = await fetch('{{ route('concours.factures.toggle-item-fait', [$concours, $client]) }}', {
+                            method: 'PATCH',
+                            headers: {
+                                'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content,
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json',
+                            },
+                            body: JSON.stringify({ section: 'modification', item_id: m.mod_id }),
+                        });
+                        if (res.ok) { const d = await res.json(); m.fait = d.fait; m.fait_info = d.fait_info; }
+                    }
                 }">
                     <div class="px-4 pt-4">
                         <h3 class="text-lg font-medium text-gray-900">Modifications payantes</h3>
@@ -498,11 +568,14 @@
                                         </select>
                                     </th>
                                     <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                                    @can('compta')
+                                        <th class="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase">Fait</th>
+                                    @endcan
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200">
                                 <template x-for="(m, i) in filteredMods" :key="i">
-                                    <tr>
+                                    <tr :class="m.fait ? 'bg-green-50' : ''">
                                         <td class="px-4 py-3 text-sm text-gray-900 font-medium" x-text="m.epreuve"></td>
                                         <td class="px-4 py-3 text-sm text-gray-900" x-text="m.cavalier"></td>
                                         <td class="px-4 py-3 text-sm text-gray-900" x-text="m.cheval"></td>
@@ -514,10 +587,21 @@
                                         <td class="px-4 py-3 text-sm text-gray-900 font-medium text-right" x-text="m.prix !== null ? fmt(m.prix) + ' €' : '-'"></td>
                                         <td class="px-4 py-3 text-sm text-gray-500" x-text="m.paiement"></td>
                                         <td class="px-4 py-3 text-sm text-gray-500" x-text="m.date"></td>
+                                        <template x-if="canCompta">
+                                            <td class="px-4 py-3 text-center">
+                                                <div class="flex flex-col items-center gap-1">
+                                                    <input type="checkbox" :checked="m.fait"
+                                                        @click.prevent="toggleFait(m)"
+                                                        class="rounded border-gray-300 text-green-600 shadow-sm focus:ring-green-500 cursor-pointer">
+                                                    <span x-show="m.fait && m.fait_info" x-text="m.fait_info"
+                                                        class="text-xs text-gray-400 max-w-[120px] truncate"></span>
+                                                </div>
+                                            </td>
+                                        </template>
                                     </tr>
                                 </template>
                                 <tr x-show="filteredMods.length === 0">
-                                    <td colspan="9" class="px-4 py-6 text-sm text-gray-400 text-center italic">Aucune modification pour ces filtres.</td>
+                                    <td colspan="{{ auth()->user()->can('compta') ? 10 : 9 }}" class="px-4 py-6 text-sm text-gray-400 text-center italic">Aucune modification pour ces filtres.</td>
                                 </tr>
                             </tbody>
                             <tfoot class="bg-gray-50">
@@ -525,16 +609,19 @@
                                     <td colspan="4" class="px-4 py-2 text-xs text-gray-500 text-right">Sous-total PF</td>
                                     <td class="px-4 py-2 text-xs font-medium text-gray-700 text-right" x-text="fmt(totalPf) + ' €'"></td>
                                     <td colspan="4" class="px-4 py-2"></td>
+                                    @can('compta')<td></td>@endcan
                                 </tr>
                                 <tr>
                                     <td colspan="5" class="px-4 py-2 text-xs text-gray-500 text-right">Sous-total P.U. HT</td>
                                     <td class="px-4 py-2 text-xs font-medium text-gray-700 text-right" x-text="fmt(totalPuHt) + ' €'"></td>
                                     <td colspan="3" class="px-4 py-2"></td>
+                                    @can('compta')<td></td>@endcan
                                 </tr>
                                 <tr class="border-t border-gray-200">
                                     <td colspan="6" class="px-4 py-3 text-sm font-bold text-gray-900 text-right">Sous-total modifications</td>
                                     <td class="px-4 py-3 text-sm font-bold text-gray-900 text-right" x-text="fmt(totalPrix) + ' €'"></td>
                                     <td colspan="2"></td>
+                                    @can('compta')<td></td>@endcan
                                 </tr>
                             </tfoot>
                         </table>
