@@ -42,21 +42,27 @@
                     $ventesGroupedData = $ventesGrouped->map(fn($g) => [
                         'produit'   => $g['produit'],
                         'quantite'  => (int) $g['quantite'],
+                        'puHt'      => round((float) $g['prix_unitaire_ttc'] / (1 + (float) $g['tva'] / 100), 2),
                         'puTtc'     => (float) $g['prix_unitaire_ttc'],
                         'tva'       => (float) $g['tva'],
                         'totalHt'   => (float) $g['total_ht'],
                         'totalTtc'  => (float) $g['total'],
                         'paiements' => array_values(array_filter(explode(', ', $g['paiement']), fn($p) => $p !== '')),
                     ])->values()->toArray();
+                    $distinctPuHt = $ventesGrouped
+                        ->map(fn($g) => round((float) $g['prix_unitaire_ttc'] / (1 + (float) $g['tva'] / 100), 2))
+                        ->unique()->sort()->values()->toArray();
                 @endphp
                 <div class="bg-white shadow-sm sm:rounded-lg mb-6"
                      x-data="{
                          rows: @js($ventesGroupedData),
                          filterProduit: '',
+                         filterPuHt: '',
                          filterPaiement: '',
                          get filteredRows() {
                              return this.rows.filter(r => {
                                  if (this.filterProduit  && !r.produit.toLowerCase().includes(this.filterProduit.toLowerCase())) return false;
+                                 if (this.filterPuHt !== '' && parseFloat(r.puHt).toFixed(2) !== parseFloat(this.filterPuHt).toFixed(2)) return false;
                                  if (this.filterPaiement && !r.paiements.includes(this.filterPaiement)) return false;
                                  return true;
                              });
@@ -90,6 +96,17 @@
                                             class="mt-1 block w-full text-xs font-normal normal-case border-gray-300 rounded shadow-sm focus:ring-indigo-500 focus:border-indigo-500 py-0.5 px-2">
                                     </th>
                                     <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Quantité</th>
+                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">
+                                        <div class="flex flex-col items-end gap-1">
+                                            <span>P.U. HT</span>
+                                            <select x-model="filterPuHt" class="text-xs font-normal normal-case border border-gray-300 rounded px-1 py-0.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                                                <option value="">Tous</option>
+                                                @foreach ($distinctPuHt as $val)
+                                                    <option value="{{ $val }}">{{ number_format($val, 2, ',', ' ') }} €</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                    </th>
                                     <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">P.U. TTC</th>
                                     <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">TVA</th>
                                     <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Total HT</th>
@@ -113,6 +130,7 @@
                                     <tr>
                                         <td class="px-4 py-3 text-sm font-medium text-gray-900" x-text="r.produit"></td>
                                         <td class="px-4 py-3 text-sm text-gray-900 text-center" x-text="r.quantite"></td>
+                                        <td class="px-4 py-3 text-sm text-gray-900 text-right" x-text="fmt(r.puHt) + ' €'"></td>
                                         <td class="px-4 py-3 text-sm text-gray-900 text-right" x-text="fmt(r.puTtc) + ' €'"></td>
                                         <td class="px-4 py-3 text-sm text-gray-900 text-right" x-text="r.tva.toFixed(1) + '%'"></td>
                                         <td class="px-4 py-3 text-sm text-gray-900 text-right" x-text="fmt(r.totalHt) + ' €'"></td>
@@ -126,22 +144,22 @@
                                     </tr>
                                 </template>
                                 <tr x-show="filteredRows.length === 0">
-                                    <td colspan="7" class="px-4 py-6 text-sm text-gray-400 text-center italic">Aucune vente pour ces filtres.</td>
+                                    <td colspan="8" class="px-4 py-6 text-sm text-gray-400 text-center italic">Aucune vente pour ces filtres.</td>
                                 </tr>
                             </tbody>
                             <tfoot class="bg-gray-50">
                                 <tr>
                                     <td class="px-4 py-2 text-xs text-gray-500 text-right">Sous-total quantité</td>
                                     <td class="px-4 py-2 text-xs font-medium text-gray-700 text-center" x-text="totalQuantite"></td>
-                                    <td colspan="5"></td>
+                                    <td colspan="6"></td>
                                 </tr>
                                 <tr>
-                                    <td colspan="4" class="px-4 py-2 text-xs text-gray-500 text-right">Sous-total Total HT</td>
+                                    <td colspan="5" class="px-4 py-2 text-xs text-gray-500 text-right">Sous-total Total HT</td>
                                     <td class="px-4 py-2 text-xs font-medium text-gray-700 text-right" x-text="fmt(totalHt) + ' €'"></td>
                                     <td colspan="2"></td>
                                 </tr>
                                 <tr class="border-t border-gray-200">
-                                    <td colspan="6" class="px-4 py-3 text-sm font-bold text-gray-900 text-right">Sous-total ventes</td>
+                                    <td colspan="7" class="px-4 py-3 text-sm font-bold text-gray-900 text-right">Sous-total ventes</td>
                                     <td class="px-4 py-3 text-sm font-bold text-gray-900 text-right"><span x-text="fmt(totalTtc)"></span> &euro;</td>
                                 </tr>
                             </tfoot>
