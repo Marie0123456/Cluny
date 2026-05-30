@@ -518,7 +518,7 @@ class FactureController extends Controller
             }
         }
 
-        $ventesGrouped = $ventesFlat->groupBy(fn($item) => $item['produit'] . '|' . $item['paiement'])
+        $ventesGrouped = $ventesFlat->groupBy(fn($item) => $item['produit'] . '|' . $item['paiement'] . '|' . number_format($item['prix_unitaire_ttc'], 2))
             ->map(function ($items, $key) use ($caisseFaits) {
                 $first = $items->first();
                 $totalTtc = $items->sum('total');
