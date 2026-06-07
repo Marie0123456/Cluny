@@ -71,10 +71,16 @@ class VenteController extends Controller
             $aRetirer = $request->boolean('a_retirer');
             $clientFacturationId = $this->resolveClientFacturation($validated, $request->boolean('facture'));
 
+            $aucunPaiement = !$request->boolean('paiement_cb')
+                && !$request->boolean('paiement_especes')
+                && !$request->boolean('paiement_cheque')
+                && !$request->boolean('paiement_internet')
+                && !$request->boolean('paiement_virement');
+
             $vente = Vente::create([
                 'concours_id' => $concours->id,
                 'nom_client' => $validated['nom_client'],
-                'jour_paiement' => $validated['jour_paiement'] ?? null,
+                'jour_paiement' => $aucunPaiement ? null : ($validated['jour_paiement'] ?? null),
                 'paiement_cb' => $request->boolean('paiement_cb'),
                 'paiement_especes' => $request->boolean('paiement_especes'),
                 'paiement_cheque' => $request->boolean('paiement_cheque'),
@@ -182,6 +188,12 @@ class VenteController extends Controller
 
         DB::transaction(function () use ($validated, $vente, $request) {
             $aRetirer = $request->boolean('a_retirer');
+            $aucunPaiement = !$request->boolean('paiement_cb')
+                && !$request->boolean('paiement_especes')
+                && !$request->boolean('paiement_cheque')
+                && !$request->boolean('paiement_internet')
+                && !$request->boolean('paiement_virement');
+
             $clientFacturationId = null;
             if ($request->boolean('facture') && !empty($validated['nom_facturation'])) {
                 $client = ClientFacturation::updateOrCreateByNom(
@@ -197,7 +209,7 @@ class VenteController extends Controller
 
             $vente->update([
                 'nom_client' => $validated['nom_client'],
-                'jour_paiement' => $validated['jour_paiement'] ?? null,
+                'jour_paiement' => $aucunPaiement ? null : ($validated['jour_paiement'] ?? null),
                 'paiement_cb' => $request->boolean('paiement_cb'),
                 'paiement_especes' => $request->boolean('paiement_especes'),
                 'paiement_cheque' => $request->boolean('paiement_cheque'),
