@@ -551,12 +551,12 @@ class FactureController extends Controller
             return $useNomEpreuve ? ($epreuve->nom ?: '?') : ($epreuve->numero ?: '?');
         };
 
-        // Grouper les modifications par type + épreuve + mode de paiement + PF
+        // Grouper les modifications par type + épreuve + mode de paiement + PF + prix
         $modificationsGrouped = $caisseModifications->groupBy(function ($mod) use ($epreuveLabel) {
             $paiement = $this->getPaiementLabel($mod);
             $epreuveKey = $epreuveLabel($mod->engagement->epreuve ?? null);
             $pf = $mod->pf !== null ? number_format($mod->pf, 2) : 'null';
-            return $mod->type->value . '|' . $epreuveKey . '|' . $paiement . '|' . $pf;
+            return $mod->type->value . '|' . $epreuveKey . '|' . $paiement . '|' . $pf . '|' . number_format((float) $mod->prix, 2);
         })->map(function ($items, $key) use ($epreuveLabel, $useNomEpreuve, $caisseFaits) {
             $first = $items->first();
             $epreuveKey = $epreuveLabel($first->engagement->epreuve ?? null);
