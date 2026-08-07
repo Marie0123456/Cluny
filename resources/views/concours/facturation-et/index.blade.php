@@ -236,7 +236,19 @@
                                                 @csrf
                                                 @method('PATCH')
 
-                                                <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                                                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                                    {{-- Prix TTC --}}
+                                                    <div>
+                                                        <label class="block text-xs font-medium text-gray-500 mb-1">Prix TTC (€)</label>
+                                                        <input type="number" name="prix" value="{{ $mod->prix }}" step="0.01" min="0"
+                                                            class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                                                    </div>
+                                                    {{-- PF --}}
+                                                    <div>
+                                                        <label class="block text-xs font-medium text-gray-500 mb-1">Part fédérale (€)</label>
+                                                        <input type="number" name="pf" value="{{ $mod->pf }}" step="0.01" min="0"
+                                                            class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                                                    </div>
                                                     {{-- Jour de paiement --}}
                                                     <div>
                                                         <label class="block text-xs font-medium text-gray-500 mb-1">Jour de paiement</label>
