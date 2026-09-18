@@ -1577,7 +1577,7 @@
                                         </td>
                                         <td class="px-4 py-2 text-sm text-right">
                                             <div class="flex justify-end space-x-2">
-                                                @can('admin')
+                                                @canany(['admin', 'chronometreur'])
                                                 @if (in_array($mod->statut->value, ['cree', 'fait', 'modifie']) && $mod->type->isEditable())
                                                     <button type="button" onclick="toggleEditRow({{ $mod->id }})" class="text-indigo-600 hover:text-indigo-800 text-xs font-medium">Editer</button>
                                                 @endif
@@ -1592,12 +1592,12 @@
                                                         <button type="submit" class="text-red-600 hover:text-red-800 text-xs font-medium">Supprimer</button>
                                                     </form>
                                                 @endif
-                                                @endcan
+                                                @endcanany
                                             </div>
                                         </td>
                                     </tr>
                                     {{-- Inline edit row --}}
-                                    @can('admin')
+                                    @canany(['admin', 'chronometreur'])
                                     @if (in_array($mod->statut->value, ['cree', 'fait', 'modifie']) && $mod->type->isEditable())
                                         <tr id="edit-row-{{ $mod->id }}" class="hidden bg-gray-50">
                                             <td colspan="{{ $concours->grand_national ? 8 : ($concours->type_ffe_sif ? 7 : 9) }}" class="px-4 py-4">
@@ -1775,7 +1775,7 @@
                                             </td>
                                         </tr>
                                     @endif
-                                    @endcan
+                                    @endcanany
                                 @endforeach
                             </tbody>
                         </table>
