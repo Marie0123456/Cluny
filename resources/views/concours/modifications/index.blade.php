@@ -1234,7 +1234,7 @@
                                     </div>
                                 @endif
 
-                                @can('admin')
+                                @canany(['admin', 'chronometreur'])
                                 {{-- Actions --}}
                                 <div class="flex items-center gap-4 pt-2 border-t border-gray-100">
                                     @if (in_array($mod->statut->value, ['cree', 'fait', 'modifie']) && $mod->type->isEditable())
@@ -1252,9 +1252,9 @@
                                         </form>
                                     @endif
                                 </div>
-                                @endcan
+                                @endcanany
 
-                                @can('admin')
+                                @canany(['admin', 'chronometreur'])
                                 {{-- Inline edit (mobile) --}}
                                 @if (in_array($mod->statut->value, ['cree', 'fait', 'modifie']) && $mod->type->isEditable())
                                     <div id="edit-card-{{ $mod->id }}" class="hidden mt-3 pt-3 border-t border-gray-200">
@@ -1411,7 +1411,7 @@
                                         </form>
                                     </div>
                                 @endif
-                                @endcan
+                                @endcanany
                             </div>
                         @endforeach
                     </div>

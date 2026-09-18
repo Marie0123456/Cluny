@@ -174,8 +174,8 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/championnats/{championnat}/save-scores', [ChampionnatController::class, 'saveScores'])->name('championnats.save-scores');
     });
 
-    // Modification actions (admin seulement)
-    Route::middleware('role:admin')->group(function () {
+    // Modification actions (admin + chronométreur)
+    Route::middleware('role:admin,chronometreur')->group(function () {
         Route::patch('/modifications/{modification}/fait', [ModificationController::class, 'marquerFait'])->name('modifications.fait');
         Route::delete('/modifications/{modification}', [ModificationController::class, 'destroy'])->name('modifications.destroy');
         Route::patch('/modifications/{modification}/update-paiement', [ModificationController::class, 'updatePaiement'])->name('modifications.update-paiement');
