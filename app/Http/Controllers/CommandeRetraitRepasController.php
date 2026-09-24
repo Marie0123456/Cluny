@@ -57,7 +57,7 @@ class CommandeRetraitRepasController extends Controller
             'note_client' => 'Note du client',
         ];
 
-        $optionalColumns = ['note_client'];
+        $optionalColumns = ['note_client', 'emplacement_boxes'];
 
         $indexes = [];
         foreach ($columnMap as $key => $csvColumn) {
@@ -72,7 +72,7 @@ class CommandeRetraitRepasController extends Controller
         }
 
         $imported = 0;
-        $skipped = 0;
+        $updated = 0;
 
         while (($row = fgetcsv($handle, 0, ';')) !== false) {
             $numeroCommande = trim($row[$indexes['numero_commande']] ?? '');
@@ -82,15 +82,6 @@ class CommandeRetraitRepasController extends Controller
             }
 
             $produit = trim($row[$indexes['produit']] ?? '');
-            $exists = CommandeRetraitRepas::withTrashed()
-                ->where('concours_id', $concours->id)
-                ->where('numero_commande', $numeroCommande)
-                ->where('produit', $produit)
-                ->exists();
-            if ($exists) {
-                $skipped++;
-                continue;
-            }
 
             $dateStr = trim($row[$indexes['date_commande']] ?? '');
             $date = null;
@@ -102,29 +93,46 @@ class CommandeRetraitRepasController extends Controller
                 }
             }
 
-            CommandeRetraitRepas::create([
-                'concours_id' => $concours->id,
-                'numero_commande' => $numeroCommande,
-                'date_commande' => $date ?? now()->toDateString(),
-                'prenom' => trim($row[$indexes['prenom']] ?? ''),
-                'nom' => trim($row[$indexes['nom']] ?? ''),
-                'produit' => $produit,
-                'quantite' => (int) ($row[$indexes['quantite']] ?? 1),
-                'emplacement_boxes' => trim($row[$indexes['emplacement_boxes']] ?? '') ?: null,
-                'note_client' => isset($indexes['note_client']) ? (trim($row[$indexes['note_client']] ?? '') ?: null) : null,
-            ]);
+            $data = [
+                'date_commande'    => $date ?? now()->toDateString(),
+                'prenom'           => trim($row[$indexes['prenom']] ?? ''),
+                'nom'              => trim($row[$indexes['nom']] ?? ''),
+                'quantite'         => (int) ($row[$indexes['quantite']] ?? 1),
+                'emplacement_boxes' => isset($indexes['emplacement_boxes']) ? (trim($row[$indexes['emplacement_boxes']] ?? '') ?: null) : null,
+                'note_client'      => isset($indexes['note_client']) ? (trim($row[$indexes['note_client']] ?? '') ?: null) : null,
+            ];
 
-            $imported++;
+            $existing = CommandeRetraitRepas::withTrashed()
+                ->where('concours_id', $concours->id)
+                ->where('numero_commande', $numeroCommande)
+                ->where('produit', $produit)
+                ->first();
+
+            if ($existing) {
+                // Restore if soft-deleted, update non-retrait fields
+                if ($existing->trashed()) {
+                    $existing->restore();
+                }
+                $existing->update($data);
+                $updated++;
+            } else {
+                CommandeRetraitRepas::create(array_merge($data, [
+                    'concours_id'    => $concours->id,
+                    'numero_commande' => $numeroCommande,
+                    'produit'        => $produit,
+                ]));
+                $imported++;
+            }
         }
 
         fclose($handle);
 
-        $message = "{$imported} commande(s) importée(s).";
-        if ($skipped > 0) {
-            $message .= " {$skipped} commande(s) déjà existante(s) ignorée(s).";
-        }
+        $parts = [];
+        if ($imported > 0) $parts[] = "{$imported} nouvelle(s) commande(s) importée(s)";
+        if ($updated > 0)  $parts[] = "{$updated} commande(s) mise(s) à jour";
+        if (empty($parts)) $parts[] = "Aucune nouvelle commande";
 
-        return back()->with('success', $message);
+        return back()->with('success', implode(', ', $parts) . '.');
     }
 
     public function update(Request $request, Concours $concours, CommandeRetraitRepas $commandeRetraitRepas)
