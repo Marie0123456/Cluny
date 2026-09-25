@@ -111,7 +111,7 @@ class VenteController extends Controller
 
             if ($aRetirer) {
                 $today = now()->format('Y-m-d');
-                $maxSeq = CommandeRetrait::where('numero_commande', 'like', $today . '-%')
+                $maxSeq = CommandeRetrait::withTrashed()->where('numero_commande', 'like', $today . '-%')
                     ->selectRaw("MAX(CAST(SPLIT_PART(numero_commande, '-', 4) AS INTEGER)) as max_seq")
                     ->value('max_seq');
 
@@ -244,7 +244,7 @@ class VenteController extends Controller
 
             if ($aRetirer) {
                 $today = now()->format('Y-m-d');
-                $maxSeq = CommandeRetrait::where('numero_commande', 'like', $today . '-%')
+                $maxSeq = CommandeRetrait::withTrashed()->where('numero_commande', 'like', $today . '-%')
                     ->selectRaw("MAX(CAST(SPLIT_PART(numero_commande, '-', 4) AS INTEGER)) as max_seq")
                     ->value('max_seq');
 
