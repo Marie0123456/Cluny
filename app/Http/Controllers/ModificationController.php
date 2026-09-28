@@ -149,14 +149,20 @@ class ModificationController extends Controller
 
         if (!empty($validated['nouveau_cavalier_id'])) {
             $nouveauCavalier = Cavalier::findOrFail($validated['nouveau_cavalier_id']);
-        } else {
+        } elseif (!empty($validated['nouveau_cavalier_num_licence'])) {
             $nouveauCavalier = Cavalier::firstOrCreate(
-                ['num_licence' => $validated['nouveau_cavalier_num_licence'] ?: null],
+                ['num_licence' => $validated['nouveau_cavalier_num_licence']],
                 [
                     'nom' => $validated['nouveau_cavalier_nom'],
                     'prenom' => $validated['nouveau_cavalier_prenom'] ?? '',
                 ]
             );
+        } else {
+            $nouveauCavalier = Cavalier::create([
+                'nom' => $validated['nouveau_cavalier_nom'],
+                'prenom' => $validated['nouveau_cavalier_prenom'] ?? '',
+                'num_licence' => null,
+            ]);
         }
 
         Modification::create([
