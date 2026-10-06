@@ -389,9 +389,12 @@ class FfeCompetImportService
 
         // Format FFE Compet réel : colonnes toujours dans le même ordre
         // N°Epr | Nom(épr) | Date | Dép. | Nom(cav) | Prénom | Rôle | Num Licence |
-        // Club | CRE | Dept. | N°Dept | Dept.Groom | Nom(cheval) | Rôle | Num Sire |
-        // Âge | Sexe | Robe | Race | Statut
+        // [Date naiss. — nouveau depuis 2026] | Club | CRE | Dept. | N°Dept | Dept.Groom |
+        // Nom(cheval) | Rôle | Num Sire | Âge | Sexe | Robe | Race | Statut
         if (str_contains($joined, 'licence') && str_contains($joined, 'sire') && count($headers) >= 15) {
+            // Nouvelle colonne "Date naiss." insérée en position 8 dans les exports récents FFE Compet
+            $offset = str_contains($joined, 'naiss') ? 1 : 0;
+
             $result = [
                 'epreuve_numero' => 0,
                 'epreuve_nom'    => 1,
@@ -401,17 +404,17 @@ class FfeCompetImportService
                 'prenom'         => 5,
                 'role_cavalier'  => 6,
                 'licence'        => 7,
-                'club'           => 8,
-                'cre'            => 9,
-                'departement'    => 10,
-                'num_dept'       => 11,
-                'dept_groom'     => 12,
-                'cheval'         => 13,
-                'role_cheval'    => 14,
-                'sire'           => 15,
-                'age'            => 16,
-                'sexe'           => 17,
-                'robe'           => 18,
+                'club'           => 8 + $offset,
+                'cre'            => 9 + $offset,
+                'departement'    => 10 + $offset,
+                'num_dept'       => 11 + $offset,
+                'dept_groom'     => 12 + $offset,
+                'cheval'         => 13 + $offset,
+                'role_cheval'    => 14 + $offset,
+                'sire'           => 15 + $offset,
+                'age'            => 16 + $offset,
+                'sexe'           => 17 + $offset,
+                'robe'           => 18 + $offset,
             ];
             // Statut/Etat : chercher par nom (position variable selon les exports)
             foreach ($headers as $i => $h) {
