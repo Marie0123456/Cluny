@@ -242,11 +242,81 @@
             <!-- Import FFE Compet / SIF -->
             @can('admin')
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                    <h3 class="text-lg font-medium text-gray-900 mb-4">
-                        {{ $concours->type_ffe_sif ? 'Import FFE SIF' : 'Import FFE Compet' }}
-                    </h3>
 
-                    @if ($concours->type_ffe_compet)
+                    @if ($concours->type_ffe_compet && $concours->type_ffe_sif)
+                        {{-- ===== MODE MIXTE : FFE Compet + FFE SIF ===== --}}
+                        <h3 class="text-lg font-medium text-gray-900 mb-1">Import FFE Compet</h3>
+                        <p class="text-sm text-gray-600 mb-4">
+                            Téléchargez le fichier depuis FFE Compet
+                            <span class="font-medium">("Extraction excel")</span>
+                            sur la page des engagements du concours, puis importez-le ici.<br>
+                            <span class="text-gray-400 text-xs">Les forfaits (colonne "Etat") sont détectés automatiquement et enregistrés comme Non-Partants.</span>
+                        </p>
+                        <form method="POST" action="{{ route('concours.import.store', $concours) }}" enctype="multipart/form-data" class="sm:flex sm:items-end sm:space-x-4 space-y-3 sm:space-y-0">
+                            @csrf
+                            <input type="hidden" name="format" value="compet">
+                            <div class="flex-1">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Fichier Excel FFE Compet</label>
+                                <input type="file" name="fichier" accept=".xls,.xlsx,.csv,.txt" required
+                                    class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
+                                @error('fichier') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
+                            </div>
+                            <button type="submit" class="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700">
+                                Importer Compet
+                            </button>
+                        </form>
+
+                        {{-- PDF prix import --}}
+                        <div class="mt-5 pt-5 border-t border-gray-100">
+                            <h4 class="text-sm font-medium text-gray-700 mb-1">Importer les prix depuis le PDF du programme</h4>
+                            <p class="text-xs text-gray-400 mb-3">
+                                Le PDF doit être le programme officiel FFE Compet (avec les lignes <span class="font-mono">Engagement : XX,00 €</span> par épreuve).
+                            </p>
+                            <form method="POST" action="{{ route('concours.import.pdf-prix', $concours) }}" enctype="multipart/form-data" class="sm:flex sm:items-end sm:space-x-4 space-y-3 sm:space-y-0">
+                                @csrf
+                                <div class="flex-1">
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Fichier PDF</label>
+                                    <input type="file" name="fichier_pdf" accept=".pdf" required
+                                        class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-amber-50 file:text-amber-700 hover:file:bg-amber-100">
+                                    @error('fichier_pdf') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
+                                </div>
+                                <button type="submit" class="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2 bg-amber-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-amber-700">
+                                    Importer les prix
+                                </button>
+                            </form>
+                        </div>
+
+                        {{-- SIF section --}}
+                        <div class="mt-6 pt-6 border-t border-gray-200">
+                            <h3 class="text-lg font-medium text-gray-900 mb-1">Import FFE SIF</h3>
+                            <p class="text-sm text-gray-500 mb-3">
+                                Les épreuves SIF seront numérotées à partir de <strong>101</strong> (épreuve 1 du SIF → épreuve 101) pour éviter les conflits avec les épreuves FFE Compet.<br>
+                                <code class="text-xs bg-gray-100 px-1.5 py-0.5 rounded">Numero Concours;Numero Epreuve;Numero Depart;Epreuve;Discipline;Licence;Nom;Prenom;Club;Sire;Cheval</code>
+                                <br><span class="text-xs text-gray-400">Le fichier peut être avec ou sans en-tête.</span>
+                            </p>
+                            <form method="POST" action="{{ route('concours.import.store', $concours) }}" enctype="multipart/form-data" class="sm:flex sm:items-end sm:space-x-4 space-y-3 sm:space-y-0">
+                                @csrf
+                                <input type="hidden" name="format" value="sif">
+                                <div class="flex-1">
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Fichier CSV/TXT FFE SIF</label>
+                                    <input type="file" name="fichier" accept=".csv,.txt,.tsv,.xlsx" required
+                                        class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-teal-50 file:text-teal-700 hover:file:bg-teal-100">
+                                    @error('fichier') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
+                                </div>
+                                <button type="submit" class="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2 bg-teal-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-teal-700">
+                                    Importer SIF
+                                </button>
+                            </form>
+                            <div class="mt-3">
+                                <a href="{{ route('import.template-sif') }}" class="text-sm text-teal-600 hover:text-teal-800 underline">
+                                    Télécharger le template CSV SIF vide
+                                </a>
+                            </div>
+                        </div>
+
+                    @elseif ($concours->type_ffe_compet)
+                        {{-- ===== MODE FFE COMPET UNIQUEMENT ===== --}}
+                        <h3 class="text-lg font-medium text-gray-900 mb-4">Import FFE Compet</h3>
                         <p class="text-sm text-gray-600 mb-4">
                             Téléchargez le fichier depuis FFE Compet
                             <span class="font-medium">("Extraction excel")</span>
@@ -287,6 +357,10 @@
                         </div>
 
                     @else
+                        {{-- ===== MODE FFE SIF OU GÉNÉRIQUE ===== --}}
+                        <h3 class="text-lg font-medium text-gray-900 mb-4">
+                            {{ $concours->type_ffe_sif ? 'Import FFE SIF' : 'Import' }}
+                        </h3>
                         <p class="text-sm text-gray-500 mb-3">
                             Colonnes attendues :
                             @if ($concours->type_ffe_sif)

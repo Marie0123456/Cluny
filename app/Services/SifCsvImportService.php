@@ -36,7 +36,7 @@ class SifCsvImportService
      * Accepts CSV/TXT (with any separator) or XLSX.
      * Columns (by position): Numero Concours;Numero Epreuve;Numero Depart;Epreuve;Discipline;Licence;Nom;Prenom;Club;Sire;Cheval;...
      */
-    public function import(Concours $concours, UploadedFile $file): array
+    public function import(Concours $concours, UploadedFile $file, int $epreuveOffset = 0): array
     {
         $extension = strtolower($file->getClientOriginalExtension());
 
@@ -77,6 +77,8 @@ class SifCsvImportService
             // If the CSV has no numero, generate a unique fallback key per epreuve name
             if ($epreuveNumero === '') {
                 $epreuveNumero = 'auto-' . $epreuveNom;
+            } elseif ($epreuveOffset > 0 && is_numeric($epreuveNumero)) {
+                $epreuveNumero = (string) ((int) $epreuveNumero + $epreuveOffset);
             }
 
             $epreuveLabel = $epreuveNom;

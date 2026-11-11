@@ -48,8 +48,13 @@ class ImportController extends Controller
 
         $file = $request->file('fichier');
 
+        // 'format' indique explicitement 'compet' ou 'sif' (utilisé quand les deux flags sont actifs)
+        // Sans ce paramètre, on garde l'ancien comportement : compet en priorité
+        $formatParam = $request->input('format');
+        $doCompet = $formatParam === 'compet' || ($formatParam === null && $concours->type_ffe_compet);
+
         // FFE Compet : utilise FfeCompetImportService (gère Excel + forfaits)
-        if ($concours->type_ffe_compet) {
+        if ($doCompet) {
             $format  = 'ffe_compet';
             $service = new FfeCompetImportService();
 
@@ -97,11 +102,13 @@ class ImportController extends Controller
         }
 
         // FFE SIF : CSV classique
+        // Si les deux formats sont actifs, les épreuves SIF sont décalées de +100
         $format  = 'ffe_sif';
         $service = new SifCsvImportService();
+        $epreuveOffset = ($concours->type_ffe_sif && $concours->type_ffe_compet) ? 100 : 0;
 
         try {
-            $result = $service->import($concours, $file);
+            $result = $service->import($concours, $file, $epreuveOffset);
 
             ImportLog::create([
                 'concours_id'    => $concours->id,
