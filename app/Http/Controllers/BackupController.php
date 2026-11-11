@@ -9,6 +9,7 @@ use App\Models\ChampionnatResultat;
 use App\Models\Cheval;
 use App\Models\ClientFacturation;
 use App\Models\CommandeRetrait;
+use App\Models\CommandeRetraitRepas;
 use App\Models\Concours;
 use App\Models\Engagement;
 use App\Models\Epreuve;
@@ -157,6 +158,7 @@ class BackupController extends Controller
         $exclusions = ChampionnatExclusion::whereIn('championnat_id', $championnatIds)->get();
 
         $commandeRetraits = CommandeRetrait::where('concours_id', $concours->id)->get();
+        $commandeRetraitRepas = CommandeRetraitRepas::where('concours_id', $concours->id)->get();
 
         $data = [
             'version' => 1,
@@ -175,6 +177,7 @@ class BackupController extends Controller
             'championnat_resultats' => $resultats->toArray(),
             'championnat_exclusions' => $exclusions->toArray(),
             'commande_retraits' => $commandeRetraits->toArray(),
+            'commande_retrait_repas' => $commandeRetraitRepas->toArray(),
         ];
 
         return json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
@@ -192,7 +195,8 @@ class BackupController extends Controller
         VenteLigne::whereIn('vente_id', $venteIds)->delete();
         $concours->ventes()->delete();
 
-        CommandeRetrait::where('concours_id', $concours->id)->delete();
+        CommandeRetrait::where('concours_id', $concours->id)->forceDelete();
+        CommandeRetraitRepas::where('concours_id', $concours->id)->forceDelete();
 
         $concours->modifications()->delete();
         $concours->engagements()->delete();
@@ -376,12 +380,22 @@ class BackupController extends Controller
 
         // Restore commande retraits
         foreach ($data['commande_retraits'] ?? [] as $row) {
-            unset($row['id'], $row['created_at'], $row['updated_at']);
+            unset($row['id'], $row['created_at'], $row['updated_at'], $row['deleted_at']);
             $row['concours_id'] = $concours->id;
             if (array_key_exists('retired_by', $row)) {
                 $row['retired_by'] = $sanitizeUserId($row['retired_by']);
             }
             CommandeRetrait::create($row);
+        }
+
+        // Restore commande retrait repas
+        foreach ($data['commande_retrait_repas'] ?? [] as $row) {
+            unset($row['id'], $row['created_at'], $row['updated_at'], $row['deleted_at']);
+            $row['concours_id'] = $concours->id;
+            if (array_key_exists('retired_by', $row)) {
+                $row['retired_by'] = $sanitizeUserId($row['retired_by']);
+            }
+            CommandeRetraitRepas::create($row);
         }
     }
 
