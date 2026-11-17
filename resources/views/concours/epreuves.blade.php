@@ -81,7 +81,22 @@
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6"
                     x-data="prixEditor()" x-cloak>
                     <div class="flex justify-between items-center px-6 pt-4">
-                        <h3 class="text-lg font-medium text-gray-900">Épreuves</h3>
+                        <div class="flex items-center gap-3">
+                            <h3 class="text-lg font-medium text-gray-900">Épreuves</h3>
+                            @if ($concours->type_ffe_compet && $concours->type_ffe_sif)
+                                <div class="flex gap-1">
+                                    <button @click="filtre = 'toutes'" type="button"
+                                        :class="filtre === 'toutes' ? 'bg-gray-700 text-white' : 'bg-white text-gray-600 border border-gray-300 hover:bg-gray-50'"
+                                        class="px-2.5 py-1 rounded text-xs font-semibold transition">Toutes</button>
+                                    <button @click="filtre = 'compet'" type="button"
+                                        :class="filtre === 'compet' ? 'bg-indigo-600 text-white' : 'bg-white text-indigo-600 border border-indigo-300 hover:bg-indigo-50'"
+                                        class="px-2.5 py-1 rounded text-xs font-semibold transition">Compet</button>
+                                    <button @click="filtre = 'sif'" type="button"
+                                        :class="filtre === 'sif' ? 'bg-teal-600 text-white' : 'bg-white text-teal-600 border border-teal-300 hover:bg-teal-50'"
+                                        class="px-2.5 py-1 rounded text-xs font-semibold transition">SIF</button>
+                                </div>
+                            @endif
+                        </div>
                         @can('admin')
                             <div>
                                 <button x-show="!editing" @click="startEditing()" type="button"
@@ -109,7 +124,14 @@
 
                     @if ($concours->type_ffe_sif)
                         <div x-show="editing" x-cloak class="mx-6 mt-3 flex items-center gap-3">
-                            <label class="text-sm font-medium text-gray-700 whitespace-nowrap">Même prix pour toutes :</label>
+                            <label class="text-sm font-medium text-gray-700 whitespace-nowrap">
+                                Même prix
+                                @if ($concours->type_ffe_compet)
+                                    (<span x-text="filtre === 'toutes' ? 'toutes' : (filtre === 'sif' ? 'SIF' : 'Compet')"></span>) :
+                                @else
+                                    pour toutes :
+                                @endif
+                            </label>
                             <input type="number" step="0.01" min="0" x-model="prixCommun"
                                 class="w-28 text-sm rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                                 placeholder="0.00">
@@ -123,7 +145,7 @@
                     {{-- Mobile card layout --}}
                     <div class="sm:hidden divide-y divide-gray-200 mt-3">
                         @foreach ($epreuves as $epreuve)
-                            <div class="px-4 py-3">
+                            <div class="px-4 py-3" x-show="rowVisible({{ $epreuve->id }})">
                                 <div class="flex items-center justify-between mb-1">
                                     <div class="flex items-center gap-2">
                                         <span class="font-medium text-sm text-gray-900">{{ $epreuve->numero }}</span>
@@ -181,7 +203,7 @@
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
                             @foreach ($epreuves as $epreuve)
-                                <tr>
+                                <tr x-show="rowVisible({{ $epreuve->id }})">
                                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ $epreuve->numero }}</td>
                                     <td class="px-6 py-4 text-sm text-gray-900">
                                         {{ $epreuve->nom }}
@@ -420,18 +442,34 @@
                 editing: false,
                 saving: false,
                 saved: false,
+                filtre: 'toutes',
                 prix: {
                     @foreach ($epreuves as $epreuve)
                         {{ $epreuve->id }}: '{{ $epreuve->prix ?? '' }}',
                     @endforeach
                 },
+                epreuvesNumeros: {
+                    @foreach ($epreuves as $epreuve)
+                        {{ $epreuve->id }}: {{ is_numeric($epreuve->numero) ? (int)$epreuve->numero : 0 }},
+                    @endforeach
+                },
                 originalPrix: {},
                 prixCommun: '',
 
+                isSif(id) {
+                    return (this.epreuvesNumeros[id] || 0) >= 101;
+                },
+
+                rowVisible(id) {
+                    if (this.filtre === 'toutes') return true;
+                    return this.filtre === 'sif' ? this.isSif(id) : !this.isSif(id);
+                },
+
                 appliquerPrixCommun() {
                     if (this.prixCommun === '') return;
-                    const ids = Object.keys(this.prix);
-                    ids.forEach(id => { this.prix[id] = this.prixCommun; });
+                    Object.keys(this.prix).forEach(id => {
+                        if (this.rowVisible(id)) this.prix[id] = this.prixCommun;
+                    });
                 },
 
                 startEditing() {
