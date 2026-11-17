@@ -188,6 +188,26 @@
             </div>
 
             @if ($ventes->isNotEmpty())
+            <!-- Récap produits -->
+            @php
+                $recapProduits = $ventes
+                    ->flatMap(fn($v) => $v->lignes)
+                    ->groupBy(fn($l) => $l->produit->nom ?? '—')
+                    ->map(fn($lignes) => $lignes->sum('quantite'))
+                    ->sortKeys();
+            @endphp
+            <div class="bg-white shadow-sm sm:rounded-lg p-6 mt-6">
+                <h3 class="text-sm font-semibold text-gray-700 uppercase tracking-wider mb-3">Récapitulatif produits</h3>
+                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                    @foreach ($recapProduits as $nom => $qte)
+                        <div class="flex items-center justify-between bg-gray-50 rounded-lg px-4 py-2">
+                            <span class="text-sm text-gray-700">{{ $nom }}</span>
+                            <span class="text-sm font-bold text-gray-900 ml-3">{{ $qte }}</span>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+
             <!-- Caisse -->
             <div class="bg-white shadow-sm sm:rounded-lg p-6 mt-6" x-data="caisseVentes()" x-cloak>
                 <h3 class="text-lg font-medium text-gray-900 mb-4">Caisse</h3>
