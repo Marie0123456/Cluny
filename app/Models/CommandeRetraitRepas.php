@@ -14,6 +14,7 @@ class CommandeRetraitRepas extends Model
 
     protected $fillable = [
         'concours_id',
+        'vente_id',
         'numero_commande',
         'date_commande',
         'prenom',

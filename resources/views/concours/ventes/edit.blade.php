@@ -177,12 +177,25 @@
 
                     <!-- À retirer -->
                     <div class="mb-6">
-                        <label class="flex items-center gap-2">
-                            <input type="checkbox" name="a_retirer" value="1" x-model="aRetirer"
-                                class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
-                            <span class="text-sm font-medium text-gray-700">À retirer</span>
-                        </label>
-                        <p class="mt-1 text-xs text-gray-500">Si coché, une ligne sera ajoutée sur la page Retrait Commandes.</p>
+                        <span class="block text-sm font-medium text-gray-700 mb-2">À retirer</span>
+                        <div class="flex flex-wrap gap-6">
+                            <label class="flex items-center gap-2">
+                                <input type="radio" name="type_retrait" value="foin" x-model="typeRetrait"
+                                    class="border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
+                                <span class="text-sm text-gray-700">Foin</span>
+                            </label>
+                            <label class="flex items-center gap-2">
+                                <input type="radio" name="type_retrait" value="repas" x-model="typeRetrait"
+                                    class="border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
+                                <span class="text-sm text-gray-700">Repas</span>
+                            </label>
+                            <label class="flex items-center gap-2">
+                                <input type="radio" name="type_retrait" value="non" x-model="typeRetrait"
+                                    class="border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
+                                <span class="text-sm text-gray-700">Non</span>
+                            </label>
+                        </div>
+                        <p class="mt-1 text-xs text-gray-500">Foin ou Repas : une ligne sera ajoutée sur la page Retrait Commandes.</p>
                     </div>
 
                     <!-- Commentaire -->
@@ -230,7 +243,7 @@
                 adresseFacturation: @json($vente->clientFacturation?->adresse ?? ''),
                 clientsResultats: [],
                 showClientsResults: false,
-                aRetirer: {{ $hasRetraits ? 'true' : 'false' }},
+                typeRetrait: @json($typeRetrait),
 
                 get totalGeneral() {
                     return this.lignes.reduce((sum, l) => sum + (l.total || 0), 0);
@@ -280,6 +293,12 @@
                     if (validLignes.length === 0) {
                         event.preventDefault();
                         alert('Veuillez ajouter au moins un produit.');
+                        return;
+                    }
+
+                    if (!this.typeRetrait) {
+                        event.preventDefault();
+                        alert('Veuillez sélectionner une option pour "À retirer" (Foin, Repas ou Non).');
                         return;
                     }
 

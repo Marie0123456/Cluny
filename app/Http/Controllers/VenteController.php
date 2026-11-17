@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Traits\HandlesPaiement;
 use App\Models\ClientFacturation;
 use App\Models\CommandeRetrait;
+use App\Models\CommandeRetraitRepas;
 use App\Models\Concours;
 use App\Models\Produit;
 use App\Models\Vente;
@@ -64,11 +65,11 @@ class VenteController extends Controller
             'lignes' => 'required|array|min:1',
             'lignes.*.produit_id' => 'required|exists:produits,id',
             'lignes.*.quantite' => 'required|integer|min:1',
-            'a_retirer' => 'boolean',
+            'type_retrait' => 'required|in:foin,repas,non',
         ]);
 
         DB::transaction(function () use ($validated, $concours, $request) {
-            $aRetirer = $request->boolean('a_retirer');
+            $typeRetrait = $validated['type_retrait'];
             $clientFacturationId = $this->resolveClientFacturation($validated, $request->boolean('facture'));
 
             $aucunPaiement = !$request->boolean('paiement_cb')
@@ -109,12 +110,12 @@ class VenteController extends Controller
 
             $vente->recalculerTotal();
 
-            if ($aRetirer) {
-                $today = now()->format('Y-m-d');
+            $today = now()->format('Y-m-d');
+
+            if ($typeRetrait === 'foin') {
                 $maxSeq = CommandeRetrait::withTrashed()->where('numero_commande', 'like', $today . '-%')
                     ->selectRaw("MAX(CAST(SPLIT_PART(numero_commande, '-', 4) AS INTEGER)) as max_seq")
                     ->value('max_seq');
-
                 $nextSeq = ($maxSeq ?? 0) + 1;
 
                 foreach ($validated['lignes'] as $ligne) {
@@ -129,6 +130,27 @@ class VenteController extends Controller
                         'produit' => $produit->nom,
                         'quantite' => $ligne['quantite'],
                         'emplacement_boxes' => null,
+                        'retire' => false,
+                    ]);
+                    $nextSeq++;
+                }
+            } elseif ($typeRetrait === 'repas') {
+                $maxSeq = CommandeRetraitRepas::withTrashed()->where('numero_commande', 'like', $today . '-%')
+                    ->selectRaw("MAX(CAST(SPLIT_PART(numero_commande, '-', 4) AS INTEGER)) as max_seq")
+                    ->value('max_seq');
+                $nextSeq = ($maxSeq ?? 0) + 1;
+
+                foreach ($validated['lignes'] as $ligne) {
+                    $produit = Produit::find($ligne['produit_id']);
+                    CommandeRetraitRepas::create([
+                        'concours_id' => $concours->id,
+                        'vente_id' => $vente->id,
+                        'numero_commande' => $today . '-' . $nextSeq,
+                        'date_commande' => $today,
+                        'prenom' => '',
+                        'nom' => $validated['nom_client'],
+                        'produit' => $produit->nom,
+                        'quantite' => $ligne['quantite'],
                         'retire' => false,
                     ]);
                     $nextSeq++;
@@ -158,9 +180,14 @@ class VenteController extends Controller
             'total' => (float) $l->total_ttc,
         ]);
 
-        $hasRetraits = CommandeRetrait::where('vente_id', $vente->id)->exists();
+        $typeRetrait = 'non';
+        if (CommandeRetrait::where('vente_id', $vente->id)->exists()) {
+            $typeRetrait = 'foin';
+        } elseif (CommandeRetraitRepas::where('vente_id', $vente->id)->exists()) {
+            $typeRetrait = 'repas';
+        }
 
-        return view('concours.ventes.edit', compact('vente', 'produits', 'initialLignes', 'hasRetraits'));
+        return view('concours.ventes.edit', compact('vente', 'produits', 'initialLignes', 'typeRetrait'));
     }
 
     public function update(Request $request, Vente $vente)
@@ -183,11 +210,11 @@ class VenteController extends Controller
             'lignes' => 'required|array|min:1',
             'lignes.*.produit_id' => 'required|exists:produits,id',
             'lignes.*.quantite' => 'required|integer|min:1',
-            'a_retirer' => 'boolean',
+            'type_retrait' => 'required|in:foin,repas,non',
         ]);
 
         DB::transaction(function () use ($validated, $vente, $request) {
-            $aRetirer = $request->boolean('a_retirer');
+            $typeRetrait = $validated['type_retrait'];
             $aucunPaiement = !$request->boolean('paiement_cb')
                 && !$request->boolean('paiement_especes')
                 && !$request->boolean('paiement_cheque')
@@ -241,13 +268,14 @@ class VenteController extends Controller
 
             // Supprimer les anciens retraits liés à cette vente (non encore retirés)
             CommandeRetrait::where('vente_id', $vente->id)->where('retire', false)->delete();
+            CommandeRetraitRepas::where('vente_id', $vente->id)->where('retire', false)->delete();
 
-            if ($aRetirer) {
-                $today = now()->format('Y-m-d');
+            $today = now()->format('Y-m-d');
+
+            if ($typeRetrait === 'foin') {
                 $maxSeq = CommandeRetrait::withTrashed()->where('numero_commande', 'like', $today . '-%')
                     ->selectRaw("MAX(CAST(SPLIT_PART(numero_commande, '-', 4) AS INTEGER)) as max_seq")
                     ->value('max_seq');
-
                 $nextSeq = ($maxSeq ?? 0) + 1;
 
                 foreach ($validated['lignes'] as $ligne) {
@@ -262,6 +290,27 @@ class VenteController extends Controller
                         'produit' => $produit->nom,
                         'quantite' => $ligne['quantite'],
                         'emplacement_boxes' => null,
+                        'retire' => false,
+                    ]);
+                    $nextSeq++;
+                }
+            } elseif ($typeRetrait === 'repas') {
+                $maxSeq = CommandeRetraitRepas::withTrashed()->where('numero_commande', 'like', $today . '-%')
+                    ->selectRaw("MAX(CAST(SPLIT_PART(numero_commande, '-', 4) AS INTEGER)) as max_seq")
+                    ->value('max_seq');
+                $nextSeq = ($maxSeq ?? 0) + 1;
+
+                foreach ($validated['lignes'] as $ligne) {
+                    $produit = Produit::find($ligne['produit_id']);
+                    CommandeRetraitRepas::create([
+                        'concours_id' => $vente->concours_id,
+                        'vente_id' => $vente->id,
+                        'numero_commande' => $today . '-' . $nextSeq,
+                        'date_commande' => $today,
+                        'prenom' => '',
+                        'nom' => $validated['nom_client'],
+                        'produit' => $produit->nom,
+                        'quantite' => $ligne['quantite'],
                         'retire' => false,
                     ]);
                     $nextSeq++;
