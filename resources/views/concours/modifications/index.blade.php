@@ -1789,6 +1789,7 @@
         const __epreuves = @json($epreuvesJson);
         const __isGrandNational = @json($concours->grand_national);
         const __isSif = @json($concours->type_ffe_sif);
+        const __isMixed = @json($concours->type_ffe_sif && $concours->type_ffe_compet);
         const __allCavaliersConcours = @json($allCavaliersJson);
 
         function marquerFait(modId, btn) {
@@ -2169,6 +2170,7 @@
                 nouvelleEpreuveId: '',
                 nouvelleEpreuvePrix: 0,
                 nouvelleEpreuveTypeDetecte: null,
+                nouvelleEpreuveNumero: null,
 
                 editablePrix: 0,
                 editablePf: 0,
@@ -2232,17 +2234,22 @@
                     if (ep) {
                         this.nouvelleEpreuvePrix = parseFloat(ep.prix) || 0;
                         this.nouvelleEpreuveTypeDetecte = ep.type_detecte;
+                        this.nouvelleEpreuveNumero = ep.numero;
                     } else {
                         this.nouvelleEpreuvePrix = 0;
                         this.nouvelleEpreuveTypeDetecte = null;
+                        this.nouvelleEpreuveNumero = null;
                     }
                     this.recalculatePrix();
                 },
 
                 recalculatePrix() {
                     const diff = this.nouvelleEpreuvePrix - this.epreuvePrix;
+                    const nouvelleIsSif = __isMixed
+                        ? parseInt(this.nouvelleEpreuveNumero) >= 101
+                        : __isSif;
 
-                    if (__isSif) {
+                    if (nouvelleIsSif) {
                         // FFE SIF : diff (min 0) + 10€, PF = 9.90€
                         this.editablePrix = Math.max(diff, 0) + 10;
                         this.editablePf = 9.90;
@@ -2288,6 +2295,7 @@
                 epreuveId: '',
                 epreuvePrix: 0,
                 epreuveTypeDetecte: null,
+                epreuveNumero: null,
 
                 cavalierMode: 'existing',
                 cavalierId: '',
@@ -2330,9 +2338,14 @@
                 clientsResultats: [],
                 showClientsResults: false,
 
+                get epreuveIsSif() {
+                    if (!__isMixed) return __isSif;
+                    return parseInt(this.epreuveNumero) >= 101;
+                },
+
                 get calculatedPrix() {
                     const base = this.epreuvePrix || 0;
-                    if (__isSif) {
+                    if (this.epreuveIsSif) {
                         return base + 10;
                     }
                     if (isGrandNational && this.isGn && this.epreuveTypeDetecte === 'pro') {
@@ -2352,7 +2365,7 @@
                 },
 
                 get calculatedPf() {
-                    if (__isSif) {
+                    if (this.epreuveIsSif) {
                         return 9.90;
                     }
                     if (isGrandNational && this.isGn && this.epreuveTypeDetecte === 'pro') {
@@ -2374,9 +2387,11 @@
                     if (ep) {
                         this.epreuvePrix = parseFloat(ep.prix) || 0;
                         this.epreuveTypeDetecte = ep.type_detecte;
+                        this.epreuveNumero = ep.numero;
                     } else {
                         this.epreuvePrix = 0;
                         this.epreuveTypeDetecte = null;
+                        this.epreuveNumero = null;
                     }
                     this.filteredCavaliers = this.allCavaliers;
                 },

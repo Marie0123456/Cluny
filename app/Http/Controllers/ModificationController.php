@@ -53,6 +53,7 @@ class ModificationController extends Controller
         $epreuvesJson = $epreuves->map(function ($e) {
             return [
                 'id' => $e->id,
+                'numero' => $e->numero,
                 'prix' => $e->prix,
                 'nom' => $e->nom,
                 'type_detecte' => $e->type_detecte,
