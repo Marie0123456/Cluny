@@ -17,6 +17,11 @@
                     {{ session('success') }}
                 </div>
             @endif
+            @if (session('error'))
+                <div class="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+                    {{ session('error') }}
+                </div>
+            @endif
 
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                 @if ($produits->isEmpty())
@@ -55,9 +60,15 @@
                                         <form method="POST" action="{{ route('admin.produits.toggle', $produit) }}" class="inline">
                                             @csrf
                                             @method('PATCH')
-                                            <button type="submit" class="{{ $produit->actif ? 'text-red-600 hover:text-red-800' : 'text-green-600 hover:text-green-800' }} text-sm font-medium">
+                                            <button type="submit" class="{{ $produit->actif ? 'text-amber-600 hover:text-amber-800' : 'text-green-600 hover:text-green-800' }} text-sm font-medium">
                                                 {{ $produit->actif ? 'Désactiver' : 'Activer' }}
                                             </button>
+                                        </form>
+                                        <form method="POST" action="{{ route('admin.produits.destroy', $produit) }}" class="inline"
+                                            onsubmit="return confirm('Supprimer le produit « {{ addslashes($produit->nom) }} » ?\n\nCette action est irréversible.')">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="text-red-600 hover:text-red-800 text-sm font-medium">Supprimer</button>
                                         </form>
                                     </td>
                                 </tr>

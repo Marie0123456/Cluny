@@ -202,7 +202,7 @@ Route::middleware(['auth'])->group(function () {
         Route::resource('users', UserController::class)->except(['show']);
         Route::post('users/{user}/assign-concours', [UserController::class, 'assignConcours'])->name('users.assign-concours');
         Route::post('users/{user}/reset-password', [UserController::class, 'resetPassword'])->name('users.reset-password');
-        Route::resource('produits', ProduitController::class)->except(['show', 'destroy']);
+        Route::resource('produits', ProduitController::class)->except(['show']);
         Route::patch('produits/{produit}/toggle', [ProduitController::class, 'toggleActif'])->name('produits.toggle');
 
         // Demandes d'acces

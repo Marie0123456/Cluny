@@ -52,6 +52,19 @@ class ProduitController extends Controller
             ->with('success', 'Produit mis à jour.');
     }
 
+    public function destroy(Produit $produit)
+    {
+        if ($produit->venteLignes()->exists()) {
+            return redirect()->route('admin.produits.index')
+                ->with('error', 'Impossible de supprimer "' . $produit->nom . '" : il est utilisé dans des ventes. Désactivez-le à la place.');
+        }
+
+        $produit->delete();
+
+        return redirect()->route('admin.produits.index')
+            ->with('success', 'Produit "' . $produit->nom . '" supprimé.');
+    }
+
     public function toggleActif(Produit $produit)
     {
         $produit->update(['actif' => !$produit->actif]);
